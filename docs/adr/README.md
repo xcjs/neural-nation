@@ -23,6 +23,7 @@ decision, its context, and consequences.
 | [0014](0014-power-generation-and-transmission.md) | Power Generation & Transmission System | Proposed |
 | [0015](0015-humanity-and-environmental-impact.md) | Humanity & Environmental Impact System | Proposed |
 | [0016](0016-space-based-resource-gathering.md) | Space-Based Resource Gathering | Proposed |
+| [0017](0017-code-organization-and-domain-driven-design.md) | Code Organization & Domain-Driven Design (PascalCase, feature folders) | Proposed |
 
 ## ADR Relationships
 
@@ -41,7 +42,8 @@ decision, its context, and consequences.
                       │                      └── 0015 (Humanity/Env)
                       ├── 0012 (UI/HUD) ──┬── 0004 (MCP)
                       │                   └── 0015 (Humanity/Env)
-                      └── 0014 (Power) ── 0016 (Space)
+                      ├── 0014 (Power) ── 0016 (Space)
+                      └── 0017 (Code Org/DDD) ── applies to all
 ```
 
 ## Status Legend
