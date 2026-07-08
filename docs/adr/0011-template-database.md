@@ -47,10 +47,18 @@ The template DB includes:
 The template DB is built (or rebuilt) via a dev/script command:
 
 ```
+npm run db:fetch-data    # downloads large geological datasets (if needed)
 npm run db:build-template
 ```
 
-This script:
+The fetch step (`scripts/fetch-geological-data.ts`, outside the Nuxt project)
+downloads large datasets (e.g., hydrological data, large oil/gas datasets)
+into `data/geological/`. Small datasets (crustal abundance table, MRDS if
+under ~5MB) are bundled in the repo and don't need downloading. The fetch
+script is idempotent — it skips datasets already present. See ADR-0003 for
+data source details.
+
+The build step:
 1. Deletes `data/games/_template.db` if it exists.
 2. Creates a fresh DB and runs all Drizzle migrations.
 3. Runs the geological data seeding pipeline (ADR-0003): parses USGS data,
@@ -60,11 +68,10 @@ This script:
 5. Runs `VACUUM` to compact the file.
 6. Logs summary stats (deposit count, element count, file size).
 
-The template is **committed to the repo** (or stored as a build artifact) so
-production deployments don't need the raw geological datasets at runtime. The
-geological datasets can remain in `data/geological/` for development and
-template rebuilding, but the template DB itself is the artifact used at
-runtime.
+The template is **committed to the repo** so production deployments don't need
+the raw geological datasets at runtime. The geological datasets can remain in
+`data/geological/` for development and template rebuilding, but the template DB
+itself is the artifact used at runtime.
 
 ### New Game Creation Flow
 
@@ -95,17 +102,22 @@ seeding pipeline. Game creation is near-instant regardless of deposit count.
 ### File Layout
 
 ```
+scripts/
+  fetch-geological-data.ts  ← downloads large datasets (outside Nuxt project)
+  build-template.ts         ← builds _template.db from geological data
+
 data/
-  geological/               ← raw datasets (USGS, crustal abundance, etc.)
-    mrds.json
-    crustal_abundance.json
-    oil_gas.json
-    biomes.json
+  geological/               ← raw datasets (bundled small + downloaded large)
+    mrds.json                ← bundled (small)
+    crustal_abundance.json   ← bundled (small)
+    oil_gas.json             ← bundled or downloaded
+    biomes.json              ← bundled or downloaded
+    hydrology/               ← downloaded (large, gitignored)
   games/
-    _template.db            ← pre-built template (committed or built in CI)
-    {token1}.db
+    _template.db             ← pre-built template (committed to repo)
+    {token1}.db              ← per-game DBs (gitignored)
     {token2}.db
-    registry.json
+    registry.json            ← active games index (gitignored)
 ```
 
 ## Consequences

@@ -37,15 +37,27 @@ thereafter** to seed resource deposits at lat/lon coordinates.
      reactors, etc.) if the player/LLM wants them. Whether each is useful in the
      game's economy is a separate gameplay question.
 
-### Data Sources (to be compiled)
+### Data Sources (to be sourced and bundled or downloaded)
+
+Geological datasets are sourced from public/open data. Strategy: **bundle
+small datasets in the repo; download large datasets via an npm task.**
 
 - **USGS Mineral Resources Data System (MRDS)**: known mineral deposit
-  locations worldwide with commodity types.
+  locations worldwide with commodity types. Dataset is a few MB — bundle
+  in repo as compressed JSON.
 - **Crustal abundance tables**: standard geochemical data (ppm by element)
-  for baseline rarity.
-- **Oil & gas deposit data**: publicly available field locations.
+  for baseline rarity. Very small (a single table of 118 rows) — bundle in
+  repo as a TypeScript constant or JSON.
+- **Oil & gas deposit data**: publicly available field locations. Moderate
+  size — bundle if under ~5MB compressed, else download via npm task.
 - **Forestry / biome data**: FAO or similar for wood density by region.
-- **Hydrological data**: for freshwater availability.
+  Moderate size — bundle or download via npm task.
+- **Hydrological data**: for freshwater availability. Often large — download
+  via npm task if too big to bundle.
+
+The script `scripts/fetch-geological-data.ts` (outside the Nuxt project) handles
+downloading and processing large datasets into the `data/geological/` directory.
+See ADR-0011 for the template build pipeline.
 
 ### Generation Algorithm
 

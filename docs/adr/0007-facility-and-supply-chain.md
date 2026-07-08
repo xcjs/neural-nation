@@ -111,12 +111,44 @@ Each facility has:
   power stability. Can be upgraded by the LLM via `set_production_target` or
   future upgrade tools.
 
-### Stockpile Model
+### Buffer Model (Per-Facility Buffers)
 
-Resources accumulate in stockpiles. Each facility has an internal buffer
-(input/output). Excess flows to connected `storage` facilities. If a
-facility's output buffer is full and no transport/storage is connected,
-production halts (overflow).
+There is **no global stockpile** by default. Resources live in per-facility
+buffers:
+
+- **Input buffer**: Each facility has a limited-capacity input buffer for each
+  resource it consumes. Transport links fill it; production drains it.
+- **Output buffer**: Each facility has a limited-capacity output buffer for each
+  resource it produces. Production fills it; transport links drain it.
+- **Storage facilities**: `storage` facilities act as dedicated large-capacity
+  buffers. They have input/output buffers with much higher caps than production
+  facilities. They serve as collection points for excess production.
+- **Overflow**: If a facility's output buffer is full and no transport/storage
+  is connected, production halts (overflow). The LLM must build transport or
+  storage to keep production flowing.
+
+### Uncollected Natural Resources (Global Buffer)
+
+Extracted resources that have not been picked up by transport are NOT
+unlimited. The "uncollected" state is a **global buffer** with realistic caps:
+
+- **Surface resources** (wood, water from rivers, surface minerals): uncollected
+  extraction accumulates at the extraction site up to a cap based on the
+  site's physical capacity (e.g., a mine's stockpile area). Beyond the cap,
+  extraction stops until transport relieves the buffer.
+- **Subsurface resources** (mined ore, pumped oil): cannot be left uncollected
+  indefinitely — the extraction facility has a finite output buffer. Once full,
+  extraction halts. This models real-world stockpile limits at mine heads and
+  well heads.
+- **Natural regeneration** (wood, water): surface resources like wood and water
+  regenerate slowly if not over-extracted, but only up to the deposit's natural
+  capacity. Over-extraction depletes the deposit permanently (no regeneration
+  beyond the original quantity).
+
+This means the LLM cannot just "extract everything and leave it" — it must
+build transport to move extracted resources to processing/storage, or
+extraction will halt. The global buffer for uncollected resources is capped
+at realistic values per deposit/extractor, not a single global number.
 
 ## Consequences
 

@@ -15,23 +15,36 @@ client chat interface, issuing directives that the LLM may or may not follow.
 
 ## Decision
 
-### Game Loop: Real-Time Simulation with Tick-Based Processing
+### Game Loop: Event-Driven Tick (MCP-Triggered Advancement)
 
-The game runs a **server-side simulation tick loop** that processes production,
-resource consumption, and transport flows. The player watches results
-rendered on the 3D earth in real-time.
+The simulation does **not** run on a wall-clock timer. Instead, the game only
+advances when the LLM makes an MCP call. This ensures the game doesn't progress
+too rapidly when the LLM/user is idle — the simulation pauses naturally when
+nothing is happening and advances in discrete steps as the LLM acts.
 
-- **Tick rate**: Configurable per game (default: 1 tick = 1 second of real time
-  = 1 in-game "minute" or similar abstraction).
+- **Tick trigger**: Each MCP tool invocation from the LLM advances the
+  simulation by one or more ticks before returning the tool result. The tool
+  response includes the resulting game state, so the LLM sees the effects of
+  its action immediately.
+- **Ticks per MCP call**: Configurable per game (default: 1 tick per call).
+  Complex actions or time-scaled actions may advance multiple ticks.
+- **Idle behavior**: When no MCP calls are received, the game is frozen in
+  time — no production, no depletion, no transport. The earth view shows the
+  last known state. This is by design: the game progresses at the pace of LLM
+  decision-making.
 - **Per-tick processing**: Each tick, the simulation:
   1. Processes facility production (extractors mine, factories transform).
   2. Moves resources along transport links.
-  3. Updates stockpile levels.
+  3. Updates facility buffers and stockpile levels.
   4. Depletes resource deposits (extracted quantity reduces deposit quantity).
   5. Logs significant events to `event_log` for UI display.
-- **Player-visible updates**: The web UI polls or receives SSE/websocket
-  updates of game state changes, rendering new facilities, transport flows,
-  and stockpile changes on the globe.
+- **Player-visible updates**: The web UI receives SSE/websocket updates when
+  ticks are processed (i.e., when the LLM acts). Between LLM actions, the UI
+  shows a static state. A "waiting for LLM..." indicator communicates when the
+  game is idle.
+- **Manual "advance" (optional)**: The web UI may offer a "step forward" button
+  that triggers a tick without an LLM action, for players who want to nudge
+  the simulation. This is a convenience, not the primary loop.
 
 ### Player Role: Passive Overseer
 
@@ -48,8 +61,9 @@ The player CAN from the web UI:
 - **View stockpiles**, production graphs, and event log.
 - **Revoke the MCP token** (cuts off LLM access).
 - **Mint a new token** (if the old one was lost/compromised).
-- **Pause/resume the simulation** (stops tick processing without disconnecting
-  the LLM — the LLM can still query state but production halts).
+- **Pause the simulation** (blocks tick advancement even on MCP calls —
+  useful for inspecting state. The LLM can still query read-only state but
+  build/production tools return a "game paused" error).
 
 ### Player-LLM Interaction: Via the Player's Own Chat Client
 
@@ -89,24 +103,35 @@ deck for the simulation.
   duplicated chat infrastructure.
 - The "passive overseer" loop is inherently satisfying — watching autonomous
   agents build is the core appeal.
-- Server-side tick loop centralizes simulation logic; no client-side
-  desync risk.
+- Event-driven ticks mean no wasted computation when idle; the server only
+  works when the LLM acts.
+- The game naturally paces itself to the LLM's decision speed — no need for
+  a separate tick scheduler or timer infrastructure.
+- Tool responses include post-tick state, giving the LLM immediate feedback
+  on its actions.
 
 **Negative:**
 - Player has no in-game corrective action if the LLM misbehaves (other than
   revoking the token or messaging via their chat client). This is by design —
   it's a sandbox for observing LLM behavior.
 - Tick processing must be efficient; a game with hundreds of facilities and
-  transport links per tick must stay within budget (~16ms for 60fps UI updates,
-  though the tick itself can be slower if UI updates are decoupled).
-- The web UI needs real-time data delivery (SSE or websocket) to feel live
-  without excessive polling.
+  transport links per tick must complete within the MCP call's response time
+  (target <500ms including DB writes) to avoid LLM timeouts.
+- The web UI needs real-time data delivery (SSE or websocket) to reflect
+  tick results promptly; between MCP calls the UI is static, which may feel
+  "dead" to some players (mitigated by the "waiting for LLM..." indicator).
+- If the LLM makes rapid successive calls, ticks may pile up; the server
+  should batch or queue ticks if calls arrive faster than processing time.
 
 ## Alternatives Considered
 
-- **Turn-based**: Player issues commands, LLM executes, then waits. Rejected —
-  breaks the "watch it grow" passive appeal; real-time is more engaging for
-  observation.
+- **Wall-clock real-time ticks**: Rejected — game would progress too rapidly
+  when the LLM/user is idle, and would waste server resources simulating
+  with no observer. Event-driven ticks solve both problems.
+- **Turn-based (player issues commands, LLM executes, then waits)**:
+  Rejected — the event-driven model is more natural: the LLM acts when it
+  decides to, and the game advances in response. No explicit "end turn"
+  needed.
 - **In-game chat panel**: Rejected — player specifically wants BYO LLM client;
   duplicating chat in the web UI adds complexity without value.
 - **Player can directly build**: Rejected — the entire concept is that the LLM
