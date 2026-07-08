@@ -18,6 +18,7 @@ decision, its context, and consequences.
 | [0009](0009-game-identity-persistence-win-state.md) | Game Identity, Persistence & Win State (token=identity, sandbox) | Proposed |
 | [0010](0010-sqlite-orm-drizzle.md) | SQLite ORM (Drizzle) | Proposed |
 | [0011](0011-template-database.md) | Template Database for Game Instantiation | Proposed |
+| [0012](0012-ui-hud-panels-and-resource-tracker.md) | UI/HUD Panels and Resource Tracker | Proposed |
 
 ## ADR Relationships
 
