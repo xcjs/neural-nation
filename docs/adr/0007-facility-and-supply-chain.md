@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0013, ADR-0014, ADR-0018 |
+| Relates to | ADR-0003, ADR-0013, ADR-0014, ADR-0018, ADR-0023 |
 
 ## Context
 
@@ -53,6 +53,18 @@ facilities.
   space infrastructure chain (spaceport → space station → orbital refinery →
   asteroid mining drones → lunar mines → deep space probes). Requires
   Aerospace Engineering tech (ADR-0018).
+- `terraformer` — large-scale terrain alteration (level mountains, raise
+  land, excavate shafts, create mountains). Requires Advanced Terraforming
+  tech. See ADR-0023 for the full terraforming system.
+- `planetary_engine` — continental-scale terraforming (shift plates, ocean↔land
+  conversion). Requires Planetary Engineering tech + fusion power. See
+  ADR-0023.
+
+**Tier 1-2 — Terraforming** (progressive capability, see ADR-0023):
+- `excavator` (Tier 1) — early earthworks (flatten, dig canal, embankment).
+  Requires Earthworks tech.
+- `dredger` (Tier 2) — hydraulic engineering (reservoir, drain, divert).
+  Requires Hydraulic Engineering tech.
 
 **Tier — Infrastructure** (not production, but required):
 - `storage` — stockpile point for resources (warehouses, tanks, silos)
@@ -87,6 +99,11 @@ terrain — see ADR-0013):
   extreme elevation (>3000m) have a production efficiency penalty. Ocean
   facilities (`offshore_platform`, `desalination_plant`) can be placed on
   ocean cells for specific resource types.
+- **Terraforming** (ADR-0023): Terrain is mutable per-game. Terraforming
+  facilities (excavator, dredger, terraformer, planetary_engine) execute
+  terraforming recipes that modify the terrain overlay. Changed terrain
+  re-evaluates transport links, facility placement, and deposit
+  accessibility. See ADR-0023 for the full system.
 
 ### Transport System (Explicit Infrastructure)
 

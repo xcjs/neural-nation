@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0004, ADR-0006, ADR-0007, ADR-0011, ADR-0012, ADR-0016, ADR-0021 |
+| Relates to | ADR-0003, ADR-0004, ADR-0006, ADR-0007, ADR-0011, ADR-0012, ADR-0016, ADR-0021, ADR-0023 |
 
 ## Context
 
@@ -142,8 +142,8 @@ interface ResearchCost {
 }
 
 interface TechUnlock {
-  Type: 'Recipe' | 'FacilityType' | 'TransportType' | 'TerrainModifier' | 'SpaceFacility'
-  Id: string                    // recipe ID, facility type, etc.
+  Type: 'Recipe' | 'FacilityType' | 'TransportType' | 'TerrainModifier' | 'SpaceFacility' | 'TerraformAction'
+  Id: string                    // recipe ID, facility type, terraform action, etc.
 }
 ```
 
@@ -178,25 +178,37 @@ interface TechUnlock {
   → Automated Production     → Soylent Research             │
         │                          │                        │
         └──────────┬───────────────┴────────────────────────┘
-                   ▼
-           [Space Branch]
-           Aerospace Engineering
-           → Spaceport
-           → Rocket Assembly
-           → Rocket Parts recipe
-                │
-                ▼
-           Orbital Infrastructure
-           → Space Station
-           → Orbital Refinery
-           → Assign Space Crew
-                │
-                ▼
-           Deep Space Technology
-           → Asteroid Mining Drones
-           → Lunar Mining
-           → Deep Space Probes
-           → Space Habitat
+                   │
+    ┌──────────────┼──────────────┐
+    ▼              ▼              ▼
+[Terraforming]  [Space Branch]   
+Earthworks      Aerospace Engineering
+→ Excavator     → Spaceport
+→ Flatten        → Rocket Assembly
+→ Dig Canal      → Rocket Parts recipe
+→ Embankment          │
+     │                ▼
+     ▼           Orbital Infrastructure
+Hydraulic Eng.  → Space Station
+→ Dredger        → Orbital Refinery
+→ Reservoir      → Assign Space Crew
+→ Drain               │
+→ Divert              ▼
+     │           Deep Space Technology
+     ▼           → Asteroid Mining Drones
+Advanced Terra.  → Lunar Mining
+→ Terraformer     → Deep Space Probes
+→ Level Mountain  → Space Habitat
+→ Raise Land
+→ Excavate Shaft
+→ Create Mountain
+     │
+     ▼
+Planetary Engineering
+→ Planetary Engine
+→ Continental Shift
+→ Ocean↔Land Conversion
+(requires Fusion Power)
 ```
 
 ### Research Mechanics
@@ -307,6 +319,10 @@ Example facility-recipe mappings:
 | Electronics Plant | Electronics Assembly, Solar Panel Production, Circuit Production |
 | Factory | Machinery, Nuclear Fuel Rods, Rocket Parts, Satellite Kits, Fusion Cores |
 | Research Lab | (research, not production — consumes research costs, produces tech progress) |
+| Excavator | Flatten Terrain, Dig Canal, Road Embankment (ADR-0023) |
+| Dredger | Create Reservoir, Drain Area, Divert River (ADR-0023) |
+| Terraformer | Level Mountain, Raise Land, Excavate Shaft, Create Mountain (ADR-0023) |
+| Planetary Engine | Continental Shift, Ocean→Land, Land→Ocean (ADR-0023) |
 
 The LLM chooses which recipe a facility runs based on what outputs it needs
 and what inputs are available. This replaces the generic "inputs/outputs" model

@@ -29,6 +29,7 @@ decision, its context, and consequences.
 | [0020](0020-game-lifecycle-and-cleanup.md) | Game Lifecycle & Cleanup (automatic stale game deletion) | Proposed |
 | [0021](0021-unit-system-and-scaling.md) | Unit System & Scaling (metric units, tonnes, MW, 1 tick = 1 day) | Proposed |
 | [0022](0022-testing-strategy.md) | Testing Strategy (Vitest, unit/integration/simulation/component) | Proposed |
+| [0023](0023-terraforming-and-world-shaping.md) | Terraforming & World Shaping (terrain modification, planetary engineering) | Proposed |
 
 ## ADR Relationships
 
@@ -39,23 +40,24 @@ decision, its context, and consequences.
                       │                └── 0020 (Cleanup)
                       ├── 0005 (SQLite DBs) ──┬── 0010 (Drizzle ORM)
                       │                       ├── 0011 (Template DB) ── 0003 (Resources)
-                      │                       │                          ├── 0013 (Terrain)
+                      │                       │                          ├── 0013 (Terrain) ── 0023 (Terraforming)
                       │                       │                          ├── 0015 (Humanity/Env)
                       │                       │                          └── 0021 (Unit System)
                       │                       └── 0020 (Cleanup)
                       ├── 0006 (Game Loop) ──┬── 0007 (Facilities/Supply Chain)
-                      │                      │    ├── 0013 (Terrain)
+                      │                      │    ├── 0013 (Terrain) ── 0023 (Terraforming)
                       │                      │    ├── 0014 (Power System)
                       │                      │    ├── 0016 (Space Gathering)
-                      │                      │    └── 0018 (Tech Tree/Recipes)
+                      │                      │    └── 0018 (Tech Tree/Recipes) ── 0023 (Terraforming)
                       │                      ├── 0009 (Lose Condition)
-                      │                      └── 0015 (Humanity/Env)
+                      │                      └── 0015 (Humanity/Env) ── 0023 (Terraforming)
                       ├── 0012 (UI/HUD) ──┬── 0004 (MCP)
                       │                   ├── 0015 (Humanity/Env)
                       │                   └── 0018 (Tech Tree)
                       ├── 0014 (Power) ── 0016 (Space)
                       ├── 0017 (Code Org/DDD) ── applies to all ── 0022 (Testing)
-                      └── 0018 (Tech Tree/Recipes) ── 0003, 0004, 0007, 0011, 0012, 0021
+                      ├── 0018 (Tech Tree/Recipes) ── 0003, 0004, 0007, 0011, 0012, 0021, 0023
+                      └── 0023 (Terraforming) ── 0002, 0004, 0007, 0008, 0011, 0013, 0015, 0018
 ```
 
 ## Status Legend

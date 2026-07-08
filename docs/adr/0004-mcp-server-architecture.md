@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0007, ADR-0009, ADR-0012, ADR-0018, ADR-0019, ADR-0021 |
+| Relates to | ADR-0003, ADR-0007, ADR-0009, ADR-0012, ADR-0018, ADR-0019, ADR-0021, ADR-0023 |
 
 ## Context
 
@@ -118,6 +118,22 @@ The MCP server exposes these tools to the LLM:
   makes it and what does that recipe need?"
 - `search_facilities` — search built facilities by type, status, resource
   produced/consumed, or geographic proximity.
+
+**Terraforming (ADR-0023):**
+- `terraform` — execute a terraforming operation (flatten, dig_canal,
+  level_mountain, raise_land, etc.). Parameters include action type, target
+  cell range, and the terraforming facility ID. Returns cost estimate,
+  environmental impact forecast, and estimated completion tick. The operation
+  consumes resources per tick like a recipe.
+- `get_terrain_modifications` — list terrain modifications made in this game
+  (paginated per ADR-0019). Shows what the agent has changed and when.
+- `get_effective_terrain` — read the effective terrain at a location (base +
+  modifications). Useful for planning transport or facility placement after
+  terraforming.
+- `get_terraform_cost_estimate` — preview the resource cost and environmental
+  impact of a terraforming operation before committing. Returns resource
+  costs, estimated ticks, environmental deltas, and any incidents that would
+  be triggered.
 
 **Game State (read-only):**
 - `get_game_state` — high-level game stats (tick count, total production,

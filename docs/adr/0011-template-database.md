@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0005, ADR-0010, ADR-0013, ADR-0018 |
+| Relates to | ADR-0003, ADR-0005, ADR-0010, ADR-0013, ADR-0018, ADR-0023 |
 
 ## Context
 
@@ -50,8 +50,11 @@ The template DB includes:
   (ADR-0018). Static game data. Per-game research progress is stored in the
   `game_research` table (empty in the template).
 - **Empty game-state tables**: `facilities`, `transports`, `stockpiles`,
-  `event_log`, `survey_log`, `game_research`, `actions` are present but
-  empty — populated during gameplay.
+  `event_log`, `survey_log`, `game_research`, `actions`,
+  `terrain_modifications` are present but empty — populated during gameplay.
+  The `terrain_modifications` table (ADR-0023) is a per-game overlay on the
+  base `terrain` table — base terrain is immutable; modifications accumulate
+  per game as the agent terraforms.
 
 ### Template Build Process
 

@@ -6,7 +6,7 @@
 | Date | 2026-07-08 |
 | Deciders | Project owner |
 
-| Relates to | ADR-0002, ADR-0014, ADR-0015 |
+| Relates to | ADR-0002, ADR-0014, ADR-0015, ADR-0023 |
 
 ## Context
 
@@ -82,6 +82,7 @@ makes each facility feel like a working industrial site.
 | Space station (orbital) | Particles orbit the station in a structured ring; density ∝ crew/activity | White ring of orbiting points |
 | Research / advanced | Particles move in complex, non-repeating patterns (Lissajous-like curves); visually exotic | Purple/magenta complex paths |
 | Under construction | Particles swirl chaotically around a pulsing marker; settles into facility-type pattern when complete | Dim, chaotic swirl → settles |
+| Terraforming facility (excavator/dredger/terraformer/planetary_engine) | Earth-toned particles (brown/amber) that churn and swirl violently during active operations; density ∝ operation scale. Planetary engine has massive particle storm visible from orbit. | Brown/amber violent churn, scale-dependent |
 
 **Particle cloud properties:**
 - **Density**: Number of particles ∝ facility throughput/capacity. An idle
@@ -162,6 +163,30 @@ The effect is that industrialized regions of the earth glow brighter and
 busier than empty regions, giving the player an immediate visual sense of
 where the LLM has built up civilization. A fully developed region looks like
 a luminous swarm of activity; an untouched region is dark wireframe.
+
+### Terraforming Visual Cues (ADR-0023)
+
+Terraforming operations have distinct visual feedback on the globe:
+
+- **Active terraforming**: The terraforming facility emits a distinctive
+  particle cloud — earth-toned particles (brown/amber) that churn and swirl
+  violently. Density and spread ∝ operation scale. A planetary engine's
+  particle storm is visible from orbital zoom.
+- **Modified terrain**: Changed cells get a subtle color shift — slightly
+  warmer/different hue than base terrain wireframe. Fades over many ticks
+  as the terrain "naturalizes."
+- **Water creation**: New water cells (canals, reservoirs) appear with the
+  blue ocean glow, animating in as water "fills" the space.
+- **Land creation**: Raised land appears with the land wireframe color,
+  animating upward as it rises from the ocean.
+- **Terrain mesh animation**: Affected vertices lerp to new positions over
+  ~1-2 seconds when terrain changes (per ADR-0002). Not instant pop.
+- **Continental-scale operations**: The affected region shows dramatic
+  visual disturbance — massive particle clouds, wireframe distortion,
+  warning markers — during the operation.
+- **Modification history overlay**: Optional UI toggle that highlights all
+  modified cells, color-coded by operation type. Lets the player see at a
+  glance how the agent has reshaped the world over time.
 
 ### Performance
 

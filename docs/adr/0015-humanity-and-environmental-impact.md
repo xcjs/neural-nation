@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0007, ADR-0009, ADR-0014 |
+| Relates to | ADR-0003, ADR-0007, ADR-0009, ADR-0014, ADR-0023 |
 
 ## Context
 
@@ -77,6 +77,16 @@ Each facility and action has an environmental profile:
 | deforestation (clear-cut) | — | High loss | — | High loss |
 | soylent_plant | Very Low | - (habitat destruction) | - | High loss |
 | pipeline spill (incident) | — | — | High | Med |
+| terraforming: flatten | Low | -low (if forested) | 0 | -low |
+| terraforming: dig canal | Low | 0 | -low (turbidity) | -low (habitat disruption) |
+| terraforming: reservoir | Low | -med (flooded valley) | -low (stagnation) | -med (aquatic disruption) |
+| terraforming: drain | Med | 0 | -med (altered hydrology) | -high (wetland loss) |
+| terraforming: divert river | Low | -low | -high (downstream) | -high |
+| terraforming: level mountain | High (dust, blasting) | -high (if forested slopes) | -med (runoff) | -high (habitat destruction) |
+| terraforming: raise land | Med | 0 | -med (coastal alteration) | -high (marine habitat buried) |
+| terraforming: excavate shaft | Low | 0 | -low (groundwater) | 0 |
+| terraforming: create mountain | Med | 0 | 0 | -low (new habitat) |
+| terraforming: continental shift | Extreme | -extreme | -extreme | -extreme (biome shift) |
 
 ### Environmental Incidents
 
@@ -99,6 +109,14 @@ negative events logged in the event feed and visible to the player:
   biome conditions (e.g., desertification of arable land, melting ice caps
   affecting sea level — cosmetic in v1). This is a long-term consequence the
   LLM may not see coming.
+- **Terraforming-induced ecological collapse** (ADR-0023): Large-scale
+  terraforming can destroy biomes (draining wetlands, leveling forests,
+  flooding valleys). If a biome is destroyed, its biodiversity collapses,
+  affecting population welfare. `get_impact_forecast` projects terraforming
+  consequences before commitment.
+- **Terraforming-induced climate shift**: Continental-scale terraforming
+  (removing a mountain range that blocked weather) can trigger regional
+  climate shifts beyond what pollution alone causes.
 
 ### Humanity-Affecting Choices
 

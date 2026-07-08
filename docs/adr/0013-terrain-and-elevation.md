@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0002, ADR-0003, ADR-0007, ADR-0011 |
+| Relates to | ADR-0002, ADR-0003, ADR-0007, ADR-0011, ADR-0023 |
 
 ## Context
 
@@ -133,6 +133,28 @@ The earth's surface geometry is displaced by elevation data:
   — returns the terrain profile along a path, helping the LLM plan routes
   before committing to `build_transport`.
 
+### Terraforming (ADR-0023)
+
+The terrain grid is **mutable per-game** via the terraforming system. The
+base `terrain` table (from the template DB) is immutable; per-game
+modifications are tracked in a `terrain_modifications` overlay table. The
+**effective terrain** at any cell = base elevation + sum of modification
+deltas. Terrain class may be overridden by modifications (e.g., land →
+ocean for a canal).
+
+- `get_terrain_path` and `build_transport` use **effective** terrain —
+  terraforming that levels a mountain automatically makes the route passable
+  without a tunnel.
+- `survey_region` and `get_effective_terrain` return effective terrain info.
+- Transport links crossing modified cells are re-evaluated when terrain
+  changes — a road through a mountain may become trivial if the mountain is
+  leveled; a road through a plain may flood if a canal is cut through it.
+- Facility placement checks effective terrain — newly created land (raised
+  from ocean) is buildable; leveled mountains lose the cost multiplier.
+
+See ADR-0023 for the full terraforming system (actions, facilities, tech
+prerequisites, environmental consequences, visualization).
+
 ## Consequences
 
 **Positive:**
@@ -157,6 +179,9 @@ The earth's surface geometry is displaced by elevation data:
 - The LLM must understand terrain constraints — MCP error messages must be
   clear and actionable ("Cannot build road through mountain at 28°N, 87°E —
   requires tunnel upgrade").
+- **Terraforming** (ADR-0023) adds a mutable overlay layer — effective terrain
+  must be computed on the fly from base + modifications. Transport links
+  and facilities must re-evaluate when terrain changes.
 
 ## Alternatives Considered
 

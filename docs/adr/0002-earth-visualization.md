@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0008, ADR-0013 |
+| Relates to | ADR-0008, ADR-0013, ADR-0023 |
 
 ## Context
 
@@ -53,6 +53,12 @@ render a **wireframe/holographic** earth.
 - Use `@tresjs/core` `<TresCanvas>` as the root 3D component.
 - Globe geometry: `IcosahedronGeometry` (high subdivision) for a faceted
   wireframe look, or `SphereGeometry` with wireframe material.
+- **Dynamic terrain**: Vertex displacements use **effective** elevation (base
+  terrain + per-game modifications, per ADR-0023). When terrain changes via
+  terraforming, affected vertices animate to their new positions over ~1-2
+  seconds (smooth lerp, not instant pop). Only affected vertices are updated
+  — the full geometry is not rebuilt. See ADR-0023 for terraforming visual
+  details.
 - Custom shaders for the atmosphere glow (fresnel-based rim lighting).
 - Facility markers use instanced meshes for performance when hundreds exist.
 - Facility **particle clouds** use GPU-driven `Points` with custom
@@ -76,6 +82,10 @@ render a **wireframe/holographic** earth.
 **Negative:**
 - Custom shaders needed for atmosphere glow, particle cloud motion, and
   transport flow effects.
+- **Dynamic terrain mesh** (ADR-0023): vertex updates on terraforming require
+  careful buffer management — cannot rebuild the entire geometry per frame.
+  Must update only affected vertices and lerp positions for smooth
+  transitions.
 - Instanced rendering + GPU particle systems add complexity for facility
   markers at scale.
 
