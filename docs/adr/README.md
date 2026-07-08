@@ -25,27 +25,37 @@ decision, its context, and consequences.
 | [0016](0016-space-based-resource-gathering.md) | Space-Based Resource Gathering | Proposed |
 | [0017](0017-code-organization-and-domain-driven-design.md) | Code Organization & Domain-Driven Design (PascalCase, feature folders) | Proposed |
 | [0018](0018-technology-tree-and-recipe-system.md) | Technology Tree & Recipe System (recipes, tech progression, multi-component crafting) | Proposed |
+| [0019](0019-mcp-response-management-and-search.md) | MCP Response Management & Search (pagination, search tools, context budget) | Proposed |
+| [0020](0020-game-lifecycle-and-cleanup.md) | Game Lifecycle & Cleanup (automatic stale game deletion) | Proposed |
+| [0021](0021-unit-system-and-scaling.md) | Unit System & Scaling (metric units, tonnes, MW, 1 tick = 1 day) | Proposed |
+| [0022](0022-testing-strategy.md) | Testing Strategy (Vitest, unit/integration/simulation/component) | Proposed |
 
 ## ADR Relationships
 
 ```
 0001 (Architecture) ──┬── 0002 (Earth Viz) ── 0008 (Facility Visuals/Particles)
                       ├── 0004 (MCP Server) ── 0009 (Identity/Token/Lose)
+                      │                ├── 0019 (Response/Search)
+                      │                └── 0020 (Cleanup)
                       ├── 0005 (SQLite DBs) ──┬── 0010 (Drizzle ORM)
-                      │                       └── 0011 (Template DB) ── 0003 (Resources)
-                      │                                  ├── 0013 (Terrain)
-                      │                                  └── 0015 (Humanity/Env)
+                      │                       ├── 0011 (Template DB) ── 0003 (Resources)
+                      │                       │                          ├── 0013 (Terrain)
+                      │                       │                          ├── 0015 (Humanity/Env)
+                      │                       │                          └── 0021 (Unit System)
+                      │                       └── 0020 (Cleanup)
                       ├── 0006 (Game Loop) ──┬── 0007 (Facilities/Supply Chain)
                       │                      │    ├── 0013 (Terrain)
                       │                      │    ├── 0014 (Power System)
-                      │                      │    └── 0016 (Space Gathering)
+                      │                      │    ├── 0016 (Space Gathering)
+                      │                      │    └── 0018 (Tech Tree/Recipes)
                       │                      ├── 0009 (Lose Condition)
                       │                      └── 0015 (Humanity/Env)
                       ├── 0012 (UI/HUD) ──┬── 0004 (MCP)
-                      │                   └── 0015 (Humanity/Env)
+                      │                   ├── 0015 (Humanity/Env)
+                      │                   └── 0018 (Tech Tree)
                       ├── 0014 (Power) ── 0016 (Space)
-                      ├── 0017 (Code Org/DDD) ── applies to all
-                      └── 0018 (Tech Tree/Recipes) ── 0003, 0004, 0007, 0011, 0012
+                      ├── 0017 (Code Org/DDD) ── applies to all ── 0022 (Testing)
+                      └── 0018 (Tech Tree/Recipes) ── 0003, 0004, 0007, 0011, 0012, 0021
 ```
 
 ## Status Legend

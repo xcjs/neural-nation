@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0007, ADR-0009, ADR-0012, ADR-0018 |
+| Relates to | ADR-0003, ADR-0007, ADR-0009, ADR-0012, ADR-0018, ADR-0019, ADR-0021 |
 
 ## Context
 
@@ -104,9 +104,20 @@ The MCP server exposes these tools to the LLM:
 - `get_tech_tree` — read-only view of the full technology tree: all tech nodes
   with their status (completed, in progress, available, locked), research
   costs, prerequisites, and what they unlock (recipes, facility types).
+  Supports pagination (ADR-0019).
 - `get_recipes` — list all available recipes (filtered by facility type,
   unlocked status, or output resource). Shows inputs, outputs, craft time,
-  and tech requirement for each recipe.
+  and tech requirement for each recipe. Supports pagination (ADR-0019).
+
+**Search (ADR-0019):**
+- `search_resources` — search resources by name, element symbol, category, or
+  construction dependency. Find what's needed to build a facility, what a
+  recipe produces, what a tech requires.
+- `search_recipes` — search recipes by output resource, facility type, tech
+  requirement, or input resource. Lets the agent plan "I need X — what recipe
+  makes it and what does that recipe need?"
+- `search_facilities` — search built facilities by type, status, resource
+  produced/consumed, or geographic proximity.
 
 **Game State (read-only):**
 - `get_game_state` — high-level game stats (tick count, total production,

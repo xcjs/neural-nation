@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0004, ADR-0006, ADR-0007, ADR-0011, ADR-0012, ADR-0016 |
+| Relates to | ADR-0003, ADR-0004, ADR-0006, ADR-0007, ADR-0011, ADR-0012, ADR-0016, ADR-0021 |
 
 ## Context
 
@@ -29,7 +29,8 @@ The user wants:
 
 A **recipe** defines a deterministic transformation: N inputs → M outputs,
 executed by a specific facility type. Recipes are data-driven (stored in the
-template DB, not hardcoded in source).
+template DB, not hardcoded in source). All quantities use metric units per
+ADR-0021 (tonnes for mass, m³ for volume, MW·tick for energy).
 
 **Recipe structure:**
 
@@ -47,13 +48,15 @@ interface Recipe {
 
 interface RecipeInput {
   ResourceKey: string           // 'Fe_ore', 'Coal', 'Water'
-  Quantity: number              // units consumed per cycle
+  Quantity: number              // units consumed per cycle (t or m³, per ADR-0021)
+  Unit: Unit                    // 't' | 'm³' | 'MW' | 'count' (ADR-0021)
   Optional?: boolean            // if true, production scales with availability
 }
 
 interface RecipeOutput {
   ResourceKey: string           // 'Iron', 'Slag', 'Electronics'
-  Quantity: number              // units produced per cycle
+  Quantity: number              // units produced per cycle (t or m³, per ADR-0021)
+  Unit: Unit                    // 't' | 'm³' | 'count' (ADR-0021)
 }
 ```
 

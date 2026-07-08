@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0006, ADR-0015, ADR-0016 |
+| Relates to | ADR-0003, ADR-0006, ADR-0015, ADR-0016, ADR-0020 |
 
 ## Context
 
@@ -46,8 +46,12 @@ endlessly consuming finite deposits.
 - Player can delete a game from the web UI (requires entering the token to
   confirm). This deletes the SQLite DB file and removes the entry from
   `registry.json`.
-- Games inactive for a configurable period (e.g., 90 days) may be archived or
-  deleted by a server-side cleanup job. Configurable.
+- **Automatic cleanup** (ADR-0020): Games that are lost or abandoned (no
+  MCP calls or web UI access) for a configurable period (default 7 days, via
+  `GAME_CLEANUP_AGE_DAYS` env var) are automatically deleted after a grace
+  period (default 1 day, via `GAME_CLEANUP_GRACE_DAYS`). The Game Over
+  overlay warns the player of the cleanup date. Active games are never
+  cleaned up regardless of age.
 
 ### Win State: Open-Ended Sandbox with Lose Condition
 

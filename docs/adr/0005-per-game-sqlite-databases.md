@@ -5,6 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
+| Relates to | ADR-0010, ADR-0011, ADR-0020 |
 
 ## Context
 
@@ -48,13 +49,15 @@ list (used by the "return to game" screen):
 
 ```json
 [
-  { "token": "AbC123...", "createdAt": "2026-07-08T...", "lastActive": "..." }
+  { "token": "AbC123...", "createdAt": "2026-07-08T...", "lastActive": "...",
+    "status": "Active", "cleanupEligibleAt": null }
 ]
 ```
 
 This file is the only place tokens are listed in plaintext outside the DB
 files themselves. It is NOT served to the client — the web UI uses the token
-the player enters/has in session storage to look up their game.
+the player enters/has in session storage to look up their game. The
+`status` and `cleanupEligibleAt` fields support automatic cleanup (ADR-0020).
 
 ### Schema Initialization
 
@@ -75,7 +78,7 @@ When a new game is created:
 
 Core tables:
 
-- `meta` — game metadata (token, created_at, tick_rate, last_tick_at)
+- `meta` — game metadata (token, created_at, tick_rate, last_tick_at, last_active_at for cleanup per ADR-0020)
 - `resources` — natural resource deposits (see ADR-0003 schema)
 - `facilities` — built structures (see ADR-0007)
 - `facility_inputs` — resource input requirements per facility
@@ -102,7 +105,8 @@ Core tables:
 - `better-sqlite3` synchronous API is ergonomic in Nitro server routes.
 - WAL mode allows concurrent reads (UI) and writes (simulation) without
   blocking.
-- Deleting a game = deleting a file. No complex cleanup.
+- Deleting a game = deleting a file. No complex cleanup. Automatic cleanup
+  of stale games handled by ADR-0020.
 
 **Negative:**
 - Many open file handles if many concurrent games; mitigated by idle

@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0001, ADR-0006, ADR-0007, ADR-0004, ADR-0013, ADR-0014, ADR-0015, ADR-0016 |
+| Relates to | ADR-0001, ADR-0006, ADR-0007, ADR-0004, ADR-0013, ADR-0014, ADR-0015, ADR-0016, ADR-0022 |
 
 ## Context
 
@@ -336,6 +336,9 @@ String enums ensure serialized values are self-documenting (`"Extractor"` not
 - `lib/types` as shared kernel keeps client and server type-safe without
   coupling them to server internals.
 - Thin API handlers are easy to test; domain services are framework-agnostic.
+- Domain service isolation maps directly to the test structure (ADR-0022):
+  each domain's unit tests are co-located or mirrored, matching the
+  feature-folder organization.
 
 **Negative:**
 - More directories than a flat Nuxt structure; navigation requires knowing
