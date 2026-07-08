@@ -97,7 +97,17 @@ The MCP server exposes these tools to the LLM:
 **Game State (read-only):**
 - `get_game_state` — high-level game stats (tick count, total production,
   resource stockpiles).
-- `get_resource_stockpile` — current stockpile of a specific resource.
+- `get_resource_overview` — full resource tracker: all 118 elements + bulk
+  resources with collected / remaining / total for each. Mirrors the data
+  shown in the web UI resource tracker panel (ADR-0012). Supports filtering
+  by category (element/bulk), discovery status, and depletion status.
+- `get_resource_details` — detailed view of a single resource: all deposits
+  (discovered and undiscovered), their locations, quantities, grades, and
+  which extractor facilities (if any) are working them.
+- `get_resource_stockpile` — current stockpile of a specific resource across
+  all facility buffers.
+- `get_event_log` — recent game events (builds, surveys, production
+  milestones, depletions). Supports pagination and filtering by event type.
 
 ### What the Token Does NOT Grant
 
