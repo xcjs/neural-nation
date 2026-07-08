@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Nuxt
+.nuxt
+.output
+.nitro
+.cache
+dist/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Game databases (per-game SQLite files — never commit live game data)
+data/games/*.db
+data/games/*.db-wal
+data/games/*.db-shm
+data/games/registry.json
+
+# Template DB is committed as a build artifact
+!data/games/_template.db
+
+# Geological raw datasets (downloaded by npm task, not committed if large)
+data/geological/raw/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temp
+tmp/
+temp/
