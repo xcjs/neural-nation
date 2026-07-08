@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0007, ADR-0009, ADR-0012, ADR-0018, ADR-0019, ADR-0021, ADR-0023 |
+| Relates to | ADR-0003, ADR-0007, ADR-0009, ADR-0012, ADR-0018, ADR-0019, ADR-0021, ADR-0023, ADR-0025 |
 
 ## Context
 
@@ -185,6 +185,9 @@ The MCP server exposes these tools to the LLM:
   Tiered permissions can be added later without architecture changes.
 - SSE connections are stateful; server must handle reconnection and session
   resumption gracefully.
+- **Public token** (ADR-0025) is rejected at MCP endpoints — only the private
+  token is accepted for `/mcp/sse` and `/mcp/messages`. Public token grants
+  web UI read-only access only, enforced at route level.
 
 ## Alternatives Considered
 

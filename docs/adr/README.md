@@ -30,6 +30,9 @@ decision, its context, and consequences.
 | [0021](0021-unit-system-and-scaling.md) | Unit System & Scaling (metric units, tonnes, MW, 1 tick = 1 day) | Proposed |
 | [0022](0022-testing-strategy.md) | Testing Strategy (Vitest, unit/integration/simulation/component) | Proposed |
 | [0023](0023-terraforming-and-world-shaping.md) | Terraforming & World Shaping (terrain modification, planetary engineering) | Proposed |
+| [0024](0024-deployment-and-containerization.md) | Deployment & Containerization (Docker, docker compose, GitLab CI/CD) | Proposed |
+| [0025](0025-spectating-and-public-token.md) | Spectating & Public Token (read-only shareable watch link) | Proposed |
+| [0026](0026-frontend-state-management.md) | Frontend State Management (Pinia stores, SSE, 3D scene sync) | Proposed |
 
 ## ADR Relationships
 
@@ -44,20 +47,25 @@ decision, its context, and consequences.
                       │                       │                          ├── 0015 (Humanity/Env)
                       │                       │                          └── 0021 (Unit System)
                       │                       └── 0020 (Cleanup)
-                      ├── 0006 (Game Loop) ──┬── 0007 (Facilities/Supply Chain)
-                      │                      │    ├── 0013 (Terrain) ── 0023 (Terraforming)
-                      │                      │    ├── 0014 (Power System)
-                      │                      │    ├── 0016 (Space Gathering)
-                      │                      │    └── 0018 (Tech Tree/Recipes) ── 0023 (Terraforming)
-                      │                      ├── 0009 (Lose Condition)
-                      │                      └── 0015 (Humanity/Env) ── 0023 (Terraforming)
-                      ├── 0012 (UI/HUD) ──┬── 0004 (MCP)
-                      │                   ├── 0015 (Humanity/Env)
-                      │                   └── 0018 (Tech Tree)
-                      ├── 0014 (Power) ── 0016 (Space)
-                      ├── 0017 (Code Org/DDD) ── applies to all ── 0022 (Testing)
-                      ├── 0018 (Tech Tree/Recipes) ── 0003, 0004, 0007, 0011, 0012, 0021, 0023
-                      └── 0023 (Terraforming) ── 0002, 0004, 0007, 0008, 0011, 0013, 0015, 0018
+                       ├── 0006 (Game Loop) ──┬── 0007 (Facilities/Supply Chain)
+                       │                      │    ├── 0013 (Terrain) ── 0023 (Terraforming)
+                       │                      │    ├── 0014 (Power System)
+                       │                      │    ├── 0016 (Space Gathering)
+                       │                      │    └── 0018 (Tech Tree/Recipes) ── 0023 (Terraforming)
+                       │                      ├── 0009 (Lose Condition) ── 0025 (Spectating)
+                       │                      └── 0015 (Humanity/Env) ── 0023 (Terraforming)
+                       ├── 0012 (UI/HUD) ──┬── 0004 (MCP)
+                       │                   ├── 0015 (Humanity/Env)
+                       │                   ├── 0018 (Tech Tree)
+                       │                   ├── 0025 (Spectating)
+                       │                   └── 0026 (Frontend State)
+                       ├── 0014 (Power) ── 0016 (Space)
+                       ├── 0017 (Code Org/DDD) ── applies to all ── 0022 (Testing)
+                       ├── 0018 (Tech Tree/Recipes) ── 0003, 0004, 0007, 0011, 0012, 0021, 0023
+                       ├── 0023 (Terraforming) ── 0002, 0004, 0007, 0008, 0011, 0013, 0015, 0018
+                       ├── 0024 (Deployment) ── 0001, 0005, 0020
+                       ├── 0025 (Spectating) ── 0004, 0005, 0009, 0012, 0026
+                       └── 0026 (Frontend State) ── 0001, 0002, 0006, 0008, 0012, 0025
 ```
 
 ## Status Legend

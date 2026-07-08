@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0002, ADR-0004, ADR-0006, ADR-0008, ADR-0015, ADR-0018 |
+| Relates to | ADR-0002, ADR-0004, ADR-0006, ADR-0008, ADR-0015, ADR-0018, ADR-0025, ADR-0026 |
 
 ## Context
 
@@ -326,6 +326,12 @@ A small panel (or modal) showing:
 - MCP URL with copy-to-clipboard (the full URL from ADR-0004).
 - Token revocation button (with confirmation).
 - New token mint button (generates new URL, invalidates old).
+- **Spectating link** (ADR-0025): share icon button that opens a popover with
+  the spectating URL (`/watch?token={publicToken}`), copy-to-clipboard button,
+  and "Regenerate link" option. The spectating URL is read-only — friends can
+  watch but not control.
+- Hidden in spectator mode (spectators don't see token management or
+  spectating controls).
 
 ### Layout
 
@@ -348,7 +354,13 @@ A small panel (or modal) showing:
   globe view.
 - Facility detail panel slides in from the left when a facility is clicked,
   overlaying the event feed.
-- Responsive: on mobile, panels collapse to tabs or a bottom sheet.
+- **No mobile layout** (ADR-0009): desktop-only for v1. Mobile browsers show a
+  warning overlay instead of the UI. No responsive panel arrangement is
+  implemented.
+- **Spectator mode**: when viewing via public token (ADR-0025), owner-only
+  controls (pause, step, revoke, mint, spectating link, delete game) are
+  hidden. A "Spectating" badge replaces control buttons in the game overview
+  bar.
 
 ### Real-Time Updates
 

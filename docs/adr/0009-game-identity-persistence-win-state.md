@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0006, ADR-0015, ADR-0016, ADR-0020 |
+| Relates to | ADR-0003, ADR-0006, ADR-0015, ADR-0016, ADR-0020, ADR-0025, ADR-0026 |
 
 ## Context
 
@@ -29,6 +29,31 @@ endlessly consuming finite deposits.
 - The web UI has a "Return to Game" entry point where the player pastes their
   MCP URL or raw token. The server validates the token exists (DB file
   present) and loads the game.
+
+### Spectating
+
+- Each game has a **paired public token** (ADR-0025) for read-only spectating.
+- The player can share a spectating URL (`/watch?token={publicToken}`) via a
+  clipboard-copy button in the HUD. Spectators see the full web UI (3D earth,
+  panels, real-time updates) but cannot issue MCP commands or modify game
+  state.
+- The public token is generated at game creation and can be regenerated from
+  the HUD (invalidates old links).
+
+### Mobile Warning
+
+- The web UI is **desktop-only** for v1. The 3D earth + multi-panel HUD is not
+  designed for mobile screens.
+- On page load, the client detects mobile browsers (user agent + viewport
+  width). If mobile is detected, a **full-screen warning overlay** is shown:
+
+  > "Neural Nation is designed for desktop browsers. Please visit this URL on
+  > a desktop or laptop computer."
+
+- The overlay blocks interaction with the 3D scene and panels. The player
+  can dismiss it but the UI will be unusable (no responsive layout).
+- No mobile-specific layout, touch controls, or responsive panel arrangement
+  is implemented in v1.
 
 ### Persistence
 

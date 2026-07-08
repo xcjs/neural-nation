@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0010, ADR-0011, ADR-0020 |
+| Relates to | ADR-0010, ADR-0011, ADR-0020, ADR-0025 |
 
 ## Context
 
@@ -49,7 +49,8 @@ list (used by the "return to game" screen):
 
 ```json
 [
-  { "token": "AbC123...", "createdAt": "2026-07-08T...", "lastActive": "...",
+  { "token": "AbC123...", "publicToken": "XyZ789...",
+    "createdAt": "2026-07-08T...", "lastActive": "...",
     "status": "Active", "cleanupEligibleAt": null }
 ]
 ```
@@ -58,6 +59,8 @@ This file is the only place tokens are listed in plaintext outside the DB
 files themselves. It is NOT served to the client — the web UI uses the token
 the player enters/has in session storage to look up their game. The
 `status` and `cleanupEligibleAt` fields support automatic cleanup (ADR-0020).
+The `publicToken` field (ADR-0025) is a paired read-only token for spectating;
+it resolves to the same game DB but is rejected at MCP endpoints.
 
 ### Schema Initialization
 

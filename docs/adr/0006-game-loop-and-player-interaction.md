@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0009, ADR-0015, ADR-0016 |
+| Relates to | ADR-0003, ADR-0009, ADR-0015, ADR-0016, ADR-0024 |
 
 ## Context
 
@@ -24,11 +24,18 @@ too rapidly when the LLM/user is idle — the simulation pauses naturally when
 nothing is happening and advances in discrete steps as the LLM acts.
 
 - **Tick trigger**: Each MCP tool invocation from the LLM advances the
-  simulation by one or more ticks before returning the tool result. The tool
+  simulation by **exactly one tick** before returning the tool result. The tool
   response includes the resulting game state, so the LLM sees the effects of
   its action immediately.
-- **Ticks per MCP call**: Configurable per game (default: 1 tick per call).
-  Complex actions or time-scaled actions may advance multiple ticks.
+- **One MCP call = one tick**: This is a hard rule. Each MCP call is wrapped in
+  a **single SQLite transaction** — the tool's action + the tick processing
+  succeed or fail atomically. There are no partial ticks: if the tool fails
+  (e.g., insufficient resources, invalid target), the tick does not advance
+  and no state changes are committed. This eliminates the need for complex
+  rollback or state-consistency recovery on partial failures.
+- **Ticks per MCP call**: Fixed at 1 tick per call (no multi-tick scaling).
+  This keeps the relationship between LLM actions and time progression
+  transparent and predictable.
 - **Idle behavior**: When no MCP calls are received, the game is frozen in
   time — no production, no depletion, no transport. The earth view shows the
   last known state. This is by design: the game progresses at the pace of LLM
@@ -167,6 +174,10 @@ deck for the simulation.
   "dead" to some players (mitigated by the "waiting for LLM..." indicator).
 - If the LLM makes rapid successive calls, ticks may pile up; the server
   should batch or queue ticks if calls arrive faster than processing time.
+- **Tick transactionality**: Each MCP call is a single SQLite transaction
+  (action + tick). If the call fails, the tick does not advance. Failed
+  actions cost no time — the LLM can retry without penalty. This eliminates
+  partial-tick state inconsistency.
 - Lose condition means games can end; the LLM must manage resources wisely
   or face Game Over. Starting resource randomization can occasionally
   create tight early-game situations.
