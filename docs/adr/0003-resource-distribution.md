@@ -5,6 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
+| Relates to | ADR-0011, ADR-0013, ADR-0015 |
 
 ## Context
 
@@ -20,15 +21,35 @@ thereafter** to seed resource deposits at lat/lon coordinates.
 
 ### Resource Categories
 
-1. **Bulk natural resources** (non-element):
-   - Wood (forest density by biome)
-   - Water (freshwater, based on real hydrology)
-   - Arable land / soil fertility
-   - Coal (from real deposit data)
+Resources are organized into **three categories** based on their
+renewability:
 
-2. **Periodic table elements** (all 118):
+1. **Renewable resources** (regrow/regenerate over time if not over-harvested):
+   - Wood (forest density by biome — regrows slowly if not clear-cut)
+   - Water (freshwater — replenishes via rainfall/hydrological cycle)
+   - Arable land / soil fertility (degrades with over-farming, recovers
+     slowly with fallow periods)
+   - Biomass / organic matter (crops, food — grown on farms each tick)
+   - **Population** (human population — grows realistically based on welfare,
+     food, energy, and environmental conditions per ADR-0015. Population is
+     a tracked resource even if not consumed as fuel. It grows at a rate
+     influenced by welfare metrics and shrins if welfare drops. If population
+     reaches zero, the game may end — see ADR-0009/ADR-0015.)
+   - Solar / wind / hydro energy potential (not a depletable resource per
+     se, but tracked as a renewable capacity per location — solar based on
+     latitude, wind on terrain class, hydro on water flow + elevation)
+
+2. **Non-renewable resources** (finite deposits, depleted by extraction):
+   - Coal (from real deposit data — does not regenerate)
+   - Oil & natural gas (from real deposit data — does not regenerate)
+   - Stone, gravel, bulk minerals (quarry resources — effectively finite
+     at game scale)
+   - Uranium and other radioactive ores (finite, rare)
+
+3. **Periodic table elements** (all 118):
    - **Naturally occurring (~92)**: distributed based on real crustal abundance
-     and known deposit locations.
+     and known deposit locations. These are non-renewable (mined from finite
+     deposits) unless synthesized.
    - **Trace / ultra-rare (e.g., technetium, francium, astatine, polonium)**:
      appear in minute quantities at very few locations if they occur naturally
      at all; most have effectively zero natural deposits.
@@ -36,6 +57,36 @@ thereafter** to seed resource deposits at lat/lon coordinates.
      be synthesized in specialized facilities (particle accelerators, breeder
      reactors, etc.) if the player/LLM wants them. Whether each is useful in the
      game's economy is a separate gameplay question.
+
+### Renewable Resource Growth Model
+
+Renewable resources grow at realistic rates each tick:
+
+- **Wood**: Forest cells regenerate at a rate proportional to biome health
+  (tropical forest faster than boreal). Over-harvesting reduces forest
+  coverage; once coverage drops below a threshold, regeneration stops
+  (deforestation collapse — ADR-0015). Sustainable harvesting (below
+  regeneration rate) allows indefinite production.
+- **Water**: Freshwater deposits replenish based on regional rainfall
+  (simplified: biome-dependent rate). Over-extraction can deplete a water
+  source faster than it replenishes, causing seasonal/long-term scarcity.
+- **Arable land**: Soil fertility degrades with intensive farming and
+  recovers slowly with fallow (no farm) periods. Monoculture degrades
+  faster; sustainable/s rotational farming preserves fertility.
+- **Biomass/crops**: Grown on farms each tick proportional to arable land
+  fertility + water availability. Consumed for food, ethanol, or biomass
+  fuel. Sustainable if land is managed; depletes soil if over-farmed.
+- **Population**: Grows based on a logistic model modulated by welfare
+  (food surplus, energy access, clean environment). Growth rate:
+  - Base growth: ~2% per tick (simplified, scaled to game pace)
+  - + Bonus if food surplus, energy surplus, high welfare
+  - − Penalty if pollution high, food deficit, low welfare
+  - − Penalty if environment degraded (deforestation, water contamination)
+  - If population growth rate goes negative for sustained ticks,
+  population declines. Severe decline (to zero) triggers lose condition
+  (ADR-0009).
+  - Population is not spatially distributed in v1 — it's a global number
+  affected by global metrics. Future expansion could regionalize it.
 
 ### Data Sources (to be sourced and bundled or downloaded)
 
@@ -58,6 +109,20 @@ small datasets in the repo; download large datasets via an npm task.**
 The script `scripts/fetch-geological-data.ts` (outside the Nuxt project) handles
 downloading and processing large datasets into the `data/geological/` directory.
 See ADR-0011 for the template build pipeline.
+
+### Terrain / Elevation Data (ADR-0013)
+
+In addition to geological resource data, the fetch script also downloads and
+processes **terrain elevation data**:
+
+- **SRTM (Shuttle Radar Topography Mission)**: near-global elevation at ~90m
+  resolution. Too large to bundle — downloaded and downsampled to a 0.1° × 0.1°
+  grid (~840K cells) by the fetch script. Stored as `data/geological/terrain/`
+  (gitignored — the downsampled grid is seeded into the template DB instead).
+- The downsampled terrain grid is inserted into the `terrain` table during
+  template build (ADR-0011).
+- Terrain data is consumed by the transport pathfinding system (ADR-0007,
+  ADR-0013) and the earth visualization (ADR-0002).
 
 ### Generation Algorithm
 

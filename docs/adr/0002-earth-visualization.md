@@ -5,6 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
+| Relates to | ADR-0008, ADR-0013 |
 
 ## Context
 
@@ -37,12 +38,15 @@ render a **wireframe/holographic** earth.
   Touch gestures supported for mobile.
 - **Facility markers**: Facilities appear as glowing geometric primitives on the
   globe surface — points, squares, short line segments — scaled by facility
-  size/type. See ADR-0008 for detail.
+  size/type. Each facility is surrounded by a **particle cloud** of small
+  glowing points whose density and motion pattern encode activity level and
+  facility type. See ADR-0008 for full detail.
 - **Transport lines**: Connections between facilities rendered as glowing arcs
-  along the globe surface (great-circle paths). Color indicates resource type
-  flowing.
-- **Pulse animations**: Active production pulses along transport lines;
-  facilities emit subtle glow pulses when producing.
+  along the globe surface (great-circle paths) with flowing particle streams
+  showing active resource movement. Color indicates resource type flowing.
+- **City glow**: Dense facility clusters produce overlapping particle clouds
+  that merge into a bright "city glow" — industrialized regions of the earth
+  visibly glow brighter than untouched regions.
 
 ### Implementation Notes
 
@@ -51,10 +55,14 @@ render a **wireframe/holographic** earth.
   wireframe look, or `SphereGeometry` with wireframe material.
 - Custom shaders for the atmosphere glow (fresnel-based rim lighting).
 - Facility markers use instanced meshes for performance when hundreds exist.
+- Facility **particle clouds** use GPU-driven `Points` with custom
+  `ShaderMaterial` — particle motion (orbit, rise, stream, swirl) computed
+  in vertex shaders, no CPU per-particle updates. See ADR-0008.
 - Transport arcs: quadratic Bezier curves projected onto the sphere surface,
-  rendered with additive blending for the glow effect.
+  rendered with additive blending for the glow effect. Flow particles along
+  arcs use the same GPU-driven particle approach.
 - Frame budget: target 60fps with up to ~500 facility markers + ~200 transport
-  lines on screen.
+  lines + ~100K particles on screen.
 
 ## Consequences
 
@@ -66,8 +74,10 @@ render a **wireframe/holographic** earth.
 - Glowing aesthetic makes facilities readable at orbital zoom.
 
 **Negative:**
-- Custom shaders needed for atmosphere glow and transport pulse effects.
-- Instanced rendering complexity for facility markers at scale.
+- Custom shaders needed for atmosphere glow, particle cloud motion, and
+  transport flow effects.
+- Instanced rendering + GPU particle systems add complexity for facility
+  markers at scale.
 
 ## Alternatives Considered
 

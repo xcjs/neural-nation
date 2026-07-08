@@ -5,6 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
+| Relates to | ADR-0003, ADR-0013, ADR-0014 |
 
 ## Context
 
@@ -35,14 +36,19 @@ facilities.
 **Tier 2 — Factories** (manufacture from processed materials):
 - `factory` — metal + components → machinery, parts
 - `chemical_plant` — elements/compounds → chemicals, alloys
-- `power_plant` — fuel/coal/uranium → electricity (powers other facilities)
+- `power_plant` — fuel/coal/uranium → electricity (powers other facilities).
+  **Note**: This is the basic fossil/nuclear power type. See ADR-0014 for the
+  full power generation system with multiple types (solar, wind, hydro,
+  geothermal, nuclear, fusion, etc.) and transmission network mechanics.
 - `electronics_plant` — rare elements + metals → electronic components
 
 **Tier 3 — Advanced / Synthesis** (endgame):
 - `research_lab` — synthesizes rare/synthetic elements (requires particle
   accelerator subcomponents)
 - `reactor` — breeder reactor for transuranic synthesis
-- `spaceport` — enables space-based extraction (future expansion hook)
+- `spaceport` — enables space-based extraction. See ADR-0016 for the full
+  space infrastructure chain (spaceport → space station → orbital refinery →
+  asteroid mining drones → lunar mines → deep space probes).
 
 **Tier — Infrastructure** (not production, but required):
 - `storage` — stockpile point for resources (warehouses, tanks, silos)
@@ -50,6 +56,14 @@ facilities.
 - `pipeline` — transports fluids (oil, water, gas)
 - `conveyor` — transports solids (ore, metal, components)
 - `road` — general transport for mixed goods (lowest speed/capacity)
+
+**Terrain Infrastructure** (modifiers that enable transport through difficult
+terrain — see ADR-0013):
+- `tunnel` — enables roads/conveyors through mountain cells
+- `bridge` — enables roads/conveyors across ocean/coastal cells
+- `pumping_station` — enables pipelines through mountains
+- `transmission_tower` — enables power lines through high mountains
+- `subsea_pipeline` — enables pipelines across deep ocean
 
 ### Facility Placement Rules
 
@@ -59,8 +73,16 @@ facilities.
 - Processors/factories can be placed anywhere but benefit from proximity to
   their input sources (lower transport cost).
 - Power consumers must be connected to a power source via `power_line`.
+  See ADR-0014 for the full power generation and transmission system
+  (multiple generator types, transmission loss, grid balancing, power
+  storage).
 - Each facility has a construction cost (resources consumed to build) and a
   construction time (ticks to complete).
+- **Terrain effects** (ADR-0013): Facilities in mountain/high-mountain terrain
+  have a construction cost multiplier (logistical difficulty). Facilities at
+  extreme elevation (>3000m) have a production efficiency penalty. Ocean
+  facilities (`offshore_platform`, `desalination_plant`) can be placed on
+  ocean cells for specific resource types.
 
 ### Transport System (Explicit Infrastructure)
 
@@ -72,7 +94,21 @@ transport link is a physical connection with:
 - **Path**: great-circle route across the globe surface (for visual rendering).
 - **Capacity**: max throughput per tick (depends on transport type).
 - **Speed**: ticks for a resource unit to traverse the link.
-- **Cost**: construction cost in resources (proportional to distance + type).
+- **Cost**: construction cost in resources (proportional to distance + type +
+  terrain modifiers — see below).
+- **Terrain constraints**: The path is evaluated against the terrain elevation
+  grid (ADR-0013). Mountain/high-mountain cells block roads and conveyors
+  unless a `tunnel` is built. Ocean cells block surface transport unless a
+  `bridge` is built. Pipelines need `pumping_station` for mountains and
+  `subsea_pipeline` for deep ocean. Power lines need `transmission_tower` for
+  high mountains. See ADR-0013 for terrain infrastructure upgrades.
+
+**Terrain-aware pathfinding**: `build_transport` checks the terrain along the
+planned great-circle path. If impassable terrain is encountered, the tool
+returns an error identifying the obstacle and the required modifier. The LLM
+must then build the modifier (e.g., `build_transport` with type `tunnel` on the
+blocked segment) and retry the base link. Alternatively, the LLM can use
+`get_terrain_path` (ADR-0013) to pre-scout a route before committing.
 
 **Flow assignment**: The LLM assigns which resources flow on which transport
 link via the `assign_route` tool. A transport link can carry multiple resource
@@ -166,6 +202,10 @@ at realistic values per deposit/extractor, not a single global number.
   reason about gaps.
 - Transport pathfinding on a sphere (great-circle routing) needs implementation;
   facilities at high latitudes may have routing edge cases.
+- **Terrain-aware routing** (ADR-0013) adds pathfinding complexity — the system
+  must check terrain class along the path and require terrain modifiers
+  (tunnels, bridges) for impassable cells. A grid-based pathfinder (A* on the
+  elevation grid) or terrain-along-path checker is needed.
 - The simulation tick must handle dependency resolution (a factory needs its
   inputs transported from smelter which needs inputs from mine) — ordering
   matters within a tick.

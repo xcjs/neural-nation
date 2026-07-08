@@ -5,6 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
+| Relates to | ADR-0003, ADR-0009, ADR-0015, ADR-0016 |
 
 ## Context
 
@@ -37,7 +38,18 @@ nothing is happening and advances in discrete steps as the LLM acts.
   2. Moves resources along transport links.
   3. Updates facility buffers and stockpile levels.
   4. Depletes resource deposits (extracted quantity reduces deposit quantity).
-  5. Logs significant events to `event_log` for UI display.
+  5. **Regenerates renewable resources** (wood regrows, water replenishes,
+     arable land recovers, biomass grows on farms — per ADR-0003).
+  6. **Updates population** (grows or shrinks based on welfare model per
+     ADR-0003/ADR-0015: food surplus, energy, pollution, environment).
+  7. **Updates environmental metrics** (pollution, forest cover, water
+     quality, biodiversity — per ADR-0015). Triggers environmental incidents
+     if thresholds crossed.
+  8. **Checks lose condition** (ADR-0009): if all non-renewable deposits
+     depleted + all stockpiles empty + no active production, game enters
+     "Game Over" state. Optionally checks population = 0 if that lose
+     condition is enabled.
+  9. Logs significant events to `event_log` for UI display.
 - **Player-visible updates**: The web UI receives SSE/websocket updates when
   ticks are processed (i.e., when the LLM acts). Between LLM actions, the UI
   shows a static state. A "waiting for LLM..." indicator communicates when the
@@ -45,6 +57,36 @@ nothing is happening and advances in discrete steps as the LLM acts.
 - **Manual "advance" (optional)**: The web UI may offer a "step forward" button
   that triggers a tick without an LLM action, for players who want to nudge
   the simulation. This is a convenience, not the primary loop.
+
+### Game Initialization: Starting Resources
+
+When a new game is created (ADR-0005, template DB copy), the game state is
+seeded with **randomized starting resources** (ADR-0009):
+
+- The LLM agent begins with a starter stockpile of energy/fuel, construction
+  materials (steel, concrete), and a small population — enough to bootstrap
+  an economy (build first extractors, power plant, transport).
+- Randomization is bounded by difficulty preset (easy/normal/hard) so games
+  are challenging but fair.
+- Starting resources are written to the game DB's stockpile/buffer tables at
+  creation time. The agent draws from them until it establishes production.
+- The starting stockpile creates early-game pressure: the agent must be
+  efficient or it runs out before bootstrapping (→ lose condition).
+
+### Game Over Handling
+
+When the lose condition triggers (resource depletion, or optional population
+collapse — ADR-0009):
+
+- The game enters a **frozen "Game Over" state**: no further ticks advance,
+  even on MCP calls. MCP build/production tools return a "game over" error.
+  Read-only state queries still work (the LLM can inspect the final state).
+- The web UI shows a **Game Over overlay**: summary stats (total ticks
+  survived, peak facility count, peak resource diversity, peak population,
+  cause of death). The 3D earth shows the final state.
+- The player can start a new game or delete the ended game from the UI.
+- The game remains in the DB until deleted or cleaned up by the inactivity
+  timeout (ADR-0009).
 
 ### Player Role: Passive Overseer
 
@@ -85,9 +127,11 @@ deck for the simulation.
 
 ### What the Player Sees
 
-- **3D earth**: Facilities as glowing markers, transport links as glowing arcs
-  (ADR-0002, ADR-0008). Pulse animations show active production and resource
-  flow.
+- **3D earth**: Facilities as glowing markers surrounded by particle clouds,
+  transport links as glowing arcs with flowing particle streams (ADR-0002,
+  ADR-0008). Dense facility clusters produce "city glow." Particle cloud
+  density and motion encode activity level — the player can see at a glance
+  which facilities are busy.
 - **HUD overlays**: Total production summary, resource stockpile levels,
   facility count, transport count.
 - **Event feed**: Chronological log of LLM actions ("Built iron mine at
@@ -114,14 +158,18 @@ deck for the simulation.
 - Player has no in-game corrective action if the LLM misbehaves (other than
   revoking the token or messaging via their chat client). This is by design —
   it's a sandbox for observing LLM behavior.
-- Tick processing must be efficient; a game with hundreds of facilities and
-  transport links per tick must complete within the MCP call's response time
+- Tick processing must be efficient; a game with hundreds of facilities,
+  transport links, renewable growth, population updates, and environmental
+  metric tracking per tick must complete within the MCP call's response time
   (target <500ms including DB writes) to avoid LLM timeouts.
 - The web UI needs real-time data delivery (SSE or websocket) to reflect
   tick results promptly; between MCP calls the UI is static, which may feel
   "dead" to some players (mitigated by the "waiting for LLM..." indicator).
 - If the LLM makes rapid successive calls, ticks may pile up; the server
   should batch or queue ticks if calls arrive faster than processing time.
+- Lose condition means games can end; the LLM must manage resources wisely
+  or face Game Over. Starting resource randomization can occasionally
+  create tight early-game situations.
 
 ## Alternatives Considered
 

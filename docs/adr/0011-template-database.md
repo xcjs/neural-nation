@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0005, ADR-0010 |
+| Relates to | ADR-0003, ADR-0005, ADR-0010, ADR-0013 |
 
 ## Context
 
@@ -36,6 +36,9 @@ The template DB includes:
 - **Resource deposits**: All `resources` rows — the ~118 elements and bulk
   resources at their real-world lat/lon coordinates, with quantities, grades,
   and depths. All with `discovered = 0` (LLM must survey to discover them).
+- **Terrain grid**: All `terrain` rows — the 0.1° × 0.1° elevation grid
+  (~840K cells) with elevation, terrain class, and land/ocean flag (ADR-0013).
+  Consumed by transport pathfinding and earth visualization.
 - **Reference data**: Any static lookup tables (element properties, facility
   type definitions, transport type definitions, biome definitions) that don't
   change per game.
@@ -64,9 +67,11 @@ The build step:
 3. Runs the geological data seeding pipeline (ADR-0003): parses USGS data,
    crustal abundance tables, oil/gas data, biome data, and inserts all
    `resources` rows.
-4. Inserts reference/lookup data.
-5. Runs `VACUUM` to compact the file.
-6. Logs summary stats (deposit count, element count, file size).
+4. Runs the terrain seeding pipeline (ADR-0013): parses the downsampled SRTM
+   elevation grid, computes terrain classes, and inserts all `terrain` rows.
+5. Inserts reference/lookup data.
+6. Runs `VACUUM` to compact the file.
+7. Logs summary stats (deposit count, element count, terrain cell count, file size).
 
 The template is **committed to the repo** so production deployments don't need
 the raw geological datasets at runtime. The geological datasets can remain in
@@ -113,6 +118,7 @@ data/
     oil_gas.json             ← bundled or downloaded
     biomes.json              ← bundled or downloaded
     hydrology/               ← downloaded (large, gitignored)
+    terrain/                 ← downloaded SRTM-derived grid (large, gitignored)
   games/
     _template.db             ← pre-built template (committed to repo)
     {token1}.db              ← per-game DBs (gitignored)
@@ -133,8 +139,8 @@ data/
 - File copy is atomic and reliable on all OSes.
 
 **Negative:**
-- Template file can be large (thousands of deposit rows + reference data).
-  Compressable; acceptable for a game artifact.
+- Template file can be large (thousands of deposit rows + ~840K terrain cells
+  + reference data). Compressable; acceptable for a game artifact.
 - Schema changes require template rebuild (or migration-on-copy, which is
   handled by the version check).
 - Template file must be kept in sync with schema migrations; a CI step should
