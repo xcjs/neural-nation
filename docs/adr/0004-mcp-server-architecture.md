@@ -5,6 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
+| Relates to | ADR-0003, ADR-0007, ADR-0009, ADR-0012, ADR-0018 |
 
 ## Context
 
@@ -90,9 +91,22 @@ The MCP server exposes these tools to the LLM:
 - `list_transports` — list all transport links (read-only).
 
 **Logistics:**
-- `set_production_target` — set a facility's target output rate.
+- `set_production_target` — set a facility's active recipe and target output
+  rate. The LLM selects which recipe a facility executes from the recipes
+  available to that facility type (ADR-0018).
 - `assign_route` — assign a resource flow to a transport link.
 - `get_supply_chain_status` — read-only overview of production/flow.
+
+**Research & Technology (ADR-0018):**
+- `start_research` — begin researching a tech node at a research_lab. Consumes
+  the tech's research costs over time. Fails if prerequisites are not met or
+  if no research_lab is available.
+- `get_tech_tree` — read-only view of the full technology tree: all tech nodes
+  with their status (completed, in progress, available, locked), research
+  costs, prerequisites, and what they unlock (recipes, facility types).
+- `get_recipes` — list all available recipes (filtered by facility type,
+  unlocked status, or output resource). Shows inputs, outputs, craft time,
+  and tech requirement for each recipe.
 
 **Game State (read-only):**
 - `get_game_state` — high-level game stats (tick count, total production,

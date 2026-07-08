@@ -24,6 +24,7 @@ decision, its context, and consequences.
 | [0015](0015-humanity-and-environmental-impact.md) | Humanity & Environmental Impact System | Proposed |
 | [0016](0016-space-based-resource-gathering.md) | Space-Based Resource Gathering | Proposed |
 | [0017](0017-code-organization-and-domain-driven-design.md) | Code Organization & Domain-Driven Design (PascalCase, feature folders) | Proposed |
+| [0018](0018-technology-tree-and-recipe-system.md) | Technology Tree & Recipe System (recipes, tech progression, multi-component crafting) | Proposed |
 
 ## ADR Relationships
 
@@ -43,7 +44,8 @@ decision, its context, and consequences.
                       ├── 0012 (UI/HUD) ──┬── 0004 (MCP)
                       │                   └── 0015 (Humanity/Env)
                       ├── 0014 (Power) ── 0016 (Space)
-                      └── 0017 (Code Org/DDD) ── applies to all
+                      ├── 0017 (Code Org/DDD) ── applies to all
+                      └── 0018 (Tech Tree/Recipes) ── 0003, 0004, 0007, 0011, 0012
 ```
 
 ## Status Legend

@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0002, ADR-0004, ADR-0006, ADR-0008, ADR-0015 |
+| Relates to | ADR-0002, ADR-0004, ADR-0006, ADR-0008, ADR-0015, ADR-0018 |
 
 ## Context
 
@@ -26,8 +26,8 @@ glowing accents, monospace data).
 ### Panel: Resource Tracker (Primary)
 
 A **scrollable, filterable, sortable list** of all resources organized into
-three categories (renewable, non-renewable, periodic table elements) per
-ADR-0003, showing collection progress:
+four categories (renewable, non-renewable, periodic table elements,
+manufactured) per ADR-0003/ADR-0018, showing collection progress:
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -54,13 +54,19 @@ ADR-0003, showing collection progress:
 │  ● U   Uranium    ░░░░░░░░       0 / 50      0.0%  │
 │  ● Tc  Technetium ░░░░░░░░       0 / 0   SYNTHETIC │
 │  ...                                                │
+│  ▸ MANUFACTURED                                    │
+│  ● Steel         ███░░░░░    600 / —      produced  │
+│  ● Electronics   █░░░░░░░     20 / —      produced  │
+│  ● Machinery     ░░░░░░░░      0 / —      produced  │
+│  ● Fuel          ██░░░░░░    180 / —      produced  │
+│  ...                                                │
 │─────────────────────────────────────────────────────│
-│  Showing 130 of 130          scroll for more         │
+│  Showing 155 of 155          scroll for more         │
 └─────────────────────────────────────────────────────┘
 ```
 
 **Features:**
-- **Three categories** (collapsible sections per ADR-0003):
+- **Four categories** (collapsible sections per ADR-0003/ADR-0018):
   1. **Renewable** — resources that regrow over time (wood, water, arable
      land, biomass/crops, solar/wind/hydro capacity). Also includes
      **population** as a special renewable "resource" — it grows over time
@@ -68,9 +74,14 @@ ADR-0003, showing collection progress:
      arrow (▲▼●) instead of a depletion progress bar, since it is not
      "collected" from a finite deposit.
   2. **Non-renewable** — finite deposits that deplete when extracted (coal,
-     oil \u0026 gas, stone/gravel, uranium/radioactive ores).
+     oil & gas, stone/gravel, uranium/radioactive ores).
   3. **Elements** — all 118 periodic table elements, split by naturally
      occurring vs. synthetic.
+  4. **Manufactured** — resources produced by recipes (ADR-0018): Iron,
+     Steel, Electronics, Machinery, Fuel, Plastics, etc. These show current
+     stockpile and production rate (e.g., "+12/tick") instead of
+     collected/total, since they are not mined from finite deposits. Color:
+     purple/magenta to distinguish from natural resources.
 - **List entries**: One row per resource. Each row shows: symbol (for
   elements), name, progress bar, collected / total, percentage.
 - **Progress bar**: Horizontal bar showing collected vs. total estimated
@@ -262,6 +273,50 @@ When the player clicks a facility marker on the globe, a side panel opens:
 │  80 ore/tick  │  Power: ✓  │  Eff: 90%  │
 └─────────────────────────────────────────┘
 ```
+
+### Panel: Tech Tree (ADR-0018 link)
+
+A visual tree showing research progress and unlocked technologies:
+
+```
+┌──────────────────────────────────────────────────────┐
+│  TECH TREE                          [filter: all ▾]  │
+│──────────────────────────────────────────────────────│
+│  TIER 0 (Starting)                                  │
+│  ✓ Basic Extraction    ✓ Basic Processing           │
+│  ✓ Basic Power         ✓ Basic Transport            │
+│  ✓ Basic Construction                                │
+│                                                      │
+│  TIER 1                                              │
+│  ✓ Advanced Metallurgy  ✓ Industrial Chemistry       │
+│  ✓ Advanced Fossil      ◐ Nuclear Power (45%)        │
+│  ○ Precision Mfg       ○ Biotechnology               │
+│                                                      │
+│  TIER 2                                              │
+│  ⊘ Machinery & Automation  ⊘ Fusion Power             │
+│  ⊘ Advanced Materials                               │
+│                                                      │
+│  TIER 3                                              │
+│  ⊘ Aerospace Engineering                            │
+│  ⊘ Orbital Infrastructure                            │
+│  ⊘ Deep Space Technology                            │
+│                                                      │
+│  Legend: ✓ completed  ◐ in progress  ○ available     │
+│         ⊘ locked (prereq needed)                     │
+└──────────────────────────────────────────────────────┘
+```
+
+- **Status icons**: ✓ completed, ◐ in progress (with % bar), ○ available
+  (prerequisites met, not started), ⊘ locked (prerequisites unmet).
+- **Click**: Clicking a tech node shows its description, prerequisites,
+  research cost, what it unlocks (recipes, facility types), and which
+  research_lab (if any) is working on it.
+- **Filter**: By category (Metallurgy, Chemistry, Power, Space), by status.
+- **Visual**: Nodes are color-coded by branch (Metallurgy = orange, Chemistry
+  = green, Power = yellow, Space = cyan). Completed nodes glow; locked nodes
+  are dimmed. Prerequisite connections shown as faint lines.
+- This panel helps the player understand the LLM's research strategy and
+  progression through the tech tree.
 
 ### Panel: MCP Connection / Token Management
 

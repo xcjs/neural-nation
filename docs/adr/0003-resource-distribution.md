@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0011, ADR-0013, ADR-0015 |
+| Relates to | ADR-0011, ADR-0013, ADR-0015, ADR-0018 |
 
 ## Context
 
@@ -57,6 +57,19 @@ renewability:
      be synthesized in specialized facilities (particle accelerators, breeder
      reactors, etc.) if the player/LLM wants them. Whether each is useful in the
      game's economy is a separate gameplay question.
+
+4. **Manufactured resources** (only produced by recipes — see ADR-0018):
+   - Processed metals: Iron, Steel, Aluminum, Copper, Silicon (smelted from
+     ore).
+   - Construction materials: Lumber, Cement/Concrete, Bricks (processed from
+     raw inputs).
+   - Fuels/chemicals: Fuel, Plastics, Lubricant (refined from crude oil).
+   - Components: Electronics, Machinery (assembled from multiple inputs).
+   - Advanced: Nuclear Fuel Rods, Fusion Cores, Rocket Parts, Satellite Kits
+     (complex multi-component recipes).
+   - These do not exist as natural deposits; they are only created by
+     facility production. They flow through the same transport/buffer system
+     and are tracked in the resource tracker alongside natural resources.
 
 ### Renewable Resource Growth Model
 

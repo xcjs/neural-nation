@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-07-08 |
 | Deciders | Project owner |
-| Relates to | ADR-0003, ADR-0013, ADR-0014 |
+| Relates to | ADR-0003, ADR-0013, ADR-0014, ADR-0018 |
 
 ## Context
 
@@ -43,12 +43,16 @@ facilities.
 - `electronics_plant` — rare elements + metals → electronic components
 
 **Tier 3 — Advanced / Synthesis** (endgame):
-- `research_lab` — synthesizes rare/synthetic elements (requires particle
-  accelerator subcomponents)
-- `reactor` — breeder reactor for transuranic synthesis
+- `research_lab` — researches tech tree nodes (ADR-0018). Consumes research
+  costs (resources) over time to unlock recipes, facility types, and
+  infrastructure. Each lab works on one tech at a time; multiple labs can
+  research in parallel. Requires Precision Manufacturing tech to build.
+- `reactor` — breeder reactor for transuranic synthesis (requires Nuclear
+  Power tech — ADR-0018).
 - `spaceport` — enables space-based extraction. See ADR-0016 for the full
   space infrastructure chain (spaceport → space station → orbital refinery →
-  asteroid mining drones → lunar mines → deep space probes).
+  asteroid mining drones → lunar mines → deep space probes). Requires
+  Aerospace Engineering tech (ADR-0018).
 
 **Tier — Infrastructure** (not production, but required):
 - `storage` — stockpile point for resources (warehouses, tanks, silos)
@@ -136,16 +140,30 @@ missing transport) result in idle facilities.
 
 ### Production Model
 
-Each facility has:
+Each facility executes **recipes** (ADR-0018). A recipe defines the exact
+inputs and outputs for a production cycle:
 
-- **Inputs**: required resources per tick (e.g., smelter needs iron ore + coal +
-  electricity).
-- **Outputs**: produced resources per tick (e.g., smelter produces iron + slag).
-- **Production rate**: determined by facility type, available inputs, and power.
-  If any input is missing, production drops to zero (or proportionally reduces).
+- **Active recipe**: Each facility has one active recipe at a time (set via
+  `set_production_target`, which now accepts a recipe ID). The LLM chooses
+  which recipe a facility runs based on what outputs it needs and what inputs
+  are available.
+- **Inputs**: required resources per production cycle (e.g., smelter running
+  Iron Smelting needs iron ore + coal + power). See ADR-0018 for the full
+  recipe structure including optional inputs and multi-component recipes.
+- **Outputs**: produced resources per cycle (e.g., smelter produces iron +
+  slag). Outputs are **manufactured resources** (ADR-0003 category 4) — they
+  do not exist in nature and are only created by recipe execution.
+- **Production rate**: determined by recipe craft_time, facility type,
+  available inputs, and power. If any required input is missing, production
+  drops to zero (or scales down for optional inputs). If the recipe's tech
+  prerequisite is not completed, the recipe cannot be selected.
 - **Efficiency**: affected by deposit grade (for extractors), facility age,
-  power stability. Can be upgraded by the LLM via `set_production_target` or
-  future upgrade tools.
+  power stability, terrain (efficiency penalty >3000m per ADR-0013). Can be
+  influenced by the LLM via `set_production_target` or future upgrade tools.
+- **Construction as recipe**: Building a facility is itself a recipe — the
+  construction cost in resources (Steel, Concrete, Machinery, etc.) is a
+  recipe with the facility as output. Advanced facilities need advanced
+  manufactured goods and their tech prerequisite completed (ADR-0018).
 
 ### Buffer Model (Per-Facility Buffers)
 
