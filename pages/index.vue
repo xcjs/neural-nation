@@ -60,16 +60,16 @@
         </NuxtLink>
       </div>
 
-      <div v-if="existingTokens.length > 0" class="mt-8">
+      <div v-if="existingGames.length > 0" class="mt-8">
         <p class="text-cyan-700 text-xs mb-2">EXISTING GAMES ON THIS SERVER</p>
         <div class="flex flex-col gap-1">
           <NuxtLink
-            v-for="t in existingTokens"
-            :key="t.token"
-            :to="`/play?token=${t.token}`"
+            v-for="(g, i) in existingGames"
+            :key="i"
+            :to="`/watch?token=${g.publicToken}`"
             class="text-cyan-500 hover:text-cyan-300 text-sm truncate"
           >
-            → {{ t.token.slice(0, 12) }}... ({{ t.difficulty }})
+            → Game #{{ i + 1 }} ({{ g.difficulty }})
           </NuxtLink>
         </div>
       </div>
@@ -87,7 +87,7 @@ const loading = ref(false)
 const error = ref('')
 const created = ref<{ token: string; publicToken: string; mcpUrl: string } | null>(null)
 const copied = ref(false)
-const existingTokens = ref<Array<{ token: string; difficulty: string }>>([])
+const existingGames = ref<Array<{ publicToken: string; difficulty: string }>>([])
 
 const difficulties = [
   { value: DifficultyPreset.Easy, label: 'EASY' },
@@ -119,7 +119,7 @@ async function createGame() {
     created.value = res
 
     const saved = JSON.parse(localStorage.getItem('neural-nation-games') || '[]')
-    saved.push({ token: res.token, difficulty: difficulty.value })
+    saved.push({ publicToken: res.publicToken, difficulty: difficulty.value })
     localStorage.setItem('neural-nation-games', JSON.stringify(saved))
     loadExistingTokens()
   } catch (e) {
@@ -138,7 +138,7 @@ function copyUrl() {
 
 function loadExistingTokens() {
   const saved = JSON.parse(localStorage.getItem('neural-nation-games') || '[]')
-  existingTokens.value = saved
+  existingGames.value = saved
 }
 
 onMounted(loadExistingTokens)
