@@ -51,8 +51,6 @@ let transportUniforms: { uTime: { value: number } } | null = null
 let terrainModGroup: THREE.Group
 let composer: EffectComposer | null = null
 let bloomPass: UnrealBloomPass | null = null
-let moonMesh: THREE.Mesh
-let moonOrbitAngle = 0
 let pollutionMesh: THREE.Mesh | null = null
 
 const EARTH_RADIUS = 1
@@ -193,29 +191,6 @@ function init() {
   terrainModGroup = new THREE.Group()
   scene.add(terrainModGroup)
 
-  // Lighting
-  scene.add(new THREE.AmbientLight(0x4488ff, 0.3))
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8)
-  dirLight.position.set(5, 3, 5)
-  scene.add(dirLight)
-
-  // Starfield background
-  addStars()
-
-  // Moon sphere (space layer visualization)
-  const moonGeo = new THREE.IcosahedronGeometry(0.27, 3)
-  const moonMat = new THREE.MeshBasicMaterial({ color: 0xccccdd, transparent: true, opacity: 0.85 })
-  moonMesh = new THREE.Mesh(moonGeo, moonMat)
-  moonMesh.position.set(4, 0.5, -2)
-  scene.add(moonMesh)
-
-  // Moon orbit ring (faint guide)
-  const orbitGeo = new THREE.RingGeometry(4.47, 4.5, 64)
-  const orbitMat = new THREE.MeshBasicMaterial({ color: 0x334455, transparent: true, opacity: 0.15, side: THREE.DoubleSide })
-  const orbitRing = new THREE.Mesh(orbitGeo, orbitMat)
-  orbitRing.rotation.x = Math.PI / 2.5
-  scene.add(orbitRing)
-
   // Pollution heatmap overlay
   buildPollutionOverlay()
 
@@ -233,23 +208,6 @@ function init() {
   }
 
   animate()
-}
-
-function addStars() {
-  const starGeo = new THREE.BufferGeometry()
-  const starCount = 1000
-  const positions = new Float32Array(starCount * 3)
-  for (let i = 0; i < starCount; i++) {
-    const r = 20 + Math.random() * 30
-    const theta = Math.random() * Math.PI * 2
-    const phi = Math.acos(2 * Math.random() - 1)
-    positions[i * 3] = r * Math.sin(phi) * Math.cos(theta)
-    positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta)
-    positions[i * 3 + 2] = r * Math.cos(phi)
-  }
-  starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  const starMat = new THREE.PointsMaterial({ color: 0x444466, size: 0.05, transparent: true, opacity: 0.6 })
-  scene.add(new THREE.Points(starGeo, starMat))
 }
 
 function buildPollutionOverlay(): void {
@@ -579,8 +537,95 @@ function updateMarkers() {
       spike.rotateX(spikeDir * Math.PI / 2)
       spike.position.add(pos.clone().normalize().multiplyScalar(spikeDir * size))
       terrainModGroup.add(spike)
+
+      // Patch coastlines for ocean↔land transitions
+      if (mod.reason === 'ocean_to_land' || mod.reason === 'land_to_ocean') {
+        patchCoastline(mod.latIndex, mod.lonIndex, mod.reason === 'ocean_to_land')
+      }
     }
   }
+}
+
+function patchCoastline(lat: number, lon: number, toLand: boolean): void {
+  // Build a small filled cell patch at this location to visually reshape the coastline.
+  // Cell size matches the terrain grid resolution (~1°).
+  const halfCell = 0.5
+  const corners: [number, number][] = [
+    [lat - halfCell, lon - halfCell],
+    [lat + halfCell, lon - halfCell],
+    [lat + halfCell, lon + halfCell],
+    [lat - halfCell, lon + halfCell],
+  ]
+  const points = corners.map(([la, lo]) => latLonToVec3(la, lo, EARTH_RADIUS * 1.003))
+  // Close the loop
+  points.push(points[0]!)
+
+  if (toLand) {
+    // Add a filled land patch (cyan outline + semi-transparent fill)
+    const fillMat = new THREE.MeshBasicMaterial({
+      color: 0x00aaff,
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.DoubleSide,
+    })
+    const shape = buildShape(points)
+    const fillGeo = new THREE.ShapeGeometry(shape)
+    const fill = new THREE.Mesh(fillGeo, fillMat)
+    positionOnSphere(fill, points[0]!)
+    coastlineGroup.add(fill)
+
+    // Outline matching existing coastlines
+    const lineGeo = new THREE.BufferGeometry().setFromPoints(points)
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x00aaff, transparent: true, opacity: 0.5 })
+    coastlineGroup.add(new THREE.Line(lineGeo, lineMat))
+  } else {
+    // Land to ocean: overlay a dark blue water patch that obscures the existing coastline
+    const fillMat = new THREE.MeshBasicMaterial({
+      color: 0x002233,
+      transparent: true,
+      opacity: 0.8,
+      side: THREE.DoubleSide,
+    })
+    const shape = buildShape(points)
+    const fillGeo = new THREE.ShapeGeometry(shape)
+    const fill = new THREE.Mesh(fillGeo, fillMat)
+    positionOnSphere(fill, points[0]!)
+    coastlineGroup.add(fill)
+
+    // Blue outline to indicate new water boundary
+    const lineGeo = new THREE.BufferGeometry().setFromPoints(points)
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.4 })
+    coastlineGroup.add(new THREE.Line(lineGeo, lineMat))
+  }
+}
+
+function positionOnSphere(mesh: THREE.Mesh, anchor: THREE.Vector3): void {
+  const normal = anchor.clone().normalize()
+  mesh.position.copy(anchor)
+  mesh.lookAt(0, 0, 0)
+  // ShapeGeometry is in XY plane; lookAt orients Z toward center, so XY faces outward
+  mesh.rotateX(Math.PI) // flip so the shape faces outward
+}
+
+function buildShape(points: THREE.Vector3[]): THREE.Shape {
+  const shape = new THREE.Shape()
+  // Project 3D points onto a 2D plane (tangent to sphere at cell center) for ShapeGeometry
+  // Use the first point's normal as the plane basis
+  const normal = points[0]!.clone().normalize()
+  const up = new THREE.Vector3(0, 1, 0)
+  let tangent = new THREE.Vector3().crossVectors(normal, up)
+  if (tangent.lengthSq() < 0.01) tangent = new THREE.Vector3(1, 0, 0)
+  tangent.normalize()
+  const bitangent = new THREE.Vector3().crossVectors(normal, tangent).normalize()
+
+  shape.moveTo(0, 0)
+  for (let i = 1; i < points.length; i++) {
+    const p = points[i]!
+    const v = p.clone().sub(points[0]!)
+    shape.lineTo(v.dot(tangent), v.dot(bitangent))
+  }
+  shape.closePath()
+  return shape
 }
 
 function buildParticleSystem(
@@ -881,15 +926,6 @@ function animate() {
   if (pollutionMesh) pollutionMesh.rotation.y += 0.0005
 
   // Moon orbit
-  moonOrbitAngle += 0.0008
-  const moonR = 4.48
-  moonMesh.position.set(
-    Math.cos(moonOrbitAngle) * moonR,
-    Math.sin(moonOrbitAngle * 0.3) * 0.5,
-    Math.sin(moonOrbitAngle) * moonR - 1.5,
-  )
-  moonMesh.rotation.y += 0.002
-
   // Pulse markers (handle LOD children)
   const time = Date.now() * 0.001
   markerGroup.children.forEach((child) => {
