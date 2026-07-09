@@ -61,7 +61,7 @@
       </div>
 
       <div v-if="existingTokens.length > 0" class="mt-8">
-        <p class="text-cyan-700 text-xs mb-2">EXISTING GAMES ON THIS DEVICE</p>
+        <p class="text-cyan-700 text-xs mb-2">EXISTING GAMES ON THIS SERVER</p>
         <div class="flex flex-col gap-1">
           <NuxtLink
             v-for="t in existingTokens"
