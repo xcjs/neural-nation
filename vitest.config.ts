@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config'
 import { fileURLToPath } from 'node:url'
+import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   test: {
@@ -33,6 +34,7 @@ export default defineConfig({
           environment: 'happy-dom',
           include: ['components/**/*.test.ts'],
         },
+        plugins: [vue()],
       },
     ],
     alias: {
