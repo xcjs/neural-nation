@@ -932,11 +932,11 @@ function animate() {
     const lod = child as THREE.LOD
     if (lod.isLOD) {
       lod.update(camera)
-      const obj = lod.getObjectByIndex(lod.getCurrentLevel())
-      if (obj && obj.type === 'Mesh') {
-        const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
+      const level = lod._currentLevel >= 0 ? lod.children[lod._currentLevel] : null
+      if (level && level.type === 'Mesh') {
+        const mat = (level as THREE.Mesh).material as THREE.MeshBasicMaterial
         if (mat.transparent) {
-          mat.opacity = 0.2 + Math.sin(time * 2 + obj.id) * 0.15
+          mat.opacity = 0.2 + Math.sin(time * 2 + level.id) * 0.15
         }
       }
     } else if (child.type === 'Mesh') {

@@ -308,15 +308,8 @@ async function main() {
     CREATE INDEX IF NOT EXISTS idx_actions_tick ON actions(tick);
   `)
 
-  // Seed reference data: periodic table elements as resource rows
-  const { NATURALLY_OCCURRING_ELEMENTS } = await import('../lib/constants/elements')
-  const insertResource = db.prepare(`
-    INSERT INTO resources (resource_key, name, category, quantity, remaining, discovered, unit)
-    VALUES (?, ?, 'Element', 0, 0, 0, 't')
-  `)
-  for (const [symbol, data] of Object.entries(NATURALLY_OCCURRING_ELEMENTS)) {
-    insertResource.run(symbol.toLowerCase(), data.name)
-  }
+  // Note: Element reference data lives in lib/constants/elements.ts (in-memory).
+  // Real resource deposits are seeded from USGS MRDS below — no stub rows needed.
 
   // Seed tech tree (basic nodes)
   const insertTech = db.prepare(`INSERT OR IGNORE INTO tech_nodes (id, name, description, tier, category, research_time) VALUES (?, ?, ?, ?, ?, ?)`)

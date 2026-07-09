@@ -128,6 +128,7 @@ export function getResourceOverview(token: string): ResourceOverviewRow[] {
   const rows: ResourceOverviewRow[] = []
 
   for (const [resourceKey, data] of resourceMap) {
+    if (data.collected === 0 && data.remaining === 0 && data.total === 0) continue
     const category = categorizeResource(resourceKey)
     const unit = getUnitForCategory(category)
     const trend = data.remaining > 0 ? TrendDirection.Stable : TrendDirection.Down
@@ -287,17 +288,17 @@ export function searchResources(
 }
 
 function categorizeResource(resourceKey: string): ResourceCategory {
-  const element = ELEMENTS.find((e) => e.symbol === resourceKey || e.name === resourceKey)
+  const element = ELEMENTS.find((e) => e.symbol.toLowerCase() === resourceKey.toLowerCase() || e.name === resourceKey)
   if (element) {
     return ResourceCategory.Element
   }
 
-  const renewableKeys = ['Wood', 'Water', 'ArableLand', 'Biomass', 'Population', 'Solar', 'Wind', 'Hydro']
+  const renewableKeys = ['wood', 'water', 'arableland', 'biomass', 'population', 'solar', 'wind', 'hydro', 'Wood', 'Water', 'ArableLand', 'Biomass', 'Population', 'Solar', 'Wind', 'Hydro']
   if (renewableKeys.includes(resourceKey)) {
     return ResourceCategory.Renewable
   }
 
-  const nonRenewableKeys = ['Coal', 'Oil', 'NaturalGas', 'Stone', 'Gravel', 'Uranium', 'Thorium']
+  const nonRenewableKeys = ['coal', 'oil', 'naturalgas', 'stone', 'gravel', 'uranium', 'thorium', 'Coal', 'Oil', 'NaturalGas', 'Stone', 'Gravel', 'Uranium', 'Thorium']
   if (nonRenewableKeys.includes(resourceKey)) {
     return ResourceCategory.NonRenewable
   }
@@ -317,7 +318,7 @@ function getUnitForCategory(category: ResourceCategory): ResourceUnit {
 }
 
 function getResourceName(resourceKey: string): string {
-  const element = ELEMENTS.find((e) => e.symbol === resourceKey)
+  const element = ELEMENTS.find((e) => e.symbol.toLowerCase() === resourceKey.toLowerCase())
   if (element) {
     return element.name
   }
