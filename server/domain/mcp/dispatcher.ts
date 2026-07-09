@@ -12,6 +12,7 @@ import { schema } from '../../db/schema'
 import { eq, desc, sql } from 'drizzle-orm'
 import { publish, type GameEvent } from '../events/bus'
 import { GameStatus } from '../../../lib/types/game'
+import { updateLastActive } from '../game/service'
 import type { TerraformAction } from '../../../lib/types/terrain'
 import type { TransportType } from '../../../lib/types/transport'
 
@@ -45,6 +46,8 @@ export function executeTool(token: string, toolName: string, args: Record<string
     const result = dispatchTool(token, toolName, args)
 
     processTick(token)
+
+    updateLastActive(token)
 
     logAction(token, toolName, args, 'success', result)
 

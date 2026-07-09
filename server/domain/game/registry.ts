@@ -15,7 +15,7 @@ export function loadRegistry(): RegistryEntry[] {
   if (!existsSync(REGISTRY_PATH)) {
     return []
   }
-  const raw = readFileSync(REGISTRY_PATH, 'utf-8')
+  const raw = readFileSync(REGISTRY_PATH, 'utf-8').replace(/^\uFEFF/, '')
   return JSON.parse(raw) as RegistryEntry[]
 }
 

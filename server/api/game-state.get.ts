@@ -11,6 +11,7 @@ import { getEnvironmentalStatus } from '../domain/humanity'
 import { getTechTree } from '../domain/tech'
 import { getPowerGridStatus } from '../domain/power'
 import { getSpaceStatus } from '../domain/space'
+import { updateLastActive, updateLastActiveInRegistry } from '../domain/game/service'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -29,6 +30,8 @@ export default defineEventHandler(async (event) => {
 
   const isSpectator = !!publicEntry && !privateEntry
   const gameToken = entry.token
+  updateLastActive(gameToken)
+  updateLastActiveInRegistry(gameToken)
   const db = createGameDb(gameToken)
   const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
   if (!meta) {

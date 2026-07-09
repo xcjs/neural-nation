@@ -1,10 +1,10 @@
-import { copyFileSync, existsSync } from 'node:fs'
+import { copyFileSync, existsSync, unlinkSync, renameSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { createGameDb, getTemplateDbPath } from '../../db/client'
+import { createGameDb, getTemplateDbPath, getGameDbPath, closeGameDb } from '../../db/client'
 import { DifficultyConfigs } from '../../../lib/constants/difficulty'
 import { DifficultyPreset, GameStatus, type RegistryEntry } from '../../../lib/types/game'
 import { generateTokenPair } from './token'
-import { addToRegistry, ensureDataDir } from './registry'
+import { addToRegistry, ensureDataDir, removeFromRegistry, updateRegistryEntry, findRegistryEntry } from './registry'
 import { schema } from '../../db/schema'
 import { eq } from 'drizzle-orm'
 
@@ -126,4 +126,75 @@ function randomInRange(min: number, max: number): number {
 export function getGameMeta(token: string) {
   const db = createGameDb(token)
   return db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
+}
+
+export function updateLastActive(token: string): void {
+  const now = new Date().toISOString()
+  const db = createGameDb(token)
+  db.update(schema.meta)
+    .set({ lastActiveAt: now })
+    .where(eq(schema.meta.key, 'game'))
+    .run()
+}
+
+export function updateLastActiveInRegistry(token: string): void {
+  updateRegistryEntry(token, { lastActive: new Date().toISOString() })
+}
+
+export function revokeToken(token: string): { success: boolean } {
+  const entry = findRegistryEntry(token)
+  if (!entry) {
+    throw new Error('Game not found')
+  }
+
+  closeGameDb(token)
+  const basePath = getGameDbPath(token)
+  for (const ext of ['', '-wal', '-shm']) {
+    const filePath = `${basePath}${ext}`
+    if (existsSync(filePath)) {
+      try { unlinkSync(filePath) } catch { /* ignore */ }
+    }
+  }
+  removeFromRegistry(token)
+  return { success: true }
+}
+
+export function mintNewToken(oldToken: string): { token: string; publicToken: string; mcpUrl: string } {
+  const entry = findRegistryEntry(oldToken)
+  if (!entry) {
+    throw new Error('Game not found')
+  }
+
+  const { token: newToken, publicToken: newPublicToken } = generateTokenPair()
+  const oldDbPath = getGameDbPath(oldToken)
+  const newDbPath = getGameDbPath(newToken)
+
+  renameSync(oldDbPath, newDbPath)
+  for (const ext of ['-wal', '-shm']) {
+    if (existsSync(`${oldDbPath}${ext}`)) {
+      try { renameSync(`${oldDbPath}${ext}`, `${newDbPath}${ext}`) } catch { /* ignore */ }
+    }
+  }
+
+  closeGameDb(oldToken)
+
+  const db = createGameDb(newToken)
+  db.update(schema.meta)
+    .set({ token: newToken, publicToken: newPublicToken })
+    .where(eq(schema.meta.key, 'game'))
+    .run()
+
+  removeFromRegistry(oldToken)
+  const now = new Date().toISOString()
+  const newEntry: RegistryEntry = {
+    token: newToken,
+    publicToken: newPublicToken,
+    createdAt: entry.createdAt,
+    lastActive: now,
+    status: entry.status,
+    cleanupEligibleAt: entry.cleanupEligibleAt,
+  }
+  addToRegistry(newEntry)
+
+  return { token: newToken, publicToken: newPublicToken, mcpUrl: buildMcpUrl(newToken) }
 }

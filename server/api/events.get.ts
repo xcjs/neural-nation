@@ -2,6 +2,7 @@ import { defineEventHandler, getQuery, createEventStream } from 'h3'
 import { findRegistryEntry, findRegistryEntryByPublicToken } from '../domain/game/registry'
 import { getGameState } from '../domain/mcp/dispatcher'
 import { subscribe } from '../domain/events/bus'
+import { updateLastActive, updateLastActiveInRegistry } from '../domain/game/service'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -17,6 +18,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const gameToken = entry.token
+  updateLastActive(gameToken)
+  updateLastActiveInRegistry(gameToken)
   const stream = createEventStream(event)
 
   const sendEvent = (data: unknown) => {
