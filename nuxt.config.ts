@@ -4,6 +4,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   modules: [
+    '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
   ],
 
@@ -31,9 +32,7 @@ export default defineNuxtConfig({
       tasks: true,
     },
     scheduledTasks: {
-      'game-cleanup': {
-        cron: '0 */6 * * *',
-      },
+      '0 */6 * * *': 'game-cleanup',
     },
   },
 
@@ -42,14 +41,15 @@ export default defineNuxtConfig({
     typeCheck: false,
   },
 
-  tailwindcss: {
-    cssPath: '~/assets/css/main.css',
-    configPath: '~/tailwind.config.ts',
-  },
-
   vite: {
     optimizeDeps: {
-      include: ['three'],
+      include: [
+        'three',
+        'three/examples/jsm/postprocessing/EffectComposer.js',
+        'three/examples/jsm/postprocessing/RenderPass.js',
+        'three/examples/jsm/postprocessing/UnrealBloomPass.js',
+        'three/examples/jsm/controls/OrbitControls.js',
+      ],
     },
   },
 

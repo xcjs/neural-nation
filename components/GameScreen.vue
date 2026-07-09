@@ -128,13 +128,12 @@ import PowerGridPanel from '~/components/hud/PowerGridPanel.vue'
 import SpaceStatusPanel from '~/components/hud/SpaceStatusPanel.vue'
 import EarthGlobe from '~/components/EarthGlobe.vue'
 
-const props = defineProps<{ spectator?: boolean }>()
+const props = defineProps<{ spectator?: boolean; token?: string }>()
 
-const route = useRoute()
 const router = useRouter()
-const token = route.query.token as string
+const token = props.token || ''
 
-if (!token) {
+if (!token && import.meta.client) {
   router.push('/')
 }
 
