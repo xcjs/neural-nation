@@ -93,8 +93,10 @@ describe('MCP end-to-end flow', () => {
     const facilityId = (build.data as { items: Array<{ id: number }> }).items[0]!.id
     const r = executeTool(token, 'get_facility_details', { facilityId })
     expect(r.status).toBe('success')
-    const details = r.data as { id: number; inputs: unknown[]; outputs: unknown[] }
+    const details = r.data as { id: number; status: string; constructionProgress: number; inputs: unknown[]; outputs: unknown[] }
     expect(details.id).toBe(facilityId)
+    expect(details.status).toBe('Active')
+    expect(details.constructionProgress).toBe(2)
     expect(Array.isArray(details.inputs)).toBe(true)
     expect(Array.isArray(details.outputs)).toBe(true)
   })
