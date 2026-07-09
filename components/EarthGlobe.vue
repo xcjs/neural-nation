@@ -5,6 +5,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import * as THREE from 'three'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import type { FacilitySummary } from '~/lib/types/facility'
 import type { TransportSummary } from '~/lib/types/transport'
 import type { TerrainModification } from '~/lib/types/terrain'
@@ -14,6 +17,9 @@ const props = defineProps<{
   transports: TransportSummary[]
   quality: 'low' | 'medium' | 'high'
   terrainModifications?: TerrainModification[]
+  pollutionLevel?: number
+  forestCoverage?: number
+  biodiversity?: number
 }>()
 
 const container = ref<HTMLDivElement | null>(null)
@@ -32,6 +38,11 @@ let particleUniforms: { uTime: { value: number }, uCount: { value: number } } | 
 let transportParticles: THREE.Points | null = null
 let transportUniforms: { uTime: { value: number } } | null = null
 let terrainModGroup: THREE.Group
+let composer: EffectComposer | null = null
+let bloomPass: UnrealBloomPass | null = null
+let moonMesh: THREE.Mesh
+let moonOrbitAngle = 0
+let pollutionMesh: THREE.Mesh | null = null
 
 const EARTH_RADIUS = 1
 
@@ -122,6 +133,36 @@ function init() {
   // Starfield background
   addStars()
 
+  // Moon sphere (space layer visualization)
+  const moonGeo = new THREE.IcosahedronGeometry(0.27, 3)
+  const moonMat = new THREE.MeshBasicMaterial({ color: 0xccccdd, transparent: true, opacity: 0.85 })
+  moonMesh = new THREE.Mesh(moonGeo, moonMat)
+  moonMesh.position.set(4, 0.5, -2)
+  scene.add(moonMesh)
+
+  // Moon orbit ring (faint guide)
+  const orbitGeo = new THREE.RingGeometry(4.47, 4.5, 64)
+  const orbitMat = new THREE.MeshBasicMaterial({ color: 0x334455, transparent: true, opacity: 0.15, side: THREE.DoubleSide })
+  const orbitRing = new THREE.Mesh(orbitGeo, orbitMat)
+  orbitRing.rotation.x = Math.PI / 2.5
+  scene.add(orbitRing)
+
+  // Pollution heatmap overlay
+  buildPollutionOverlay()
+
+  // Bloom post-processing (only for medium/high quality)
+  if (props.quality !== 'low') {
+    composer = new EffectComposer(renderer)
+    composer.addPass(new RenderPass(scene, camera))
+    bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(w, h),
+      props.quality === 'high' ? 0.8 : 0.5, // strength
+      0.4, // radius
+      0.2, // threshold
+    )
+    composer.addPass(bloomPass)
+  }
+
   animate()
 }
 
@@ -140,6 +181,64 @@ function addStars() {
   starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
   const starMat = new THREE.PointsMaterial({ color: 0x444466, size: 0.05, transparent: true, opacity: 0.6 })
   scene.add(new THREE.Points(starGeo, starMat))
+}
+
+function buildPollutionOverlay(): void {
+  if (pollutionMesh) {
+    scene.remove(pollutionMesh)
+    pollutionMesh.geometry.dispose()
+    ;(pollutionMesh.material as THREE.Material).dispose()
+  }
+  const geo = new THREE.IcosahedronGeometry(EARTH_RADIUS * 1.01, 4)
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uPollution: { value: (props.pollutionLevel ?? 0) / 100 },
+      uForest: { value: (props.forestCoverage ?? 100) / 100 },
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vPos;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        vPos = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uPollution;
+      uniform float uForest;
+      varying vec3 vNormal;
+      varying vec3 vPos;
+      void main() {
+        // Pollution: brown/gray haze, more visible at high pollution
+        vec3 pollutionColor = vec3(0.4, 0.3, 0.15);
+        // Forest/biome health: green tint when healthy, fades when degraded
+        vec3 healthyColor = vec3(0.1, 0.3, 0.08);
+        float health = uForest * (1.0 - uPollution * 0.5);
+        vec3 color = mix(pollutionColor * uPollution, healthyColor * health, 0.5);
+        float alpha = uPollution * 0.4 + (1.0 - uForest) * 0.2;
+        gl_FragColor = vec4(color, alpha);
+      }
+    `,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  })
+  pollutionMesh = new THREE.Mesh(geo, mat)
+  scene.add(pollutionMesh)
+}
+
+function updateEarthTint(): void {
+  const pollution = (props.pollutionLevel ?? 0) / 100
+  const forest = (props.forestCoverage ?? 100) / 100
+  const biodiversity = (props.biodiversity ?? 100) / 100
+  // Healthy earth: blue-cyan (0x002233). Degraded: brownish gray.
+  const health = (forest + biodiversity) * 0.5 * (1 - pollution * 0.3)
+  const r = 0.0 + (1 - health) * 0.25
+  const g = 0.13 * health + (1 - health) * 0.1
+  const b = 0.2 * health + (1 - health) * 0.05
+  const mat = earthMesh.material as THREE.MeshBasicMaterial
+  mat.color.setRGB(r, g, b)
 }
 
 function updateMarkers() {
@@ -186,7 +285,7 @@ function updateMarkers() {
     Excavator: 1, Dredger: 2, Terraformer: 1, PlanetaryEngine: 1,
   }
 
-  const PARTICLES_PER_FACILITY = 40
+  const PARTICLES_PER_FACILITY = props.quality === 'low' ? 10 : props.quality === 'medium' ? 25 : 40
 
   // Build marker meshes + collect particle data
   const facilityParticleData: {
@@ -195,23 +294,35 @@ function updateMarkers() {
     motion: number
     activity: number
   }[] = []
-
   for (const f of props.facilities) {
     const pos = latLonToVec3(f.lat, f.lon, EARTH_RADIUS * 1.02)
+
     const color = markerColors[f.type] ?? 0x00ffff
     const size = f.status === 'Active' ? 0.02 : 0.015
+
+    // LOD: high detail (octahedron + glow) up close, billboard far away
+    const lod = new THREE.LOD()
     const markerGeo = new THREE.OctahedronGeometry(size, 0)
     const markerMat = new THREE.MeshBasicMaterial({ color })
     const marker = new THREE.Mesh(markerGeo, markerMat)
     marker.position.copy(pos)
-    markerGroup.add(marker)
+    lod.addLevel(marker, 0)
 
     // Glow dot
     const dotGeo = new THREE.SphereGeometry(size * 1.8, 8, 8)
     const dotMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3 })
     const dot = new THREE.Mesh(dotGeo, dotMat)
     dot.position.copy(pos)
-    markerGroup.add(dot)
+    lod.addLevel(dot, 1.5)
+
+    // Simple point sprite at far distance
+    const farGeo = new THREE.BufferGeometry()
+    farGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([pos.x, pos.y, pos.z]), 3))
+    const farMat = new THREE.PointsMaterial({ color, size: 3, sizeAttenuation: false, transparent: true, opacity: 0.8 })
+    const farPoint = new THREE.Points(farGeo, farMat)
+    lod.addLevel(farPoint, 5)
+
+    markerGroup.add(lod)
 
     // Particle cloud data (only for Active facilities)
     if (f.status === 'Active') {
@@ -594,14 +705,36 @@ function animate() {
   transportGroup.rotation.y += 0.0005
   particleGroup.rotation.y += 0.0005
   terrainModGroup.rotation.y += 0.0005
+  if (pollutionMesh) pollutionMesh.rotation.y += 0.0005
 
-  // Pulse markers
+  // Moon orbit
+  moonOrbitAngle += 0.0008
+  const moonR = 4.48
+  moonMesh.position.set(
+    Math.cos(moonOrbitAngle) * moonR,
+    Math.sin(moonOrbitAngle * 0.3) * 0.5,
+    Math.sin(moonOrbitAngle) * moonR - 1.5,
+  )
+  moonMesh.rotation.y += 0.002
+
+  // Pulse markers (handle LOD children)
   const time = Date.now() * 0.001
-  markerGroup.children.forEach((child, i) => {
-    if (i % 2 === 1) {
-      const mesh = child as THREE.Mesh
-      const mat = mesh.material as THREE.MeshBasicMaterial
-      mat.opacity = 0.2 + Math.sin(time * 2 + i) * 0.15
+  markerGroup.children.forEach((child) => {
+    const lod = child as THREE.LOD
+    if (lod.isLOD) {
+      lod.update(camera)
+      const obj = lod.getObjectByIndex(lod.getCurrentLevel())
+      if (obj && obj.type === 'Mesh') {
+        const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
+        if (mat.transparent) {
+          mat.opacity = 0.2 + Math.sin(time * 2 + obj.id) * 0.15
+        }
+      }
+    } else if (child.type === 'Mesh') {
+      const mat = (child as THREE.Mesh).material as THREE.MeshBasicMaterial
+      if (mat.transparent) {
+        mat.opacity = 0.2 + Math.sin(time * 2 + child.id) * 0.15
+      }
     }
   })
 
@@ -613,7 +746,11 @@ function animate() {
     transportUniforms.uTime.value = time
   }
 
-  renderer.render(scene, camera)
+  if (composer) {
+    composer.render()
+  } else {
+    renderer.render(scene, camera)
+  }
 }
 
 function onResize() {
@@ -628,6 +765,14 @@ function onResize() {
 watch(() => props.facilities, updateMarkers, { deep: true })
 watch(() => props.transports, updateMarkers, { deep: true })
 watch(() => props.terrainModifications, updateMarkers, { deep: true })
+watch(() => [props.pollutionLevel, props.forestCoverage, props.biodiversity], () => {
+  if (pollutionMesh) {
+    const mat = pollutionMesh.material as THREE.ShaderMaterial
+    mat.uniforms.uPollution.value = (props.pollutionLevel ?? 0) / 100
+    mat.uniforms.uForest.value = (props.forestCoverage ?? 100) / 100
+  }
+  updateEarthTint()
+})
 
 onMounted(() => {
   init()

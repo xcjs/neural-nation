@@ -30,7 +30,7 @@
     <!-- 3D Earth canvas (full screen) -->
     <div class="absolute inset-0 z-0">
       <ClientOnly>
-        <EarthGlobe :facilities="facilities.list" :transports="transports.list" :quality="ui.quality" :terrain-modifications="terrain.modifications" />
+        <EarthGlobe :facilities="facilities.list" :transports="transports.list" :quality="ui.quality" :terrain-modifications="terrain.modifications" :pollution-level="environment.state.pollutionLevel" :forest-coverage="environment.state.forestCoverage" :biodiversity="environment.state.biodiversity" />
         <template #fallback>
           <div class="w-full h-full flex items-center justify-center">
             <p class="text-cyan-700 text-sm animate-pulse">INITIALIZING GLOBE...</p>
