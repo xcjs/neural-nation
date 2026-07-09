@@ -52,7 +52,7 @@ describe('API route handlers', () => {
       const result: any = await createGameHandler(event)
       expect(result.token).toBeTruthy()
       expect(result.publicToken).toBeTruthy()
-      expect(result.mcpUrl).toContain('/mcp/sse')
+      expect(result.mcpUrl).toContain('/api/mcp/sse')
       // Cleanup
       for (const ext of ['', '-shm', '-wal']) {
         try { rmSync(resolve('data', 'games', `${result.token}.db${ext}`), { force: true }) } catch { /* */ }
