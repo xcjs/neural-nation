@@ -598,13 +598,48 @@ function checkLoseCondition(db: GameDb): boolean {
   }
 
   const nonEmptyStockpiles = stockpiles.filter((s) => s.quantity > 0)
-  if (nonEmptyStockpiles.length === 0) {
-    const activeFacilities = db.select()
-      .from(schema.facilities)
-      .where(eq(schema.facilities.status, 'Active'))
+  const activeFacilities = db.select()
+    .from(schema.facilities)
+    .where(eq(schema.facilities.status, 'Active'))
+    .all()
+
+  if (nonEmptyStockpiles.length === 0 && activeFacilities.length === 0) {
+    return true
+  }
+
+  // Population collapse (ADR-0009): if population drops to 0, game over
+  const humanity = db.select().from(schema.humanity)
+    .where(eq(schema.humanity.key, 'global'))
+    .get()
+  if (humanity && humanity.population <= 0) {
+    return true
+  }
+
+  // Complete depletion: all non-renewable deposits exhausted AND no stockpiles AND no active production
+  if (nonEmptyStockpiles.length === 0 && activeFacilities.length > 0) {
+    const nonRenewableDeposits = db.select().from(schema.resources)
+      .where(
+        and(
+          eq(schema.resources.category, 'NonRenewable'),
+          sql`${schema.resources.remaining} > 0`,
+        ),
+      )
       .all()
 
-    if (activeFacilities.length === 0) {
+    const renewableResources = db.select().from(schema.resources)
+      .where(
+        and(
+          eq(schema.resources.category, 'Renewable'),
+          sql`${schema.resources.remaining} > 0`,
+        ),
+      )
+      .all()
+
+    const extractingFacilities = activeFacilities.filter((f) =>
+      EXTRACTOR_TYPES.has(f.type),
+    )
+
+    if (nonRenewableDeposits.length === 0 && renewableResources.length === 0 && extractingFacilities.length > 0) {
       return true
     }
   }

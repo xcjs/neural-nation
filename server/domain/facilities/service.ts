@@ -30,6 +30,84 @@ const FACILITY_TECH_REQUIREMENTS: Record<string, string> = {
   Dredger: 'hydraulic_engineering',
 }
 
+interface ConstructionCost {
+  resourceKey: string
+  quantity: number
+  unit: string
+}
+
+const CONSTRUCTION_COSTS: Record<string, ConstructionCost[]> = {
+  Extractor: [{ resourceKey: 'Steel', quantity: 2, unit: 't' }, { resourceKey: 'Concrete', quantity: 3, unit: 't' }],
+  Farm: [{ resourceKey: 'Steel', quantity: 1, unit: 't' }, { resourceKey: 'Concrete', quantity: 2, unit: 't' }],
+  Forestry: [{ resourceKey: 'Steel', quantity: 1, unit: 't' }, { resourceKey: 'Concrete', quantity: 1, unit: 't' }],
+  WaterPump: [{ resourceKey: 'Steel', quantity: 1, unit: 't' }, { resourceKey: 'Concrete', quantity: 2, unit: 't' }],
+  Processor: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Concrete', quantity: 5, unit: 't' }],
+  Smelter: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Concrete', quantity: 5, unit: 't' }],
+  Refinery: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 5, unit: 't' }],
+  Factory: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Concrete', quantity: 8, unit: 't' }, { resourceKey: 'Machinery', quantity: 1, unit: 't' }],
+  AdvancedFactory: [{ resourceKey: 'Steel', quantity: 8, unit: 't' }, { resourceKey: 'Concrete', quantity: 10, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }, { resourceKey: 'Electronics', quantity: 1, unit: 't' }],
+  ChemicalPlant: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 6, unit: 't' }, { resourceKey: 'Machinery', quantity: 1, unit: 't' }],
+  ResearchLab: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Concrete', quantity: 8, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }, { resourceKey: 'Electronics', quantity: 2, unit: 't' }],
+  PowerPlant: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Concrete', quantity: 10, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
+  SolarFarm: [{ resourceKey: 'Steel', quantity: 2, unit: 't' }, { resourceKey: 'Concrete', quantity: 3, unit: 't' }],
+  WindFarm: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Concrete', quantity: 4, unit: 't' }],
+  HydroPlant: [{ resourceKey: 'Steel', quantity: 8, unit: 't' }, { resourceKey: 'Concrete', quantity: 15, unit: 't' }, { resourceKey: 'Machinery', quantity: 3, unit: 't' }],
+  NuclearReactor: [{ resourceKey: 'Steel', quantity: 10, unit: 't' }, { resourceKey: 'Concrete', quantity: 20, unit: 't' }, { resourceKey: 'Machinery', quantity: 3, unit: 't' }, { resourceKey: 'Electronics', quantity: 2, unit: 't' }],
+  BreederReactor: [{ resourceKey: 'Steel', quantity: 12, unit: 't' }, { resourceKey: 'Concrete', quantity: 25, unit: 't' }, { resourceKey: 'Machinery', quantity: 4, unit: 't' }, { resourceKey: 'Electronics', quantity: 3, unit: 't' }],
+  FusionReactor: [{ resourceKey: 'Steel', quantity: 20, unit: 't' }, { resourceKey: 'Concrete', quantity: 30, unit: 't' }, { resourceKey: 'Machinery', quantity: 5, unit: 't' }, { resourceKey: 'Electronics', quantity: 5, unit: 't' }, { resourceKey: 'Alloys', quantity: 2, unit: 't' }],
+  BiomassPlant: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Concrete', quantity: 4, unit: 't' }],
+  BiogasPlant: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Concrete', quantity: 4, unit: 't' }],
+  EthanolRefinery: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 6, unit: 't' }, { resourceKey: 'Machinery', quantity: 1, unit: 't' }],
+  SoylentPlant: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 6, unit: 't' }, { resourceKey: 'Machinery', quantity: 1, unit: 't' }],
+  DieselGenerator: [{ resourceKey: 'Steel', quantity: 2, unit: 't' }, { resourceKey: 'Machinery', quantity: 1, unit: 't' }],
+  CoalPlant: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Concrete', quantity: 8, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
+  GasPlant: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 6, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
+  OilPlant: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 6, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
+  GeothermalPlant: [{ resourceKey: 'Steel', quantity: 6, unit: 't' }, { resourceKey: 'Concrete', quantity: 10, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
+  Storage: [{ resourceKey: 'Steel', quantity: 2, unit: 't' }, { resourceKey: 'Concrete', quantity: 4, unit: 't' }],
+  BatteryBank: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Electronics', quantity: 1, unit: 't' }],
+  Spaceport: [{ resourceKey: 'Steel', quantity: 15, unit: 't' }, { resourceKey: 'Concrete', quantity: 20, unit: 't' }, { resourceKey: 'Machinery', quantity: 5, unit: 't' }, { resourceKey: 'Electronics', quantity: 3, unit: 't' }, { resourceKey: 'Fuel', quantity: 10, unit: 't' }],
+  RocketAssembly: [{ resourceKey: 'Steel', quantity: 10, unit: 't' }, { resourceKey: 'Machinery', quantity: 3, unit: 't' }, { resourceKey: 'Electronics', quantity: 2, unit: 't' }, { resourceKey: 'Fuel', quantity: 5, unit: 't' }],
+  SpaceStation: [{ resourceKey: 'Steel', quantity: 20, unit: 't' }, { resourceKey: 'Alloys', quantity: 5, unit: 't' }, { resourceKey: 'Electronics', quantity: 5, unit: 't' }, { resourceKey: 'Composites', quantity: 3, unit: 't' }],
+  OrbitalRefinery: [{ resourceKey: 'Steel', quantity: 15, unit: 't' }, { resourceKey: 'Machinery', quantity: 3, unit: 't' }, { resourceKey: 'Electronics', quantity: 3, unit: 't' }],
+  LunarMine: [{ resourceKey: 'Steel', quantity: 12, unit: 't' }, { resourceKey: 'Machinery', quantity: 3, unit: 't' }, { resourceKey: 'Composites', quantity: 2, unit: 't' }],
+  DeepSpaceProbe: [{ resourceKey: 'Steel', quantity: 8, unit: 't' }, { resourceKey: 'Electronics', quantity: 4, unit: 't' }, { resourceKey: 'Composites', quantity: 2, unit: 't' }],
+  SpaceHabitat: [{ resourceKey: 'Steel', quantity: 25, unit: 't' }, { resourceKey: 'Alloys', quantity: 8, unit: 't' }, { resourceKey: 'Composites', quantity: 5, unit: 't' }, { resourceKey: 'Electronics', quantity: 5, unit: 't' }],
+  Excavator: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
+  Dredger: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
+  Terraformer: [{ resourceKey: 'Steel', quantity: 10, unit: 't' }, { resourceKey: 'Machinery', quantity: 5, unit: 't' }, { resourceKey: 'Electronics', quantity: 3, unit: 't' }, { resourceKey: 'Alloys', quantity: 2, unit: 't' }],
+  PlanetaryEngine: [{ resourceKey: 'Steel', quantity: 30, unit: 't' }, { resourceKey: 'Concrete', quantity: 50, unit: 't' }, { resourceKey: 'Machinery', quantity: 10, unit: 't' }, { resourceKey: 'Electronics', quantity: 5, unit: 't' }, { resourceKey: 'Alloys', quantity: 5, unit: 't' }, { resourceKey: 'Composites', quantity: 3, unit: 't' }],
+}
+
+function checkAndConsumeConstructionCosts(
+  db: ReturnType<typeof createGameDb>,
+  type: string,
+): void {
+  const costs = CONSTRUCTION_COSTS[type]
+  if (!costs || costs.length === 0) return
+
+  for (const cost of costs) {
+    const stockpile = db.select().from(schema.stockpiles)
+      .where(eq(schema.stockpiles.resourceKey, cost.resourceKey))
+      .get()
+
+    if (!stockpile || stockpile.quantity < cost.quantity) {
+      const have = stockpile?.quantity ?? 0
+      throw new Error(`Insufficient resources to build ${type}: need ${cost.quantity}${cost.unit} ${cost.resourceKey}, have ${have}${cost.unit}`)
+    }
+  }
+
+  for (const cost of costs) {
+    const stockpile = db.select().from(schema.stockpiles)
+      .where(eq(schema.stockpiles.resourceKey, cost.resourceKey))
+      .get()
+    db.update(schema.stockpiles)
+      .set({ quantity: stockpile!.quantity - cost.quantity })
+      .where(eq(schema.stockpiles.id, stockpile!.id))
+      .run()
+  }
+}
+
 export function buildFacility(
   token: string,
   params: {
@@ -59,6 +137,9 @@ export function buildFacility(
   // Power-generating facilities are self-powered; others start disconnected
   // (the agent must build power lines to connect them — see ADR-0014)
   const isPowerGenerating = POWER_GENERATING_TYPES.has(params.type)
+
+  // Construction resource consumption (ADR-0007/0018)
+  checkAndConsumeConstructionCosts(db, params.type)
 
   const facility = db.insert(schema.facilities).values({
     type: params.type,
