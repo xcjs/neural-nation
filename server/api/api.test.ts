@@ -77,13 +77,20 @@ describe('API route handlers', () => {
     it('returns game state for valid private token', async () => {
       const event = mockEvent('GET', { token })
       const result: any = await gameStateHandler(event)
+      expect(result.meta).toBeDefined()
+      expect(result.meta.token).toBe(token)
       expect(result.tick).toBeDefined()
-      expect(result.status).toBeDefined()
+      expect(result.tick.tickCount).toBeDefined()
+      expect(result.resources).toBeDefined()
+      expect(result.facilities).toBeDefined()
     })
 
-    it('returns game state for valid public token', async () => {
+    it('returns game state for valid public token (token redacted)', async () => {
       const event = mockEvent('GET', { token: publicToken })
       const result: any = await gameStateHandler(event)
+      expect(result.meta).toBeDefined()
+      expect(result.meta.token).toBe('')
+      expect(result.meta.publicToken).toBe(publicToken)
       expect(result.tick).toBeDefined()
     })
   })

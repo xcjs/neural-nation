@@ -9,8 +9,9 @@ import { getSpaceStatus, launchMission, assignSpaceCrew } from '../space'
 import { getTechTree, getRecipes, startResearch, searchRecipes } from '../tech'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, desc, sql } from 'drizzle-orm'
 import { publish, type GameEvent } from '../events/bus'
+import { GameStatus } from '../../../lib/types/game'
 import type { TerraformAction } from '../../../lib/types/terrain'
 import type { TransportType } from '../../../lib/types/transport'
 
@@ -20,8 +21,27 @@ export interface ToolCallResult {
   errorMessage?: string
 }
 
+const READ_ONLY_TOOLS = new Set([
+  'get_game_state', 'get_event_log', 'list_facilities', 'get_facility_details',
+  'get_discovered_resources', 'get_resource_overview', 'get_resource_details',
+  'get_resource_stockpile', 'search_resources', 'search_facilities',
+  'list_transports', 'get_supply_chain_status', 'get_terrain_path',
+  'get_tech_tree', 'get_recipes', 'search_recipes', 'get_terrain_modifications',
+  'get_effective_terrain', 'get_terraform_cost_estimate', 'get_power_grid_status',
+  'get_environmental_status', 'get_impact_forecast', 'get_space_status',
+])
+
 export function executeTool(token: string, toolName: string, args: Record<string, unknown>): ToolCallResult {
   try {
+    // Gate tools on game status
+    const gameState = getGameState(token)
+    if (gameState.status === GameStatus.GameOver) {
+      return { status: 'error', data: null, errorMessage: 'Game is over' }
+    }
+    if (gameState.status === GameStatus.Paused && !READ_ONLY_TOOLS.has(toolName)) {
+      return { status: 'error', data: null, errorMessage: 'Game is paused — only read-only tools allowed' }
+    }
+
     const result = dispatchTool(token, toolName, args)
 
     processTick(token)
@@ -130,7 +150,19 @@ function dispatchTool(token: string, toolName: string, args: Record<string, unkn
     // Game state tools
     case 'get_game_state':
       return getGameState(token)
-    case 'get_event_log':
+    case 'get_event_log': {
+      const db = createGameDb(token)
+      const limit = Math.min((args.limit as number) || 50, 200)
+      const offset = (args.offset as number) || 0
+      const items = db.select().from(schema.events)
+        .orderBy(desc(schema.events.id))
+        .limit(limit)
+        .offset(offset)
+        .all()
+      const countRow = db.select({ count: sql<number>`count(*)` }).from(schema.events).get()
+      return { items, totalCount: countRow?.count ?? items.length, limit, offset }
+    }
+    case 'get_incidents':
       return getIncidents(token, { limit: args.limit as number, offset: args.offset as number })
     default:
       throw new Error(`Unknown tool: ${toolName}`)

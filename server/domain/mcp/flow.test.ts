@@ -140,12 +140,12 @@ describe('MCP end-to-end flow', () => {
     expect(r.status).toBe('success')
   })
 
-  it('returns an empty event log initially (incidents table)', () => {
+  it('returns event log with entries from tool calls (event_log table)', () => {
     const r = executeTool(token, 'get_event_log', { limit: 20, offset: 0 })
     expect(r.status).toBe('success')
     const data = r.data as { items: unknown[]; totalCount: number }
     expect(Array.isArray(data.items)).toBe(true)
-    expect(data.totalCount).toBe(0)
+    expect(data.totalCount).toBeGreaterThan(0)
   })
 
   it('logs actions and events to the database on every tool call', () => {
