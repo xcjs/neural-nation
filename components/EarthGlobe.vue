@@ -314,11 +314,11 @@ function addFilledPolygon(group: THREE.Group, ring: number[][], mat: THREE.Mater
   const clatRad = clat * Math.PI / 180
   const east = new THREE.Vector3(-Math.sin(clon * Math.PI / 180), 0, Math.cos(clon * Math.PI / 180))
   const north = new THREE.Vector3(Math.sin(clatRad) * Math.cos(clon * Math.PI / 180), Math.cos(clatRad), Math.sin(clatRad) * Math.sin(clon * Math.PI / 180))
-  const center3D = latLonToVec3(clat, clon, EARTH_RADIUS * 1.003)
+  const center3D = latLonToVec3(clat, clon, EARTH_RADIUS * 1.001)
 
   // Project ring points onto tangent plane (2D coordinates)
   const points2D: Array<{ x: number; y: number; idx: number }> = ring.map(([lon, lat], i) => {
-    const p = latLonToVec3(lat, lon, EARTH_RADIUS * 1.003)
+    const p = latLonToVec3(lat, lon, EARTH_RADIUS * 1.001)
     const d = p.clone().sub(center3D)
     return { x: d.dot(east), y: d.dot(north), idx: i }
   })
@@ -349,7 +349,7 @@ function addFilledPolygon(group: THREE.Group, ring: number[][], mat: THREE.Mater
   const positions = new Float32Array(ring.length * 3)
   for (let i = 0; i < ring.length; i++) {
     const [lon, lat] = ring[i]
-    const p = latLonToVec3(lat, lon, EARTH_RADIUS * 1.003)
+    const p = latLonToVec3(lat, lon, EARTH_RADIUS * 1.001)
     positions[i * 3] = p.x
     positions[i * 3 + 1] = p.y
     positions[i * 3 + 2] = p.z
@@ -688,7 +688,7 @@ function patchCoastline(lat: number, lon: number, toLand: boolean): void {
     [lat + halfCell, lon + halfCell],
     [lat - halfCell, lon + halfCell],
   ]
-  const points = corners.map(([la, lo]) => latLonToVec3(la, lo, EARTH_RADIUS * 1.003))
+  const points = corners.map(([la, lo]) => latLonToVec3(la, lo, EARTH_RADIUS * 1.001))
   // Close the loop
   points.push(points[0]!)
 
