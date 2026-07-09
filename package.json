@@ -20,7 +20,10 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "build:template": "tsx scripts/build-template.ts",
-    "fetch:data": "tsx scripts/fetch-geological-data.ts"
+    "fetch:data": "tsx scripts/fetch-geological-data.ts",
+    "db:seed-terrain": "tsx scripts/seed-terrain.ts",
+    "db:seed-deposits": "tsx scripts/seed-deposits.ts",
+    "db:rebuild": "node -e \"require('fs').rmSync('data/games/_template.db',{force:true})\" && tsx scripts/build-template.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -34,12 +37,14 @@
     "vue-router": "^4.4.0"
   },
   "devDependencies": {
-    "@nuxt/test-utils": "^3.23.0",
     "@antfu/eslint-config": "^3.0.0",
+    "@nuxt/test-utils": "^3.23.0",
+    "@types/adm-zip": "^0.5.8",
     "@types/better-sqlite3": "^7.6.0",
     "@types/three": "^0.169.0",
     "@vitest/coverage-v8": "^3.2.0",
     "@vue/test-utils": "^2.4.0",
+    "adm-zip": "^0.5.18",
     "autoprefixer": "^10.4.0",
     "drizzle-kit": "^0.28.0",
     "eslint": "^9.0.0",

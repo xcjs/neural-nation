@@ -11,8 +11,8 @@ export function getEffectiveTerrain(token: string, lat: number, lon: number) {
   const baseCell = db.select().from(schema.terrain)
     .where(
       and(
-        sql`abs(${schema.terrain.lat} - ${lat}) <= 0.05`,
-        sql`abs(${schema.terrain.lon} - ${lon}) <= 0.05`,
+        sql`abs(${schema.terrain.lat} - ${lat}) <= 0.5`,
+        sql`abs(${schema.terrain.lon} - ${lon}) <= 0.5`,
       ),
     )
     .get()

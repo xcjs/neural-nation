@@ -358,6 +358,24 @@ async function main() {
   insertInput.run('silicon_extraction', 'si', 2, 't', 0)
   insertOutput.run('silicon_extraction', 'silicon', 1, 't')
 
+  // Seed terrain grid (deterministic value-noise, 1° resolution).
+  // Idempotent — no-ops if terrain table already populated.
+  console.log('Seeding terrain grid...')
+  const { seedTerrainGrid } = await import('./lib/terrain-seed')
+  const terrainResult = seedTerrainGrid(db)
+  console.log(`Terrain: ${terrainResult.insertedCells} cells @ ${terrainResult.resolution}° resolution`)
+
+  // Seed real resource deposits from USGS MRDS (if the zip is present).
+  // Idempotent — no-ops if resources already seeded or zip missing.
+  console.log('Seeding MRDS deposits...')
+  const { seedMrdsDeposits } = await import('./lib/mrds-seed')
+  const mrdsZipPath = join(root, 'data', 'geological', 'raw', 'mrds.csv.zip')
+  const mrdsResult = seedMrdsDeposits(db, mrdsZipPath)
+  console.log(`MRDS: ${mrdsResult.insertedRows} deposits inserted (${mrdsResult.skippedRows} skipped, ${mrdsResult.totalRows} total rows)`)
+  if (mrdsResult.unmappedCommodities.size > 0) {
+    console.log(`MRDS unmapped commodities: ${[...mrdsResult.unmappedCommodities].sort().join(', ')}`)
+  }
+
   // VACUUM
   db.exec('VACUUM;')
 
