@@ -101,31 +101,32 @@ describe('MCP end-to-end flow', () => {
     expect(Array.isArray(details.outputs)).toBe(true)
   })
 
-  it('sets production target to iron_smelting and returns success', () => {
+  it('rejects setting production target with wrong facility type (Extractor vs Smelter recipe)', () => {
     const build = executeTool(token, 'list_facilities', { limit: 1, offset: 0 })
     const facilityId = (build.data as { items: Array<{ id: number }> }).items[0]!.id
     const r = executeTool(token, 'set_production_target', { facilityId, recipeId: 'iron_smelting', targetRate: 1 })
-    expect(r.status).toBe('success')
-    expect((r.data as { success: boolean }).success).toBe(true)
+    expect(r.status).toBe('error')
+    expect(r.errorMessage).toContain('requires a Smelter')
   })
 
-  it('returns a tech tree with >=10 nodes', () => {
+  it('returns a tech tree with >=13 nodes', () => {
     const r = executeTool(token, 'get_tech_tree', {})
     expect(r.status).toBe('success')
     const tree = r.data as Array<{ id: string }>
     expect(Array.isArray(tree)).toBe(true)
-    expect(tree.length).toBeGreaterThanOrEqual(10)
+    expect(tree.length).toBeGreaterThanOrEqual(13)
   })
 
-  it('returns >=5 recipes and 0 unlocked when nothing is researched', () => {
+  it('returns >=5 recipes and only tech-free recipes unlocked when nothing is researched', () => {
     const all = executeTool(token, 'get_recipes', {})
     expect(all.status).toBe('success')
     const allData = all.data as { items: Array<{ id: string }>; totalCount: number }
     expect(allData.items.length).toBeGreaterThanOrEqual(5)
 
     const unlocked = executeTool(token, 'get_recipes', { unlockedOnly: true })
-    const unlockedData = unlocked.data as { items: unknown[]; totalCount: number }
-    expect(unlockedData.items).toHaveLength(0)
+    const unlockedData = unlocked.data as { items: Array<{ id: string }>; totalCount: number }
+    expect(unlockedData.items.length).toBeGreaterThanOrEqual(1)
+    expect(unlockedData.items.every((r) => r.id === 'lumber')).toBe(true)
   })
 
   it('returns environmental status with numeric pollutionLevel', () => {
@@ -163,9 +164,10 @@ describe('MCP end-to-end flow', () => {
     expect(r.errorMessage).toContain('Unknown tool')
   })
 
-  it('advances the tick once per successful executeTool call', () => {
+  it('advances the tick once per successful executeTool call (errors do not advance)', () => {
     const state = getGameState(token)
-    const executeToolCalls = 13
-    expect(state.tick).toBe(executeToolCalls)
+    // 13 total executeTool calls, 1 errored (nonexistent_tool)
+    // set_production_target error doesn't count because it's caught before processTick
+    expect(state.tick).toBe(12)
   })
 })

@@ -90,14 +90,14 @@ describe('template DB schema integrity', () => {
 })
 
 describe('template DB seed data', () => {
-  it('seeds 10 tech nodes', () => {
+  it('seeds 13 tech nodes', () => {
     const count = db.prepare('SELECT COUNT(*) as n FROM tech_nodes').get() as { n: number }
-    expect(count.n).toBe(10)
+    expect(count.n).toBe(13)
   })
 
-  it('seeds 9 recipes', () => {
+  it('seeds 17 recipes', () => {
     const count = db.prepare('SELECT COUNT(*) as n FROM recipes').get() as { n: number }
-    expect(count.n).toBe(9)
+    expect(count.n).toBe(17)
   })
 
   it('seeds tech prerequisites forming a valid DAG (no cycles)', () => {

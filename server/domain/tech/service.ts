@@ -16,15 +16,22 @@ export function getTechTree(token: string): TechTreeNode[] {
 
   return nodes.map((node) => {
     const researchEntry = research.find((r) => r.techId === node.id)
-    let status: TechStatus = TechStatus.Available
+    const nodePrerequisites = prerequisites.filter((p) => p.techId === node.id).map((p) => p.prerequisiteId)
 
+    let status: TechStatus
     if (researchEntry?.status === 'Completed') {
       status = TechStatus.Completed
     } else if (researchEntry?.status === 'InProgress') {
       status = TechStatus.InProgress
+    } else {
+      // Check if all prerequisites are completed
+      const completedTechIds = research
+        .filter((r) => r.status === 'Completed')
+        .map((r) => r.techId)
+      const allPrereqsMet = nodePrerequisites.every((p) => completedTechIds.includes(p))
+      status = allPrereqsMet ? TechStatus.Available : TechStatus.Locked
     }
 
-    const nodePrerequisites = prerequisites.filter((p) => p.techId === node.id).map((p) => p.prerequisiteId)
     const nodeCosts: RecipeInput[] = costs
       .filter((c) => c.techId === node.id)
       .map((c) => ({

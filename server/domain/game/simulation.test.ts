@@ -122,6 +122,18 @@ describe('simulation: extractor production', () => {
 })
 
 describe('simulation: recipe production chain', () => {
+  beforeAll(() => {
+    // Complete metallurgy_1 tech (required by iron_smelting recipe) for all tests in this block
+    db.insert(schema.gameResearch).values({
+      techId: 'metallurgy_1',
+      status: 'Completed',
+      progress: 10,
+      startedAtTick: 0,
+      completedAtTick: 5,
+      labFacilityId: null,
+    }).run()
+  })
+
   it('builds a Smelter, sets iron_smelting recipe, and verifies input/output buffers', () => {
     const r = executeTool(token, 'build_facility', { type: 'Smelter', name: 'Smelter 1', lat: 37.07, lon: -90.58 })
     expect(r.status).toBe('success')
@@ -144,7 +156,7 @@ describe('simulation: recipe production chain', () => {
     expect(facility?.throughput).toBe(0)
   })
 
-  it('produces iron when iron ore is available in input buffer', () => {
+  it('produces iron when iron ore and coal are available in input buffer', () => {
     const r = executeTool(token, 'build_facility', { type: 'Smelter', name: 'Smelter 2', lat: 37.08, lon: -90.59 })
     const smelterId = (r.data as { facilityId: number }).facilityId
     advanceTicks(3)
@@ -159,20 +171,32 @@ describe('simulation: recipe production chain', () => {
     executeTool(token, 'set_production_target', { facilityId: smelterId, recipeId: 'iron_smelting', targetRate: 1 })
     advanceTicks(1)
 
-    // Manually insert iron ore into the input buffer to simulate transport delivery
-    const inputBuffer = db.select().from(schema.facilityBuffers)
-      .where(and(
-        eq(schema.facilityBuffers.facilityId, smelterId),
-        eq(schema.facilityBuffers.resourceKey, 'fe'),
-        eq(schema.facilityBuffers.direction, 'input'),
-      ))
-      .get()
+    // Manually insert iron ore AND coal into the input buffers to simulate transport delivery
+    // iron_smelting requires fe:2t + c:0.5t per cycle
+    for (const key of ['fe', 'c']) {
+      const existing = db.select().from(schema.facilityBuffers)
+        .where(and(
+          eq(schema.facilityBuffers.facilityId, smelterId),
+          eq(schema.facilityBuffers.resourceKey, key),
+          eq(schema.facilityBuffers.direction, 'input'),
+        ))
+        .get()
 
-    if (inputBuffer) {
-      db.update(schema.facilityBuffers)
-        .set({ quantity: 10 })
-        .where(eq(schema.facilityBuffers.id, inputBuffer.id))
-        .run()
+      if (existing) {
+        db.update(schema.facilityBuffers)
+          .set({ quantity: 10 })
+          .where(eq(schema.facilityBuffers.id, existing.id))
+          .run()
+      } else {
+        db.insert(schema.facilityBuffers).values({
+          facilityId: smelterId,
+          resourceKey: key,
+          quantity: 10,
+          capacity: 100,
+          unit: 't',
+          direction: 'input',
+        }).run()
+      }
     }
 
     advanceTicks(2)

@@ -172,6 +172,36 @@ export function setProductionTarget(
 ): { success: boolean } {
   const db = createGameDb(token)
 
+  // Validate facility exists
+  const facility = db.select().from(schema.facilities)
+    .where(eq(schema.facilities.id, facilityId))
+    .get()
+  if (!facility) {
+    throw new Error(`Facility not found: ${facilityId}`)
+  }
+
+  // Validate recipe exists and matches facility type
+  const recipe = db.select().from(schema.recipes)
+    .where(eq(schema.recipes.id, recipeId))
+    .get()
+  if (!recipe) {
+    throw new Error(`Recipe not found: ${recipeId}`)
+  }
+  if (recipe.facilityType !== facility.type) {
+    throw new Error(`Recipe ${recipeId} requires a ${recipe.facilityType}, but facility ${facilityId} is a ${facility.type}`)
+  }
+
+  // Check recipe tech prerequisite is researched
+  if (recipe.techRequired) {
+    const completedTech = db.select().from(schema.gameResearch)
+      .where(eq(schema.gameResearch.status, 'Completed'))
+      .all()
+      .map((r) => r.techId)
+    if (!completedTech.includes(recipe.techRequired)) {
+      throw new Error(`Recipe ${recipeId} requires tech "${recipe.techRequired}" to be researched`)
+    }
+  }
+
   db.update(schema.facilities)
     .set({
       activeRecipeId: recipeId,
