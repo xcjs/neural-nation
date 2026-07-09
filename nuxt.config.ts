@@ -49,6 +49,7 @@ export default defineNuxtConfig({
         'three/examples/jsm/postprocessing/RenderPass.js',
         'three/examples/jsm/postprocessing/UnrealBloomPass.js',
         'three/examples/jsm/controls/OrbitControls.js',
+        'topojson-client',
       ],
     },
   },

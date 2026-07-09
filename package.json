@@ -43,6 +43,7 @@
     "@types/adm-zip": "^0.5.8",
     "@types/better-sqlite3": "^7.6.0",
     "@types/three": "^0.169.0",
+    "@types/topojson-client": "^3.1.5",
     "@vitest/coverage-v8": "^3.2.0",
     "@vue/test-utils": "^2.4.0",
     "adm-zip": "^0.5.18",
@@ -52,9 +53,11 @@
     "happy-dom": "^15.0.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
+    "topojson-client": "^3.1.0",
     "tsx": "^4.0.0",
     "typescript": "^5.6.0",
     "vitest": "^3.2.0",
-    "vue-tsc": "^2.0.0"
+    "vue-tsc": "^2.0.0",
+    "world-atlas": "^2.0.2"
   }
 }

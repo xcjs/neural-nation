@@ -9,6 +9,8 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { feature } from 'topojson-client'
+import landTopo from 'world-atlas/land-110m.json'
 import type { FacilitySummary } from '~/lib/types/facility'
 import type { TransportSummary } from '~/lib/types/transport'
 import type { TerrainModification } from '~/lib/types/terrain'
@@ -38,6 +40,7 @@ let animationId: number
 let earthMesh: THREE.Mesh
 let wireframeMesh: THREE.LineSegments
 let atmosphereMesh: THREE.Mesh
+let coastlineGroup: THREE.Group
 let markerGroup: THREE.Group
 let transportGroup: THREE.Group
 let particleGroup: THREE.Group
@@ -62,6 +65,46 @@ function latLonToVec3(lat: number, lon: number, r: number = EARTH_RADIUS): THREE
     r * Math.cos(phi),
     r * Math.sin(phi) * Math.sin(theta)
   )
+}
+
+function buildCoastlines(): THREE.Group {
+  const group = new THREE.Group()
+  const lineMat = new THREE.LineBasicMaterial({
+    color: 0x00aaff,
+    transparent: true,
+    opacity: 0.5,
+  })
+
+  // Convert TopoJSON to GeoJSON FeatureCollection
+  const geojson = feature(landTopo as never, (landTopo as never as { objects: { land: unknown } }).objects.land as never) as unknown as { type: string; features: Array<{ geometry: { type: string; coordinates: number[][] | number[][][] } }> }
+
+  for (const feat of geojson.features) {
+    const geom = feat.geometry
+    if (geom.type === 'Polygon') {
+      for (const ring of geom.coordinates as number[][][]) {
+        addRing(group, ring, lineMat)
+      }
+    } else if (geom.type === 'MultiPolygon') {
+      for (const polygon of geom.coordinates as number[][][][]) {
+        for (const ring of polygon) {
+          addRing(group, ring, lineMat)
+        }
+      }
+    }
+  }
+
+  return group
+}
+
+function addRing(group: THREE.Group, ring: number[][], mat: THREE.LineBasicMaterial): void {
+  const points: THREE.Vector3[] = []
+  for (const [lon, lat] of ring) {
+    points.push(latLonToVec3(lat, lon, EARTH_RADIUS * 1.002))
+  }
+  if (points.length < 2) return
+  const geo = new THREE.BufferGeometry().setFromPoints(points)
+  const line = new THREE.Line(geo, mat)
+  group.add(line)
 }
 
 function init() {
@@ -111,6 +154,10 @@ function init() {
   })
   wireframeMesh = new THREE.LineSegments(wireGeo, wireMat)
   scene.add(wireframeMesh)
+
+  // Continent coastlines from real GeoJSON data
+  coastlineGroup = buildCoastlines()
+  scene.add(coastlineGroup)
 
   // Atmosphere glow (fresnel effect)
   const atmoGeo = new THREE.IcosahedronGeometry(EARTH_RADIUS * 1.05, 4)
@@ -825,6 +872,7 @@ function animate() {
   // Slow earth self-rotation (markers + earth rotate together)
   earthMesh.rotation.y += 0.0005
   wireframeMesh.rotation.y += 0.0005
+  coastlineGroup.rotation.y += 0.0005
   atmosphereMesh.rotation.y += 0.0005
   markerGroup.rotation.y += 0.0005
   transportGroup.rotation.y += 0.0005
