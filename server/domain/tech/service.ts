@@ -1,6 +1,6 @@
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq, and, sql } from 'drizzle-orm'
+import { eq, and, sql, like } from 'drizzle-orm'
 import type { TechTreeNode, Recipe, RecipeInput, TechUnlock } from '../../../lib/types/tech'
 import { TechBranch, TechStatus } from '../../../lib/types/tech'
 import type { PaginatedResult } from '../../../lib/types/mcp'
@@ -217,6 +217,7 @@ export function startResearch(
 export function searchRecipes(
   token: string,
   params: {
+    query?: string
     outputResource?: string
     inputResource?: string
     facilityType?: string
@@ -227,8 +228,8 @@ export function searchRecipes(
   },
 ): PaginatedResult<Recipe> {
   const db = createGameDb(token)
-  const limit = params.limit || 50
-  const offset = params.offset || 0
+  const limit = Math.min(params.limit || 50, 200)
+  const offset = Math.max(params.offset || 0, 0)
 
   let recipeQuery = db.select().from(schema.recipes).$dynamic()
   const conditions = []
@@ -238,11 +239,14 @@ export function searchRecipes(
   if (params.techRequired) {
     conditions.push(eq(schema.recipes.techRequired, params.techRequired))
   }
+  if (params.query) {
+    conditions.push(like(schema.recipes.name, `%${params.query}%`))
+  }
   if (conditions.length > 0) {
     recipeQuery = recipeQuery.where(and(...conditions))
   }
 
-  let recipes = recipeQuery.limit(limit).offset(offset).all()
+  let recipes = recipeQuery.all()
 
   if (params.outputResource) {
     const matchingOutputs = db.select().from(schema.recipeOutputs)
@@ -260,10 +264,22 @@ export function searchRecipes(
     recipes = recipes.filter((r) => matchingInputs.includes(r.id))
   }
 
+  if (params.unlockedOnly) {
+    const completedTechIds = db.select().from(schema.gameResearch)
+      .where(eq(schema.gameResearch.status, 'Completed'))
+      .all()
+      .map((r) => r.techId)
+    recipes = recipes.filter((r) => !r.techRequired || completedTechIds.includes(r.techRequired))
+  }
+
+  // Apply pagination AFTER all filtering for correct totalCount + hasMore
+  const totalCount = recipes.length
+  const pagedRecipes = recipes.slice(offset, offset + limit)
+
   const allInputs = db.select().from(schema.recipeInputs).all()
   const allOutputs = db.select().from(schema.recipeOutputs).all()
 
-  const result: Recipe[] = recipes.map((r) => ({
+  const result: Recipe[] = pagedRecipes.map((r) => ({
     id: r.id,
     name: r.name,
     facilityType: r.facilityType,
@@ -288,9 +304,9 @@ export function searchRecipes(
 
   return {
     items: result,
-    totalCount: result.length,
+    totalCount,
     limit,
     offset,
-    hasMore: false,
+    hasMore: offset + result.length < totalCount,
   }
 }

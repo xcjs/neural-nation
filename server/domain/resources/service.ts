@@ -196,8 +196,8 @@ export function searchResources(
   },
 ): PaginatedResult<{ resourceKey: string; name: string; category: string }> {
   const db = createGameDb(token)
-  const limit = params.limit || 50
-  const offset = params.offset || 0
+  const limit = Math.min(params.limit || 50, 200)
+  const offset = Math.max(params.offset || 0, 0)
 
   let queryBuilder = db.select({
     resourceKey: schema.resources.resourceKey,
@@ -217,15 +217,65 @@ export function searchResources(
     conditions.push(eq(schema.resources.category, params.category))
   }
 
+  // Relationship filters: collect matching resourceKeys from related tables
+  const relationshipKeys = new Set<string>()
+
+  if (params.usedByRecipe) {
+    // Resources used as inputs to a specific recipe
+    const inputs = db.select().from(schema.recipeInputs)
+      .where(eq(schema.recipeInputs.recipeId, params.usedByRecipe))
+      .all()
+    inputs.forEach((i) => relationshipKeys.add(i.resourceKey))
+  }
+
+  if (params.producedByRecipe) {
+    // Resources produced as outputs of a specific recipe
+    const outputs = db.select().from(schema.recipeOutputs)
+      .where(eq(schema.recipeOutputs.recipeId, params.producedByRecipe))
+      .all()
+    outputs.forEach((o) => relationshipKeys.add(o.resourceKey))
+  }
+
+  if (params.neededForFacility) {
+    // Resources needed as inputs by recipes for a specific facility type
+    const recipesForType = db.select().from(schema.recipes)
+      .where(eq(schema.recipes.facilityType, params.neededForFacility))
+      .all()
+      .map((r) => r.id)
+    if (recipesForType.length > 0) {
+      const inputs = db.select().from(schema.recipeInputs).all()
+        .filter((i) => recipesForType.includes(i.recipeId))
+      inputs.forEach((i) => relationshipKeys.add(i.resourceKey))
+    }
+  }
+
+  if (params.neededForTech) {
+    // Resources needed as research costs for a specific tech
+    const costs = db.select().from(schema.techCosts)
+      .where(eq(schema.techCosts.techId, params.neededForTech))
+      .all()
+    costs.forEach((c) => relationshipKeys.add(c.resourceKey))
+  }
+
+  if (relationshipKeys.size > 0) {
+    const keys = [...relationshipKeys]
+    conditions.push(sql`${schema.resources.resourceKey} IN (${sql.join(keys.map(k => sql`${k}`), sql`,`)})`)
+  }
+
   if (conditions.length > 0) {
     queryBuilder = queryBuilder.where(and(...conditions))
   }
 
   const items = queryBuilder.limit(limit).offset(offset).all()
 
-  const totalCount = db.select({ count: sql<number>`count(distinct ${schema.resources.resourceKey})` })
+  // Count with same conditions for correct totalCount
+  const countQuery = db.select({ count: sql<number>`count(distinct ${schema.resources.resourceKey})` })
     .from(schema.resources)
-    .get()?.count || 0
+    .$dynamic()
+  if (conditions.length > 0) {
+    countQuery.where(and(...conditions))
+  }
+  const totalCount = countQuery.get()?.count || 0
 
   return {
     items,

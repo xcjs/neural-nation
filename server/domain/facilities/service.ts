@@ -1,6 +1,7 @@
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
+import { greatCircleDistance } from '../../shared/geo/distance'
 import type { FacilitySummary, FacilityDetail, FacilityBufferEntry } from '../../../lib/types/facility'
 import { FacilityStatus } from '../../../lib/types/facility'
 import type { PaginationParams, PaginatedResult } from '../../../lib/types/mcp'
@@ -176,8 +177,8 @@ export function listFacilities(
   params: PaginationParams = {},
 ): PaginatedResult<FacilitySummary> {
   const db = createGameDb(token)
-  const limit = params.limit || 50
-  const offset = params.offset || 0
+  const limit = Math.min(params.limit || 50, 200)
+  const offset = Math.max(params.offset || 0, 0)
 
   const items = db.select().from(schema.facilities).limit(limit).offset(offset).all()
 
@@ -309,8 +310,8 @@ export function searchFacilities(
   },
 ): PaginatedResult<FacilitySummary> {
   const db = createGameDb(token)
-  const limit = params.limit || 50
-  const offset = params.offset || 0
+  const limit = Math.min(params.limit || 50, 200)
+  const offset = Math.max(params.offset || 0, 0)
 
   let queryBuilder = db.select().from(schema.facilities).$dynamic()
   const conditions = []
@@ -323,14 +324,64 @@ export function searchFacilities(
     conditions.push(eq(schema.facilities.status, params.status))
   }
 
+  if (params.producesResource) {
+    // Facilities with an output buffer for this resource
+    const facilityIds = db.select().from(schema.facilityBuffers)
+      .where(
+        and(
+          eq(schema.facilityBuffers.resourceKey, params.producesResource),
+          eq(schema.facilityBuffers.direction, 'output'),
+        ),
+      )
+      .all()
+      .map((b) => b.facilityId)
+    if (facilityIds.length > 0) {
+      conditions.push(sql`${schema.facilities.id} IN (${sql.join(facilityIds.map(id => sql`${id}`), sql`,`)})`)
+    } else {
+      conditions.push(sql`1=0`)
+    }
+  }
+
+  if (params.consumesResource) {
+    // Facilities with an input buffer for this resource
+    const facilityIds = db.select().from(schema.facilityBuffers)
+      .where(
+        and(
+          eq(schema.facilityBuffers.resourceKey, params.consumesResource),
+          eq(schema.facilityBuffers.direction, 'input'),
+        ),
+      )
+      .all()
+      .map((b) => b.facilityId)
+    if (facilityIds.length > 0) {
+      conditions.push(sql`${schema.facilities.id} IN (${sql.join(facilityIds.map(id => sql`${id}`), sql`,`)})`)
+    } else {
+      conditions.push(sql`1=0`)
+    }
+  }
+
   if (conditions.length > 0) {
     queryBuilder = queryBuilder.where(and(...conditions))
   }
 
-  const items = queryBuilder.limit(limit).offset(offset).all()
-  const totalCount = db.select({ count: sql<number>`count(*)` })
+  let items = queryBuilder.limit(limit).offset(offset).all()
+
+  // Proximity filter (post-query since it requires haversine math)
+  if (params.nearLat !== undefined && params.nearLon !== undefined) {
+    const radiusKm = params.radiusKm || 100
+    items = items.filter((f) => {
+      const dist = greatCircleDistance(params.nearLat!, params.nearLon!, f.lat, f.lon)
+      return dist <= radiusKm
+    })
+  }
+
+  const countQuery = db.select({ count: sql<number>`count(*)` })
     .from(schema.facilities)
-    .get()?.count || 0
+    .$dynamic()
+  if (conditions.length > 0) {
+    countQuery.where(and(...conditions))
+  }
+  const totalCount = countQuery.get()?.count || 0
 
   return {
     items: items.map(mapToSummary),
