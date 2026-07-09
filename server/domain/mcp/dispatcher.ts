@@ -1,0 +1,193 @@
+import { processTick } from '../game/tick'
+import { surveyRegion, getDiscoveredResources, getResourceOverview, getResourceDetails, getResourceStockpile, searchResources } from '../resources'
+import { buildFacility, demolishFacility, listFacilities, getFacilityDetails, setProductionTarget, searchFacilities } from '../facilities'
+import { buildTransport, demolishTransport, listTransports, assignRoute, getSupplyChainStatus } from '../transport'
+import { getEffectiveTerrain, getTerrainPath, terraform, getTerrainModifications, getTerraformCostEstimate } from '../terrain'
+import { getPowerGridStatus } from '../power'
+import { getEnvironmentalStatus, getImpactForecast, getIncidents } from '../humanity'
+import { getSpaceStatus, launchMission, assignSpaceCrew } from '../space'
+import { getTechTree, getRecipes, startResearch, searchRecipes } from '../tech'
+import { createGameDb } from '../../db/client'
+import { schema } from '../../db/schema'
+import { eq } from 'drizzle-orm'
+import type { TerraformAction } from '../../../lib/types/terrain'
+import type { TransportType } from '../../../lib/types/transport'
+
+export interface ToolCallResult {
+  status: 'success' | 'warning' | 'error'
+  data: unknown
+  errorMessage?: string
+}
+
+export function executeTool(token: string, toolName: string, args: Record<string, unknown>): ToolCallResult {
+  try {
+    const result = dispatchTool(token, toolName, args)
+
+    processTick(token)
+
+    logAction(token, toolName, args, 'success', result)
+
+    return { status: 'success', data: result }
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    logAction(token, toolName, args, 'error', null, errorMessage)
+    return { status: 'error', data: null, errorMessage }
+  }
+}
+
+function dispatchTool(token: string, toolName: string, args: Record<string, unknown>): unknown {
+  switch (toolName) {
+    // Resource tools
+    case 'survey_region':
+      return surveyRegion(token, args.lat as number, args.lon as number, args.radius as number)
+    case 'get_discovered_resources':
+      return getDiscoveredResources(token, { limit: args.limit as number, offset: args.offset as number })
+    case 'get_resource_overview':
+      return getResourceOverview(token)
+    case 'get_resource_details':
+      return getResourceDetails(token, args.resourceKey as string)
+    case 'get_resource_stockpile':
+      return getResourceStockpile(token, args.resourceKey as string | undefined)
+    case 'search_resources':
+      return searchResources(token, args as Parameters<typeof searchResources>[1])
+    // Facility tools
+    case 'build_facility':
+      return buildFacility(token, { type: args.type as string, name: args.name as string, lat: args.lat as number, lon: args.lon as number })
+    case 'demolish_facility':
+      return demolishFacility(token, args.facilityId as number)
+    case 'list_facilities':
+      return listFacilities(token, { limit: args.limit as number, offset: args.offset as number })
+    case 'get_facility_details':
+      return getFacilityDetails(token, args.facilityId as number)
+    case 'set_production_target':
+      return setProductionTarget(token, args.facilityId as number, args.recipeId as string, args.targetRate as number)
+    case 'search_facilities':
+      return searchFacilities(token, args as Parameters<typeof searchFacilities>[1])
+    // Transport tools
+    case 'build_transport':
+      return buildTransport(token, {
+        type: args.type as TransportType,
+        fromFacilityId: args.fromFacilityId as number,
+        toFacilityId: args.toFacilityId as number,
+        resourceKey: args.resourceKey as string | undefined,
+      })
+    case 'demolish_transport':
+      return demolishTransport(token, args.transportId as number)
+    case 'list_transports':
+      return listTransports(token, { limit: args.limit as number, offset: args.offset as number })
+    case 'assign_route':
+      return assignRoute(token, args.transportId as number, args.resourceKey as string, args.flowRate as number)
+    case 'get_supply_chain_status':
+      return getSupplyChainStatus(token)
+    case 'get_terrain_path':
+      return getTerrainPath(token, args.fromLat as number, args.fromLon as number, args.toLat as number, args.toLon as number)
+    // Tech tools
+    case 'start_research':
+      return startResearch(token, args.techNodeId as string, args.labFacilityId as number)
+    case 'get_tech_tree':
+      return getTechTree(token)
+    case 'get_recipes':
+      return getRecipes(token, args as Parameters<typeof getRecipes>[1])
+    case 'search_recipes':
+      return searchRecipes(token, args as Parameters<typeof searchRecipes>[1])
+    // Terraforming tools
+    case 'terraform':
+      return terraform(token, args.action as TerraformAction, {
+        facilityId: args.facilityId as number,
+        targetCells: args.targetCells as Array<{ latIndex: number; lonIndex: number }>,
+      })
+    case 'get_terrain_modifications':
+      return getTerrainModifications(token, { limit: args.limit as number, offset: args.offset as number })
+    case 'get_effective_terrain':
+      return getEffectiveTerrain(token, args.lat as number, args.lon as number)
+    case 'get_terraform_cost_estimate':
+      return getTerraformCostEstimate(token, args.action as TerraformAction, { targetCells: args.targetCells as Array<{ latIndex: number; lonIndex: number }> })
+    // Power tools
+    case 'get_power_grid_status':
+      return getPowerGridStatus(token)
+    // Environment tools
+    case 'get_environmental_status':
+      return getEnvironmentalStatus(token)
+    case 'get_impact_forecast':
+      return getImpactForecast(token)
+    // Space tools
+    case 'launch_mission':
+      return launchMission(token, {
+        facilityId: args.facilityId as number,
+        missionType: args.missionType as string,
+        target: args.target as string,
+        payload: args.payload as string,
+      })
+    case 'assign_space_crew':
+      return assignSpaceCrew(token, args.facilityId as number, args.crewCount as number)
+    case 'get_space_status':
+      return getSpaceStatus(token)
+    // Game state tools
+    case 'get_game_state':
+      return getGameState(token)
+    case 'get_event_log':
+      return getIncidents(token, { limit: args.limit as number, offset: args.offset as number })
+    default:
+      throw new Error(`Unknown tool: ${toolName}`)
+  }
+}
+
+function getGameState(token: string) {
+  const db = createGameDb(token)
+  const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
+
+  if (!meta) throw new Error('Game not found')
+
+  const facilityCount = db.select().from(schema.facilities).all().length
+  const transportCount = db.select().from(schema.transports).all().length
+  const human = db.select().from(schema.humanity).where(eq(schema.humanity.key, 'global')).get()
+  const env = db.select().from(schema.environment).where(eq(schema.environment.key, 'global')).get()
+
+  return {
+    tick: meta.tickCount,
+    status: meta.status,
+    difficulty: meta.difficulty,
+    createdAt: meta.createdAt,
+    facilityCount,
+    transportCount,
+    population: human?.population || 0,
+    pollutionLevel: env?.pollutionLevel || 0,
+    forestCoverage: env?.forestCoverage || 0,
+    waterQuality: env?.waterQuality || 0,
+    biodiversity: env?.biodiversity || 0,
+  }
+}
+
+function logAction(
+  token: string,
+  toolName: string,
+  args: Record<string, unknown>,
+  status: 'success' | 'warning' | 'error',
+  data: unknown,
+  errorMessage?: string,
+): void {
+  const db = createGameDb(token)
+  const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
+  const tick = meta?.tickCount || 0
+
+  db.insert(schema.actions).values({
+    tick,
+    timestamp: new Date().toISOString(),
+    toolName,
+    arguments: JSON.stringify(args),
+    resultStatus: status,
+    resultData: JSON.stringify(data),
+    impactTags: '[]',
+    stateSnapshot: null,
+  }).run()
+
+  db.insert(schema.eventLog).values({
+    tick,
+    timestamp: new Date().toISOString(),
+    type: 'mcp_call',
+    message: `${toolName}: ${errorMessage || status}`,
+    severity: status === 'error' ? 'error' : 'info',
+    facilityId: null,
+    data: JSON.stringify({ toolName, args, status, errorMessage }),
+  }).run()
+}

@@ -1,0 +1,23 @@
+services:
+  neural-nation:
+    build: .
+    image: neural-nation:latest
+    container_name: neural-nation
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3000
+      - GAME_CLEANUP_ENABLED=${GAME_CLEANUP_ENABLED:-true}
+      - GAME_CLEANUP_AGE_DAYS=${GAME_CLEANUP_AGE_DAYS:-7}
+      - GAME_CLEANUP_GRACE_DAYS=${GAME_CLEANUP_GRACE_DAYS:-1}
+      - GAME_CLEANUP_INTERVAL_HOURS=${GAME_CLEANUP_INTERVAL_HOURS:-6}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

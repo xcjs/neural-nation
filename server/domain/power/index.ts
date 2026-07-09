@@ -1,0 +1,1 @@
+export { getPowerGridStatus } from './service'

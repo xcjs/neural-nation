@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "editorconfig.editorconfig",
+    "vue.volar",
+    "antfu.iconify",
+    "antfu.unhead",
+    "antfu.vite",
+    "antfu.goto-alias",
+    "antfu.nuxt-starter-snippets",
+    "bradlc.vscode-tailwindcss",
+    "wayou.vscode-todo-highlight"
+  ]
+}
