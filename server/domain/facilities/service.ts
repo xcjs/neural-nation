@@ -5,6 +5,31 @@ import type { FacilitySummary, FacilityDetail, FacilityBufferEntry } from '../..
 import { FacilityStatus } from '../../../lib/types/facility'
 import type { PaginationParams, PaginatedResult } from '../../../lib/types/mcp'
 
+const POWER_GENERATING_TYPES = new Set([
+  'PowerPlant', 'SolarFarm', 'WindFarm', 'HydroPlant', 'NuclearReactor',
+  'BreederReactor', 'FusionReactor', 'BiomassPlant', 'BiogasPlant',
+  'DieselGenerator', 'CoalPlant', 'GasPlant', 'OilPlant', 'GeothermalPlant',
+])
+
+const FACILITY_TECH_REQUIREMENTS: Record<string, string> = {
+  AdvancedFactory: 'precision_manufacturing',
+  ResearchLab: 'precision_manufacturing',
+  NuclearReactor: 'nuclear_power',
+  BreederReactor: 'nuclear_power',
+  FusionReactor: 'fusion_power',
+  Spaceport: 'aerospace_engineering',
+  RocketAssembly: 'aerospace_engineering',
+  SpaceStation: 'aerospace_engineering',
+  OrbitalRefinery: 'aerospace_engineering',
+  LunarMine: 'aerospace_engineering',
+  DeepSpaceProbe: 'aerospace_engineering',
+  SpaceHabitat: 'aerospace_engineering',
+  Terraformer: 'advanced_terraforming',
+  PlanetaryEngine: 'planetary_engineering',
+  Excavator: 'earthworks',
+  Dredger: 'hydraulic_engineering',
+}
+
 export function buildFacility(
   token: string,
   params: {
@@ -19,17 +44,33 @@ export function buildFacility(
   const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
   const tick = meta?.tickCount || 0
 
+  // Tech prerequisite check: certain facility types require researched tech
+  const requiredTech = FACILITY_TECH_REQUIREMENTS[params.type]
+  if (requiredTech) {
+    const completedTech = db.select().from(schema.gameResearch)
+      .where(eq(schema.gameResearch.status, 'Completed'))
+      .all()
+      .map((r) => r.techId)
+    if (!completedTech.includes(requiredTech)) {
+      throw new Error(`Facility type ${params.type} requires tech "${requiredTech}" to be researched`)
+    }
+  }
+
+  // Power-generating facilities are self-powered; others start disconnected
+  // (the agent must build power lines to connect them — see ADR-0014)
+  const isPowerGenerating = POWER_GENERATING_TYPES.has(params.type)
+
   const facility = db.insert(schema.facilities).values({
     type: params.type,
     name: params.name,
     lat: params.lat,
     lon: params.lon,
     status: FacilityStatus.UnderConstruction,
-    techRequired: null,
+    techRequired: requiredTech ?? null,
     activeRecipeId: null,
     targetOutputRate: 0,
     powerConsumption: 0,
-    powerConnected: 0,
+    powerConnected: isPowerGenerating ? 1 : 0,
     throughput: 0,
     constructionProgress: 0,
     elevation: 0,

@@ -149,12 +149,50 @@ export function startResearch(
   const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
   const tick = meta?.tickCount || 0
 
+  // Validate the tech node exists
+  const techNode = db.select().from(schema.techNodes)
+    .where(eq(schema.techNodes.id, techNodeId))
+    .get()
+  if (!techNode) {
+    throw new Error(`Tech node not found: ${techNodeId}`)
+  }
+
+  // Reject if already started or completed
   const existing = db.select().from(schema.gameResearch)
     .where(eq(schema.gameResearch.techId, techNodeId))
     .get()
-
   if (existing) {
-    throw new Error(`Research already started for ${techNodeId}`)
+    throw new Error(`Research already ${existing.status} for ${techNodeId}`)
+  }
+
+  // Check prerequisites are all Completed
+  const prereqs = db.select().from(schema.techPrerequisites)
+    .where(eq(schema.techPrerequisites.techId, techNodeId))
+    .all()
+  if (prereqs.length > 0) {
+    const completedTechIds = db.select().from(schema.gameResearch)
+      .where(eq(schema.gameResearch.status, 'Completed'))
+      .all()
+      .map((r) => r.techId)
+    const missing = prereqs.filter((p) => !completedTechIds.includes(p.prerequisiteId))
+    if (missing.length > 0) {
+      const missingIds = missing.map((p) => p.prerequisiteId).join(', ')
+      throw new Error(`Tech prerequisites not met for ${techNodeId}: requires ${missingIds}`)
+    }
+  }
+
+  // Validate the lab facility exists, is a ResearchLab, and is Active
+  const lab = db.select().from(schema.facilities)
+    .where(eq(schema.facilities.id, labFacilityId))
+    .get()
+  if (!lab) {
+    throw new Error(`Facility not found: ${labFacilityId}`)
+  }
+  if (lab.type !== 'ResearchLab') {
+    throw new Error(`Facility ${labFacilityId} is a ${lab.type}, not a ResearchLab`)
+  }
+  if (lab.status !== 'Active') {
+    throw new Error(`Research lab ${labFacilityId} is ${lab.status}, must be Active`)
   }
 
   const research = db.insert(schema.gameResearch).values({

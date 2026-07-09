@@ -331,6 +331,16 @@ async function main() {
   insertTech.run('planetary_engineering', 'Planetary Engineering', 'Unlock continental terraforming', 4, 'Terraforming', 50)
   insertTech.run('fusion_power', 'Fusion Power', 'Unlock fusion reactor', 3, 'Power', 40)
 
+  // Seed tech prerequisites (tier progression)
+  const insertPrereq = db.prepare(`INSERT OR IGNORE INTO tech_prerequisites (tech_id, prerequisite_id) VALUES (?, ?)`)
+  insertPrereq.run('precision_manufacturing', 'metallurgy_1')
+  insertPrereq.run('hydraulic_engineering', 'earthworks')
+  insertPrereq.run('advanced_terraforming', 'hydraulic_engineering')
+  insertPrereq.run('nuclear_power', 'precision_manufacturing')
+  insertPrereq.run('aerospace_engineering', 'precision_manufacturing')
+  insertPrereq.run('planetary_engineering', 'advanced_terraforming')
+  insertPrereq.run('fusion_power', 'nuclear_power')
+
   // Seed basic recipes
   const insertRecipe = db.prepare(`INSERT OR IGNORE INTO recipes (id, name, facility_type, craft_time, tech_required) VALUES (?, ?, ?, ?, ?)`)
   insertRecipe.run('iron_smelting', 'Iron Smelting', 'Smelter', 2, 'metallurgy_1')
