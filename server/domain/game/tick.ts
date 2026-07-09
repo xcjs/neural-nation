@@ -1,6 +1,6 @@
 import { createGameDb, type GameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq, sql } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import { GameStatus } from '../../../lib/types/game'
 
 export interface TickResult {
@@ -107,25 +107,262 @@ function processEnvironmentUpdate(db: GameDb, _tick: number): void {
     .run()
 }
 
+const EXTRACTOR_TYPES = new Set(['Extractor', 'Farm', 'Forestry', 'WaterPump', 'Excavator', 'Dredger'])
+const DEFAULT_BUFFER_CAPACITY = 100
+const STORAGE_BUFFER_CAPACITY = 1000
+const EXTRACTOR_RANGE_DEG = 2
+
 function processFacilityProduction(db: GameDb, _tick: number): void {
-  // Stub: facility production logic will be expanded in later iteration
-  // For now, update throughput for active facilities
   const activeFacilities = db.select()
     .from(schema.facilities)
     .where(eq(schema.facilities.status, 'Active'))
     .all()
 
   for (const facility of activeFacilities) {
-    db.update(schema.facilities)
-      .set({ throughput: facility.targetOutputRate })
-      .where(eq(schema.facilities.id, facility.id))
-      .run()
+    // Power check: unpowered facilities produce nothing
+    if (!facility.powerConnected) {
+      db.update(schema.facilities)
+        .set({ throughput: 0 })
+        .where(eq(schema.facilities.id, facility.id))
+        .run()
+      continue
+    }
+
+    if (EXTRACTOR_TYPES.has(facility.type)) {
+      processExtractorProduction(db, facility)
+    } else if (facility.activeRecipeId) {
+      processRecipeProduction(db, facility)
+    } else {
+      db.update(schema.facilities)
+        .set({ throughput: 0 })
+        .where(eq(schema.facilities.id, facility.id))
+        .run()
+    }
   }
 }
 
-function processTransportFlows(_db: GameDb, _tick: number): void {
-  // Stub: transport flow processing
-  // Will move resources along transport links based on flow rates
+function processExtractorProduction(db: GameDb, facility: typeof schema.facilities.$inferSelect): void {
+  const rate = facility.targetOutputRate || 1
+
+  // Find nearest discovered deposit within range
+  const deposit = db.select().from(schema.resources)
+    .where(
+      and(
+        sql`${schema.resources.discovered} = 1`,
+        sql`${schema.resources.remaining} > 0`,
+        sql`abs(${schema.resources.lat} - ${facility.lat}) <= ${EXTRACTOR_RANGE_DEG}`,
+        sql`abs(${schema.resources.lon} - ${facility.lon}) <= ${EXTRACTOR_RANGE_DEG}`,
+      ),
+    )
+    .all()
+    .sort((a, b) => {
+      const da = Math.sqrt((a.lat - facility.lat) ** 2 + (a.lon - facility.lon) ** 2)
+      const db2 = Math.sqrt((b.lat - facility.lat) ** 2 + (b.lon - facility.lon) ** 2)
+      return da - db2
+    })[0]
+
+  if (!deposit) {
+    db.update(schema.facilities)
+      .set({ throughput: 0 })
+      .where(eq(schema.facilities.id, facility.id))
+      .run()
+    return
+  }
+
+  const extractAmount = Math.min(rate, deposit.remaining)
+  if (extractAmount <= 0) return
+
+  // Check output buffer capacity
+  const outputBuffer = getOrCreateBuffer(db, facility.id, deposit.resourceKey, 'output', facility.type === 'Storage' ? STORAGE_BUFFER_CAPACITY : DEFAULT_BUFFER_CAPACITY, deposit.unit)
+  const spaceRemaining = outputBuffer.capacity - outputBuffer.quantity
+  const actualExtract = Math.min(extractAmount, spaceRemaining)
+
+  if (actualExtract <= 0) {
+    // Output buffer full — extraction halts (overflow)
+    db.update(schema.facilities)
+      .set({ throughput: 0 })
+      .where(eq(schema.facilities.id, facility.id))
+      .run()
+    return
+  }
+
+  // Deplete deposit
+  db.update(schema.resources)
+    .set({ remaining: deposit.remaining - actualExtract })
+    .where(eq(schema.resources.id, deposit.id))
+    .run()
+
+  // Fill output buffer
+  db.update(schema.facilityBuffers)
+    .set({ quantity: outputBuffer.quantity + actualExtract })
+    .where(eq(schema.facilityBuffers.id, outputBuffer.id))
+    .run()
+
+  db.update(schema.facilities)
+    .set({ throughput: actualExtract })
+    .where(eq(schema.facilities.id, facility.id))
+    .run()
+}
+
+function processRecipeProduction(db: GameDb, facility: typeof schema.facilities.$inferSelect): void {
+  const recipeId = facility.activeRecipeId!
+
+  const inputs = db.select().from(schema.recipeInputs)
+    .where(eq(schema.recipeInputs.recipeId, recipeId))
+    .all()
+  const outputs = db.select().from(schema.recipeOutputs)
+    .where(eq(schema.recipeOutputs.recipeId, recipeId))
+    .all()
+
+  if (outputs.length === 0) return
+
+  // Determine production cycles this tick based on target rate and craft time
+  const rate = facility.targetOutputRate || 1
+  const cycles = rate / (1) // 1 cycle per tick at rate 1; scaled by targetOutputRate
+
+  // Check all required (non-optional) inputs are available in input buffers
+  let canProduce = true
+  const inputConsumption: Array<{ buffer: typeof schema.facilityBuffers.$inferSelect, amount: number }> = []
+
+  for (const input of inputs) {
+    if (input.optional) continue
+
+    const buffer = getOrCreateBuffer(db, facility.id, input.resourceKey, 'input', DEFAULT_BUFFER_CAPACITY, input.unit)
+    const needed = input.quantity * cycles
+
+    if (buffer.quantity < needed) {
+      canProduce = false
+      break
+    }
+    inputConsumption.push({ buffer, amount: needed })
+  }
+
+  if (!canProduce) {
+    db.update(schema.facilities)
+      .set({ throughput: 0 })
+      .where(eq(schema.facilities.id, facility.id))
+      .run()
+    return
+  }
+
+  // Check output buffers have space
+  const outputProduction: Array<{ buffer: typeof schema.facilityBuffers.$inferSelect, amount: number }> = []
+  for (const output of outputs) {
+    const buffer = getOrCreateBuffer(db, facility.id, output.resourceKey, 'output', facility.type === 'Storage' ? STORAGE_BUFFER_CAPACITY : DEFAULT_BUFFER_CAPACITY, output.unit)
+    const spaceRemaining = buffer.capacity - buffer.quantity
+    const produced = output.quantity * cycles
+
+    if (produced > spaceRemaining) {
+      // Overflow — production halts
+      canProduce = false
+      break
+    }
+    outputProduction.push({ buffer, amount: produced })
+  }
+
+  if (!canProduce) {
+    db.update(schema.facilities)
+      .set({ throughput: 0 })
+      .where(eq(schema.facilities.id, facility.id))
+      .run()
+    return
+  }
+
+  // Consume inputs
+  for (const { buffer, amount } of inputConsumption) {
+    db.update(schema.facilityBuffers)
+      .set({ quantity: buffer.quantity - amount })
+      .where(eq(schema.facilityBuffers.id, buffer.id))
+      .run()
+  }
+
+  // Produce outputs
+  for (const { buffer, amount } of outputProduction) {
+    db.update(schema.facilityBuffers)
+      .set({ quantity: buffer.quantity + amount })
+      .where(eq(schema.facilityBuffers.id, buffer.id))
+      .run()
+  }
+
+  // Update throughput (sum of outputs produced)
+  const totalOutput = outputProduction.reduce((sum, o) => sum + o.amount, 0)
+  db.update(schema.facilities)
+    .set({ throughput: totalOutput })
+    .where(eq(schema.facilities.id, facility.id))
+    .run()
+}
+
+function getOrCreateBuffer(
+  db: GameDb,
+  facilityId: number,
+  resourceKey: string,
+  direction: 'input' | 'output',
+  capacity: number,
+  unit: string,
+): typeof schema.facilityBuffers.$inferSelect {
+  const existing = db.select().from(schema.facilityBuffers)
+    .where(
+      and(
+        eq(schema.facilityBuffers.facilityId, facilityId),
+        eq(schema.facilityBuffers.resourceKey, resourceKey),
+        eq(schema.facilityBuffers.direction, direction),
+      ),
+    )
+    .get()
+
+  if (existing) return existing
+
+  return db.insert(schema.facilityBuffers).values({
+    facilityId,
+    resourceKey,
+    quantity: 0,
+    capacity,
+    unit,
+    direction,
+  }).returning().get()
+}
+
+function processTransportFlows(db: GameDb, _tick: number): void {
+  const transports = db.select().from(schema.transports)
+    .where(sql`${schema.transports.flowRate} > 0`)
+    .all()
+
+  for (const transport of transports) {
+    if (!transport.resourceKey) continue
+
+    // Source: from facility's output buffer
+    const sourceBuffer = db.select().from(schema.facilityBuffers)
+      .where(
+        and(
+          eq(schema.facilityBuffers.facilityId, transport.fromFacilityId),
+          eq(schema.facilityBuffers.resourceKey, transport.resourceKey),
+          eq(schema.facilityBuffers.direction, 'output'),
+        ),
+      )
+      .get()
+
+    if (!sourceBuffer || sourceBuffer.quantity <= 0) continue
+
+    // Destination: to facility's input buffer (create if needed)
+    const destBuffer = getOrCreateBuffer(db, transport.toFacilityId, transport.resourceKey, 'input', DEFAULT_BUFFER_CAPACITY, sourceBuffer.unit)
+
+    const destSpace = destBuffer.capacity - destBuffer.quantity
+    const flowAmount = Math.min(transport.flowRate, sourceBuffer.quantity, destSpace)
+
+    if (flowAmount <= 0) continue
+
+    // Drain source output buffer
+    db.update(schema.facilityBuffers)
+      .set({ quantity: sourceBuffer.quantity - flowAmount })
+      .where(eq(schema.facilityBuffers.id, sourceBuffer.id))
+      .run()
+
+    // Fill destination input buffer
+    db.update(schema.facilityBuffers)
+      .set({ quantity: destBuffer.quantity + flowAmount })
+      .where(eq(schema.facilityBuffers.id, destBuffer.id))
+      .run()
+  }
 }
 
 function processResearchProgress(db: GameDb, _tick: number): void {
