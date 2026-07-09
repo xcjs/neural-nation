@@ -50,9 +50,9 @@ export function executeTool(token: string, toolName: string, args: Record<string
 
     updateLastActive(token)
 
-    logAction(token, toolName, args, 'success', result)
+    const loggedEvent = logAction(token, toolName, args, 'success', result)
 
-    emitGameEvents(token, toolName, args, result)
+    emitGameEvents(token, toolName, args, result, loggedEvent)
 
     return { status: 'success', data: result }
   } catch (err) {
@@ -206,14 +206,17 @@ function logAction(
   status: 'success' | 'warning' | 'error',
   data: unknown,
   errorMessage?: string,
-): void {
+): { id: number; tick: number; timestamp: string; type: string; message: string; severity: string; facilityId: number | null; data: string | null } {
   const db = createGameDb(token)
   const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
   const tick = meta?.tickCount || 0
+  const timestamp = new Date().toISOString()
+  const message = `${toolName}: ${errorMessage || status}`
+  const severity = status === 'error' ? 'error' : 'info'
 
   db.insert(schema.actions).values({
     tick,
-    timestamp: new Date().toISOString(),
+    timestamp,
     toolName,
     arguments: JSON.stringify(args),
     resultStatus: status,
@@ -222,18 +225,29 @@ function logAction(
     stateSnapshot: null,
   }).run()
 
-  db.insert(schema.events).values({
+  const eventRow = db.insert(schema.events).values({
     tick,
-    timestamp: new Date().toISOString(),
+    timestamp,
     type: 'mcp_call',
-    message: `${toolName}: ${errorMessage || status}`,
-    severity: status === 'error' ? 'error' : 'info',
+    message,
+    severity,
     facilityId: null,
     data: JSON.stringify({ toolName, args, status, errorMessage }),
-  }).run()
+  }).returning().get()
+
+  return {
+    id: eventRow.id,
+    tick: eventRow.tick,
+    timestamp: eventRow.timestamp,
+    type: eventRow.type,
+    message: eventRow.message,
+    severity: eventRow.severity,
+    facilityId: eventRow.facilityId,
+    data: eventRow.data,
+  }
 }
 
-function emitGameEvents(token: string, toolName: string, args: Record<string, unknown>, result: unknown): void {
+function emitGameEvents(token: string, toolName: string, args: Record<string, unknown>, result: unknown, loggedEvent: { id: number; tick: number; timestamp: string; type: string; message: string; severity: string; facilityId: number | null; data: string | null }): void {
   const events: GameEvent[] = []
 
   switch (toolName) {
@@ -291,8 +305,8 @@ function emitGameEvents(token: string, toolName: string, args: Record<string, un
     events.push({ type: 'environment_updated', environment: fullState.environment })
   }
   events.push({ type: 'power_updated', power: getPowerGridStatus(token) })
-  events.push({ type: 'event_logged', event: { toolName, args, status: 'success' } })
-  events.push({ type: 'action_logged', action: { toolName, args } })
+  events.push({ type: 'event_logged', event: loggedEvent })
+  events.push({ type: 'action_logged', action: { toolName, args, tick: loggedEvent.tick } })
 
   // Game over check
   const state = getGameState(token)

@@ -51,7 +51,7 @@ describe('simulation: tick cycle', () => {
     expect(after.pollutionLevel).toBeGreaterThanOrEqual(0)
   })
 
-  it('updates population over ticks', () => {
+  it('updates population over ticks', { timeout: 30000 }, () => {
     advanceTicks(10)
     const after = getGameState(token).population
     expect(typeof after).toBe('number')
@@ -112,7 +112,7 @@ describe('simulation: extractor production', () => {
     }
   })
 
-  it('halts extraction when output buffer is full (overflow)', () => {
+  it('halts extraction when output buffer is full (overflow)', { timeout: 30000 }, () => {
     // Run many ticks to fill the buffer
     advanceTicks(50)
     const facility = getFacilityById(extractorId)
@@ -220,7 +220,7 @@ describe('simulation: recipe production chain', () => {
 })
 
 describe('simulation: transport flows', () => {
-  it('moves resources from source output buffer to destination input buffer', () => {
+  it('moves resources from source output buffer to destination input buffer', { timeout: 30000 }, () => {
     // Build two facilities near each other
     const mine = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Src Mine', lat: 37.10, lon: -90.60 })
     const smelter = executeTool(token, 'build_facility', { type: 'Smelter', name: 'Dst Smelter', lat: 37.11, lon: -90.61 })

@@ -27,6 +27,7 @@ const props = defineProps<{
   pollutionLevel?: number
   forestCoverage?: number
   biodiversity?: number
+  waterQuality?: number
 }>()
 
 const container = ref<HTMLDivElement | null>(null)
@@ -52,6 +53,8 @@ let terrainModGroup: THREE.Group
 let composer: EffectComposer | null = null
 let bloomPass: UnrealBloomPass | null = null
 let pollutionMesh: THREE.Mesh | null = null
+let forestFillGroup: THREE.Group | null = null
+let waterFillMesh: THREE.Mesh | null = null
 
 const EARTH_RADIUS = 1
 
@@ -157,6 +160,9 @@ function init() {
   coastlineGroup = buildCoastlines()
   scene.add(coastlineGroup)
 
+  // Environment overlay: forest (green land fills), water (blue ocean), pollution (brown haze)
+  buildEnvironmentOverlay()
+
   // Atmosphere glow (fresnel effect)
   const atmoGeo = new THREE.IcosahedronGeometry(EARTH_RADIUS * 1.05, 4)
   const atmoMat = new THREE.ShaderMaterial({
@@ -191,9 +197,6 @@ function init() {
   terrainModGroup = new THREE.Group()
   scene.add(terrainModGroup)
 
-  // Pollution heatmap overlay
-  buildPollutionOverlay()
-
   // Bloom post-processing (only for medium/high quality)
   if (props.quality !== 'low') {
     composer = new EffectComposer(renderer)
@@ -210,57 +213,186 @@ function init() {
   animate()
 }
 
-function buildPollutionOverlay(): void {
+function buildEnvironmentOverlay(): void {
+  // --- Forest: fill land polygons green, opacity scaled by forest coverage ---
+  if (forestFillGroup) {
+    scene.remove(forestFillGroup)
+    forestFillGroup.traverse((o) => {
+      if (o.type === 'Mesh') {
+        o.geometry.dispose()
+        ;(o as THREE.Mesh).material instanceof THREE.Material && (o as THREE.Mesh).material.dispose()
+      }
+    })
+  }
+  forestFillGroup = new THREE.Group()
+
+  const forest = (props.forestCoverage ?? 100) / 100
+  const forestColor = new THREE.Color(0.0, 0.35 * forest, 0.05 * forest)
+  const forestMat = new THREE.MeshBasicMaterial({
+    color: forestColor,
+    transparent: true,
+    opacity: 0.15 + (1 - forest) * 0.25,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  })
+
+  const geojson = feature(landTopo as never, (landTopo as never as { objects: { land: unknown } }).objects.land as never) as unknown as { type: string; features: Array<{ geometry: { type: string; coordinates: number[][] | number[][][] } }> }
+
+  for (const feat of geojson.features) {
+    const geom = feat.geometry
+    if (geom.type === 'Polygon') {
+      for (const ring of geom.coordinates as number[][][]) {
+        addFilledPolygon(forestFillGroup, ring, forestMat)
+      }
+    } else if (geom.type === 'MultiPolygon') {
+      for (const polygon of geom.coordinates as number[][][][]) {
+        for (const ring of polygon) {
+          addFilledPolygon(forestFillGroup, ring, forestMat)
+        }
+      }
+    }
+  }
+  scene.add(forestFillGroup)
+
+  // --- Water: tint the base earth sphere blue, opacity scaled by water quality ---
+  // We don't need a separate mesh — the earth sphere IS the ocean.
+  // Adjust the earth base color to show water quality (clean = deeper blue, polluted = murky).
+  updateEarthTint()
+
+  // --- Pollution: thin haze sphere (brown, additive) ---
   if (pollutionMesh) {
     scene.remove(pollutionMesh)
     pollutionMesh.geometry.dispose()
     ;(pollutionMesh.material as THREE.Material).dispose()
   }
-  const geo = new THREE.IcosahedronGeometry(EARTH_RADIUS * 1.01, 4)
-  const mat = new THREE.ShaderMaterial({
+  const pollution = (props.pollutionLevel ?? 0) / 100
+  const hazeGeo = new THREE.IcosahedronGeometry(EARTH_RADIUS * 1.015, 4)
+  const hazeMat = new THREE.ShaderMaterial({
     uniforms: {
-      uPollution: { value: (props.pollutionLevel ?? 0) / 100 },
-      uForest: { value: (props.forestCoverage ?? 100) / 100 },
+      uPollution: { value: pollution },
     },
     vertexShader: `
       varying vec3 vNormal;
-      varying vec3 vPos;
       void main() {
         vNormal = normalize(normalMatrix * normal);
-        vPos = position;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `,
     fragmentShader: `
       uniform float uPollution;
-      uniform float uForest;
       varying vec3 vNormal;
-      varying vec3 vPos;
       void main() {
-        // Pollution: brown/gray haze, more visible at high pollution
-        vec3 pollutionColor = vec3(0.4, 0.3, 0.15);
-        // Forest/biome health: green tint when healthy, fades when degraded
-        vec3 healthyColor = vec3(0.1, 0.3, 0.08);
-        float health = uForest * (1.0 - uPollution * 0.5);
-        vec3 color = mix(pollutionColor * uPollution, healthyColor * health, 0.5);
-        float alpha = uPollution * 0.4 + (1.0 - uForest) * 0.2;
-        gl_FragColor = vec4(color, alpha);
+        // Fresnel: haze stronger at grazing angles (atmosphere thickens at edges)
+        float fresnel = pow(1.0 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+        vec3 hazeColor = vec3(0.5, 0.35, 0.15);
+        float alpha = uPollution * (0.3 + fresnel * 0.4);
+        gl_FragColor = vec4(hazeColor, alpha);
       }
     `,
     transparent: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   })
-  pollutionMesh = new THREE.Mesh(geo, mat)
+  pollutionMesh = new THREE.Mesh(hazeGeo, hazeMat)
   scene.add(pollutionMesh)
+}
+
+function addFilledPolygon(group: THREE.Group, ring: number[][], mat: THREE.Material): void {
+  if (ring.length < 3) return
+
+  // Triangulate the polygon ring on a tangent plane.
+  // Pick the centroid as the tangent point, project all points onto the plane.
+  let clat = 0, clon = 0
+  for (const [lon, lat] of ring) {
+    clat += lat
+    clon += lon
+  }
+  clat /= ring.length
+  clon /= ring.length
+
+  // Tangent basis vectors at the centroid
+  const clatRad = clat * Math.PI / 180
+  const east = new THREE.Vector3(-Math.sin(clon * Math.PI / 180), 0, Math.cos(clon * Math.PI / 180))
+  const north = new THREE.Vector3(Math.sin(clatRad) * Math.cos(clon * Math.PI / 180), Math.cos(clatRad), Math.sin(clatRad) * Math.sin(clon * Math.PI / 180))
+  const center3D = latLonToVec3(clat, clon, EARTH_RADIUS * 1.003)
+
+  // Project ring points onto tangent plane (2D coordinates)
+  const points2D: Array<{ x: number; y: number; idx: number }> = ring.map(([lon, lat], i) => {
+    const p = latLonToVec3(lat, lon, EARTH_RADIUS * 1.003)
+    const d = p.clone().sub(center3D)
+    return { x: d.dot(east), y: d.dot(north), idx: i }
+  })
+
+  // Ear clipping triangulation
+  const indices: number[] = []
+  const remaining = points2D.slice()
+  let guard = 0
+  while (remaining.length > 2 && guard++ < 10000) {
+    let earFound = false
+    for (let i = 0; i < remaining.length; i++) {
+      const prev = remaining[(i - 1 + remaining.length) % remaining.length]
+      const curr = remaining[i]
+      const next = remaining[(i + 1) % remaining.length]
+      if (isEar(prev, curr, next, remaining)) {
+        indices.push(prev.idx, curr.idx, next.idx)
+        remaining.splice(i, 1)
+        earFound = true
+        break
+      }
+    }
+    if (!earFound) break
+  }
+
+  if (indices.length === 0) return
+
+  // Build geometry from 3D positions + triangulated indices
+  const positions = new Float32Array(ring.length * 3)
+  for (let i = 0; i < ring.length; i++) {
+    const [lon, lat] = ring[i]
+    const p = latLonToVec3(lat, lon, EARTH_RADIUS * 1.003)
+    positions[i * 3] = p.x
+    positions[i * 3 + 1] = p.y
+    positions[i * 3 + 2] = p.z
+  }
+
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geo.setIndex(indices)
+  geo.computeVertexNormals()
+
+  const fill = new THREE.Mesh(geo, mat)
+  group.add(fill)
+}
+
+function isEar(prev: { x: number; y: number }, curr: { x: number; y: number }, next: { x: number; y: number }, remaining: Array<{ x: number; y: number }>): boolean {
+  // Check if the triangle prev-curr-next is convex (counter-clockwise or clockwise consistently)
+  const cross = (curr.x - prev.x) * (next.y - curr.y) - (curr.y - prev.y) * (next.x - curr.x)
+  if (cross <= 0) return false
+
+  // Check no other point is inside the triangle
+  for (const p of remaining) {
+    if (p === prev || p === curr || p === next) continue
+    if (pointInTriangle(p, prev, curr, next)) return false
+  }
+  return true
+}
+
+function pointInTriangle(p: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }): boolean {
+  const d1 = (p.x - b.x) * (a.y - b.y) - (a.x - b.x) * (p.y - b.y)
+  const d2 = (p.x - c.x) * (b.y - c.y) - (b.x - c.x) * (p.y - c.y)
+  const d3 = (p.x - a.x) * (c.y - a.y) - (c.x - a.x) * (p.y - a.y)
+  const hasNeg = d1 < 0 || d2 < 0 || d3 < 0
+  const hasPos = d1 > 0 || d2 > 0 || d3 > 0
+  return !(hasNeg && hasPos)
 }
 
 function updateEarthTint(): void {
   const pollution = (props.pollutionLevel ?? 0) / 100
   const forest = (props.forestCoverage ?? 100) / 100
   const biodiversity = (props.biodiversity ?? 100) / 100
+  const water = (props.waterQuality ?? 100) / 100
   // Healthy earth: blue-cyan (0x002233). Degraded: brownish gray.
-  const health = (forest + biodiversity) * 0.5 * (1 - pollution * 0.3)
+  const health = (forest + biodiversity + water) / 3 * (1 - pollution * 0.3)
   const r = 0.0 + (1 - health) * 0.25
   const g = 0.13 * health + (1 - health) * 0.1
   const b = 0.2 * health + (1 - health) * 0.05
@@ -924,6 +1056,7 @@ function animate() {
   particleGroup.rotation.y += 0.0005
   terrainModGroup.rotation.y += 0.0005
   if (pollutionMesh) pollutionMesh.rotation.y += 0.0005
+  if (forestFillGroup) forestFillGroup.rotation.y += 0.0005
 
   // Moon orbit
   // Pulse markers (handle LOD children)
@@ -974,12 +1107,24 @@ function onResize() {
 watch(() => props.facilities, updateMarkers, { deep: true })
 watch(() => props.transports, updateMarkers, { deep: true })
 watch(() => props.terrainModifications, updateMarkers, { deep: true })
-watch(() => [props.pollutionLevel, props.forestCoverage, props.biodiversity], () => {
+watch(() => [props.pollutionLevel, props.forestCoverage, props.biodiversity, props.waterQuality], () => {
+  const forest = (props.forestCoverage ?? 100) / 100
+  // Update forest fill material color + opacity without rebuilding polygons
+  if (forestFillGroup) {
+    forestFillGroup.traverse((o) => {
+      if (o.type === 'Mesh') {
+        const mat = (o as THREE.Mesh).material as THREE.MeshBasicMaterial
+        mat.color.setRGB(0.0, 0.35 * forest, 0.05 * forest)
+        mat.opacity = 0.15 + (1 - forest) * 0.25
+      }
+    })
+  }
+  // Update pollution haze shader uniform
   if (pollutionMesh) {
     const mat = pollutionMesh.material as THREE.ShaderMaterial
     mat.uniforms.uPollution.value = (props.pollutionLevel ?? 0) / 100
-    mat.uniforms.uForest.value = (props.forestCoverage ?? 100) / 100
   }
+  // Earth tint reflects water quality + overall health
   updateEarthTint()
 })
 

@@ -481,6 +481,21 @@ async function main() {
   insertInput.run('composites', 'chemicals', 0.5, 't', 1)
   insertOutput.run('composites', 'composites', 1, 't')
 
+  // Seed renewable resources (not from MRDS — these are global availability)
+  const insertRenewable = db.prepare(`INSERT OR IGNORE INTO resources (resource_key, name, category, lat, lon, quantity, remaining, grade, discovered, surface, depth, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+  const renewables: Array<[string, string, number, string]> = [
+    ['Wood', 'Wood', 1e9, 't'],
+    ['Water', 'Water', 1e10, 't'],
+    ['ArableLand', 'Arable Land', 5e8, 't'],
+    ['Biomass', 'Biomass', 1e8, 't'],
+    ['Solar', 'Solar Energy', 1e9, 'MW'],
+    ['Wind', 'Wind Energy', 1e8, 'MW'],
+    ['Hydro', 'Hydro Power', 5e7, 'MW'],
+  ]
+  for (const [key, name, qty, unit] of renewables) {
+    insertRenewable.run(key, name, 'Renewable', null, null, qty, qty, 1.0, 0, 1, null, unit)
+  }
+
   // Seed terrain grid (deterministic value-noise, 1° resolution).
   // Idempotent — no-ops if terrain table already populated.
   console.log('Seeding terrain grid...')
