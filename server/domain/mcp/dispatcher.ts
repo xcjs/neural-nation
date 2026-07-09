@@ -13,6 +13,7 @@ import { eq, desc, sql } from 'drizzle-orm'
 import { publish, type GameEvent } from '../events/bus'
 import { GameStatus } from '../../../lib/types/game'
 import { updateLastActive } from '../game/service'
+import { buildFullGameState } from '../game/state'
 import type { TerraformAction } from '../../../lib/types/terrain'
 import type { TransportType } from '../../../lib/types/transport'
 
@@ -284,8 +285,11 @@ function emitGameEvents(token: string, toolName: string, args: Record<string, un
   }
 
   // Every tool call advances a tick and may change environment/power
-  events.push({ type: 'tick', tick: getGameState(token).tick })
-  events.push({ type: 'environment_updated', environment: getEnvironmentalStatus(token).environment })
+  const fullState = buildFullGameState(token, false)
+  if (fullState) {
+    events.push({ type: 'tick', tick: fullState.tick })
+    events.push({ type: 'environment_updated', environment: fullState.environment })
+  }
   events.push({ type: 'power_updated', power: getPowerGridStatus(token) })
   events.push({ type: 'event_logged', event: { toolName, args, status: 'success' } })
   events.push({ type: 'action_logged', action: { toolName, args } })
