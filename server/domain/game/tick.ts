@@ -76,21 +76,49 @@ function processResourceRegeneration(db: GameDb, _tick: number): void {
 
 function processPopulationUpdate(db: GameDb, _tick: number): void {
   const human = db.select().from(schema.humanity).where(eq(schema.humanity.key, 'global')).get()
-
   if (!human) return
 
-  const growthAmount = Math.floor(human.population * human.growthRate)
+  const env = db.select().from(schema.environment).where(eq(schema.environment.key, 'global')).get()
+
+  // Logistic growth modulated by environmental conditions
+  let effectiveGrowthRate = human.growthRate
+
+  if (env) {
+    // High pollution reduces growth
+    if (env.pollutionLevel > 60) effectiveGrowthRate *= 0.5
+    else if (env.pollutionLevel > 30) effectiveGrowthRate *= 0.8
+
+    // Low forest/biodiversity reduces growth (habitat degradation)
+    const habitatHealth = (env.forestCoverage + env.biodiversity) * 0.5
+    if (habitatHealth < 30) effectiveGrowthRate *= 0.7
+
+    // Poor water quality reduces growth
+    if (env.waterQuality < 30) effectiveGrowthRate *= 0.6
+
+    // Death spiral: if population is already low and environment is bad, population declines
+    if (env.pollutionLevel > 80 && human.population < 100) {
+      effectiveGrowthRate = -Math.abs(human.growthRate) * 2
+    }
+  }
+
+  const growthAmount = Math.floor(human.population * effectiveGrowthRate)
   const newPopulation = Math.max(0, human.population + growthAmount)
 
+  // Update welfare based on environment
+  let welfare = human.welfare
+  if (env) {
+    const envScore = (100 - env.pollutionLevel + env.forestCoverage + env.waterQuality + env.biodiversity) / 4
+    welfare = Math.round(human.welfare * 0.9 + envScore * 0.1)
+  }
+
   db.update(schema.humanity)
-    .set({ population: newPopulation })
+    .set({ population: newPopulation, welfare })
     .where(eq(schema.humanity.key, 'global'))
     .run()
 }
 
 function processEnvironmentUpdate(db: GameDb, _tick: number): void {
   const env = db.select().from(schema.environment).where(eq(schema.environment.key, 'global')).get()
-
   if (!env) return
 
   const activeFacilities = db.select()
@@ -98,14 +126,129 @@ function processEnvironmentUpdate(db: GameDb, _tick: number): void {
     .where(eq(schema.facilities.status, 'Active'))
     .all()
 
-  const pollutionDelta = activeFacilities.length * 0.01
+  let pollutionDelta = 0
+  let forestDelta = 0
+  let waterDelta = 0
+  let biodiversityDelta = 0
+
+  for (const facility of activeFacilities) {
+    const impact = FACILITY_IMPACT[facility.type]
+    if (!impact) continue
+
+    pollutionDelta += impact.pollution
+    forestDelta += impact.forest
+    waterDelta += impact.water
+    biodiversityDelta += impact.biodiversity
+
+    // Nuclear incident probability: 0.01% per tick per reactor
+    if ((facility.type === 'NuclearReactor' || facility.type === 'BreederReactor') && facility.throughput > 0) {
+      if (Math.random() < 0.0001) {
+        logIncident(db, _tick, 'nuclear_incident', `Nuclear incident at ${facility.name} (id=${facility.id})`, 'critical', facility.id)
+        pollutionDelta += 5
+        waterDelta -= 2
+        biodiversityDelta -= 1
+      }
+    }
+  }
+
+  // Natural recovery: forests and biodiversity slowly regenerate if pollution is low
+  if (env.pollutionLevel < 30) {
+    forestDelta += 0.005
+    biodiversityDelta += 0.003
+  }
+
+  // High pollution damages forest and biodiversity (carbon sink loss feedback)
+  if (env.pollutionLevel > 60) {
+    forestDelta -= 0.01
+    biodiversityDelta -= 0.005
+  }
+
+  // Water quality degrades from high pollution
+  if (env.pollutionLevel > 50) {
+    waterDelta -= 0.005
+  }
+
+  const newPollution = Math.max(0, Math.min(100, env.pollutionLevel + pollutionDelta))
+  const newForest = Math.max(0, Math.min(100, env.forestCoverage + forestDelta))
+  const newWater = Math.max(0, Math.min(100, env.waterQuality + waterDelta))
+  const newBiodiversity = Math.max(0, Math.min(100, env.biodiversity + biodiversityDelta))
 
   db.update(schema.environment)
     .set({
-      pollutionLevel: Math.max(0, env.pollutionLevel + pollutionDelta),
+      pollutionLevel: newPollution,
+      forestCoverage: newForest,
+      waterQuality: newWater,
+      biodiversity: newBiodiversity,
     })
     .where(eq(schema.environment.key, 'global'))
     .run()
+
+  // Check for deforestation collapse
+  if (env.forestCoverage > 20 && newForest <= 20) {
+    logIncident(db, _tick, 'deforestation_collapse', 'Forest coverage has collapsed below 20% — biome degradation accelerating', 'warning')
+  }
+
+  // Check for water contamination
+  if (env.waterQuality > 30 && newWater <= 30) {
+    logIncident(db, _tick, 'water_contamination', 'Water quality has dropped below 30% — contamination spreading', 'warning')
+  }
+
+  // Check for climate shift
+  if (env.pollutionLevel < 80 && newPollution >= 80) {
+    logIncident(db, _tick, 'climate_shift', 'Pollution has reached critical levels — climate shift imminent', 'critical')
+  }
+}
+
+const FACILITY_IMPACT: Record<string, { pollution: number; forest: number; water: number; biodiversity: number }> = {
+  CoalPlant: { pollution: 0.1, forest: 0, water: 0, biodiversity: 0 },
+  OilPlant: { pollution: 0.07, forest: 0, water: 0, biodiversity: 0 },
+  GasPlant: { pollution: 0.04, forest: 0, water: 0, biodiversity: 0 },
+  DieselGenerator: { pollution: 0.05, forest: 0, water: 0, biodiversity: 0 },
+  BiomassPlant: { pollution: 0.02, forest: -0.01, water: 0, biodiversity: -0.005 },
+  BiogasPlant: { pollution: 0.01, forest: 0, water: 0, biodiversity: 0 },
+  NuclearReactor: { pollution: 0.002, forest: 0, water: -0.003, biodiversity: 0 },
+  BreederReactor: { pollution: 0.002, forest: 0, water: -0.003, biodiversity: 0 },
+  FusionReactor: { pollution: 0, forest: 0, water: 0, biodiversity: 0 },
+  SolarFarm: { pollution: 0, forest: 0, water: 0, biodiversity: 0 },
+  WindFarm: { pollution: 0, forest: 0, water: 0, biodiversity: 0 },
+  HydroPlant: { pollution: 0, forest: -0.002, water: -0.002, biodiversity: -0.002 },
+  GeothermalPlant: { pollution: 0.005, forest: 0, water: -0.001, biodiversity: 0 },
+  EthanolRefinery: { pollution: 0.02, forest: 0, water: -0.002, biodiversity: 0 },
+  SoylentPlant: { pollution: 0.005, forest: -0.005, water: -0.003, biodiversity: -0.01 },
+  Extractor: { pollution: 0.03, forest: -0.005, water: -0.005, biodiversity: -0.005 },
+  Farm: { pollution: 0.015, forest: -0.003, water: -0.003, biodiversity: -0.005 },
+  Forestry: { pollution: 0.01, forest: -0.02, water: 0, biodiversity: -0.01 },
+  WaterPump: { pollution: 0.005, forest: 0, water: -0.002, biodiversity: 0 },
+  Smelter: { pollution: 0.06, forest: 0, water: 0, biodiversity: 0 },
+  Refinery: { pollution: 0.07, forest: 0, water: -0.005, biodiversity: 0 },
+  Processor: { pollution: 0.04, forest: 0, water: -0.002, biodiversity: 0 },
+  ChemicalPlant: { pollution: 0.05, forest: 0, water: -0.005, biodiversity: -0.002 },
+  Factory: { pollution: 0.04, forest: 0, water: -0.002, biodiversity: -0.002 },
+  AdvancedFactory: { pollution: 0.03, forest: 0, water: -0.001, biodiversity: -0.001 },
+  Excavator: { pollution: 0.03, forest: -0.01, water: -0.005, biodiversity: -0.01 },
+  Dredger: { pollution: 0.02, forest: 0, water: -0.01, biodiversity: -0.01 },
+  Terraformer: { pollution: 0.05, forest: -0.02, water: -0.01, biodiversity: -0.02 },
+  PlanetaryEngine: { pollution: 0.1, forest: -0.05, water: -0.05, biodiversity: -0.05 },
+}
+
+function logIncident(db: GameDb, tick: number, type: string, message: string, severity: string, facilityId: number | null = null): void {
+  db.insert(schema.incidents).values({
+    type,
+    severity,
+    description: message,
+    tickTriggered: tick,
+    tickResolved: null,
+  }).run()
+
+  db.insert(schema.events).values({
+    tick,
+    timestamp: new Date().toISOString(),
+    type,
+    message,
+    severity,
+    facilityId,
+    data: null,
+  }).run()
 }
 
 const EXTRACTOR_TYPES = new Set(['Extractor', 'Farm', 'Forestry', 'WaterPump', 'Excavator', 'Dredger'])
