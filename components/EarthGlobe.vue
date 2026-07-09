@@ -7,11 +7,13 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import * as THREE from 'three'
 import type { FacilitySummary } from '~/lib/types/facility'
 import type { TransportSummary } from '~/lib/types/transport'
+import type { TerrainModification } from '~/lib/types/terrain'
 
 const props = defineProps<{
   facilities: FacilitySummary[]
   transports: TransportSummary[]
   quality: 'low' | 'medium' | 'high'
+  terrainModifications?: TerrainModification[]
 }>()
 
 const container = ref<HTMLDivElement | null>(null)
@@ -29,6 +31,7 @@ let particleSystem: THREE.Points | null = null
 let particleUniforms: { uTime: { value: number }, uCount: { value: number } } | null = null
 let transportParticles: THREE.Points | null = null
 let transportUniforms: { uTime: { value: number } } | null = null
+let terrainModGroup: THREE.Group
 
 const EARTH_RADIUS = 1
 
@@ -107,6 +110,8 @@ function init() {
   scene.add(transportGroup)
   particleGroup = new THREE.Group()
   scene.add(particleGroup)
+  terrainModGroup = new THREE.Group()
+  scene.add(terrainModGroup)
 
   // Lighting
   scene.add(new THREE.AmbientLight(0x4488ff, 0.3))
@@ -252,6 +257,49 @@ function updateMarkers() {
 
   if (arcData.length > 0) {
     buildTransportParticles(arcData)
+  }
+
+  // Terrain modification markers
+  while (terrainModGroup.children.length > 0) terrainModGroup.remove(terrainModGroup.children[0]!)
+  if (props.terrainModifications && props.terrainModifications.length > 0) {
+    const modColors: Record<string, number> = {
+      flatten_terrain: 0xcc8844,
+      dig_canal: 0x4488ff,
+      build_road_embankment: 0x886644,
+      create_reservoir: 0x44aaff,
+      drain_area: 0xaa8844,
+      divert_river: 0x44aaff,
+      level_mountain: 0xcc6622,
+      raise_land: 0xcc8844,
+      excavate_mine_shaft: 0x884422,
+      create_mountain: 0xaa4422,
+      shift_continental_plate: 0xff4400,
+      ocean_to_land: 0xcc8844,
+      land_to_ocean: 0x4488ff,
+    }
+    for (const mod of props.terrainModifications) {
+      const pos = latLonToVec3(mod.latIndex, mod.lonIndex, EARTH_RADIUS * 1.03)
+      const color = modColors[mod.reason] ?? 0xff8800
+      const raiseAmt = mod.elevationDelta > 0 ? 1 : 0
+      const size = 0.015 + Math.min(Math.abs(mod.elevationDelta) / 5000, 1) * 0.02
+      const ringGeo = new THREE.RingGeometry(size, size * 1.5, 16)
+      const ringMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.6, side: THREE.DoubleSide })
+      const ring = new THREE.Mesh(ringGeo, ringMat)
+      ring.position.copy(pos)
+      ring.lookAt(0, 0, 0)
+      terrainModGroup.add(ring)
+
+      // Vertical indicator: upward spike for raise, downward for lower
+      const spikeDir = raiseAmt ? 1 : -1
+      const spikeGeo = new THREE.ConeGeometry(0.005, size * 2, 8)
+      const spikeMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.5 })
+      const spike = new THREE.Mesh(spikeGeo, spikeMat)
+      spike.position.copy(pos)
+      spike.lookAt(pos.clone().multiplyScalar(2))
+      spike.rotateX(spikeDir * Math.PI / 2)
+      spike.position.add(pos.clone().normalize().multiplyScalar(spikeDir * size))
+      terrainModGroup.add(spike)
+    }
   }
 }
 
@@ -545,6 +593,7 @@ function animate() {
   markerGroup.rotation.y += 0.0005
   transportGroup.rotation.y += 0.0005
   particleGroup.rotation.y += 0.0005
+  terrainModGroup.rotation.y += 0.0005
 
   // Pulse markers
   const time = Date.now() * 0.001
@@ -578,6 +627,7 @@ function onResize() {
 
 watch(() => props.facilities, updateMarkers, { deep: true })
 watch(() => props.transports, updateMarkers, { deep: true })
+watch(() => props.terrainModifications, updateMarkers, { deep: true })
 
 onMounted(() => {
   init()
