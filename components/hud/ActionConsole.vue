@@ -33,7 +33,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
 import { useActionsStore } from '~/stores/actions'
 import { useGameStore } from '~/stores/game'
 

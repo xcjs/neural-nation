@@ -1,25 +1,44 @@
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
-import type { TechTreeNode, TechStatus, Recipe } from '../../../lib/types/tech'
-import { TechBranch } from '../../../lib/types/tech'
-import type { PaginationParams, PaginatedResult } from '../../../lib/types/mcp'
+import type { TechTreeNode, Recipe, RecipeInput, TechUnlock } from '../../../lib/types/tech'
+import { TechBranch, TechStatus } from '../../../lib/types/tech'
+import type { PaginatedResult } from '../../../lib/types/mcp'
 
 export function getTechTree(token: string): TechTreeNode[] {
   const db = createGameDb(token)
 
   const nodes = db.select().from(schema.techNodes).all()
   const research = db.select().from(schema.gameResearch).all()
+  const prerequisites = db.select().from(schema.techPrerequisites).all()
+  const costs = db.select().from(schema.techCosts).all()
+  const unlocks = db.select().from(schema.techUnlocks).all()
 
   return nodes.map((node) => {
     const researchEntry = research.find((r) => r.techId === node.id)
-    let status: TechStatus = 'Available'
+    let status: TechStatus = TechStatus.Available
 
     if (researchEntry?.status === 'Completed') {
-      status = 'Completed'
+      status = TechStatus.Completed
     } else if (researchEntry?.status === 'InProgress') {
-      status = 'InProgress'
+      status = TechStatus.InProgress
     }
+
+    const nodePrerequisites = prerequisites.filter((p) => p.techId === node.id).map((p) => p.prerequisiteId)
+    const nodeCosts: RecipeInput[] = costs
+      .filter((c) => c.techId === node.id)
+      .map((c) => ({
+        resourceKey: c.resourceKey,
+        quantity: c.quantity,
+        unit: c.unit,
+        optional: false,
+      }))
+    const nodeUnlocks: TechUnlock[] = unlocks
+      .filter((u) => u.techId === node.id)
+      .map((u) => ({
+        type: u.unlockType as TechUnlock['type'],
+        id: u.unlockId,
+      }))
 
     return {
       id: node.id,
@@ -27,7 +46,10 @@ export function getTechTree(token: string): TechTreeNode[] {
       description: node.description,
       tier: node.tier,
       category: node.category as TechBranch,
+      prerequisites: nodePrerequisites,
+      researchCost: nodeCosts,
       researchTime: node.researchTime,
+      unlocks: nodeUnlocks,
       status,
       progress: researchEntry?.progress || 0,
     }
@@ -66,10 +88,28 @@ export function getRecipes(
     .from(schema.recipes)
     .get()?.count || 0
 
+  const allInputs = db.select().from(schema.recipeInputs).all()
+  const allOutputs = db.select().from(schema.recipeOutputs).all()
+
   const recipes: Recipe[] = recipeRows.map((row) => ({
     id: row.id,
     name: row.name,
     facilityType: row.facilityType,
+    inputs: allInputs
+      .filter((i) => i.recipeId === row.id)
+      .map((i) => ({
+        resourceKey: i.resourceKey,
+        quantity: i.quantity,
+        unit: i.unit,
+        optional: Boolean(i.optional),
+      })),
+    outputs: allOutputs
+      .filter((o) => o.recipeId === row.id)
+      .map((o) => ({
+        resourceKey: o.resourceKey,
+        quantity: o.quantity,
+        unit: o.unit,
+      })),
     craftTime: row.craftTime,
     techRequired: row.techRequired,
   }))
@@ -175,10 +215,28 @@ export function searchRecipes(
     recipes = recipes.filter((r) => matchingInputs.includes(r.id))
   }
 
+  const allInputs = db.select().from(schema.recipeInputs).all()
+  const allOutputs = db.select().from(schema.recipeOutputs).all()
+
   const result: Recipe[] = recipes.map((r) => ({
     id: r.id,
     name: r.name,
     facilityType: r.facilityType,
+    inputs: allInputs
+      .filter((i) => i.recipeId === r.id)
+      .map((i) => ({
+        resourceKey: i.resourceKey,
+        quantity: i.quantity,
+        unit: i.unit,
+        optional: Boolean(i.optional),
+      })),
+    outputs: allOutputs
+      .filter((o) => o.recipeId === r.id)
+      .map((o) => ({
+        resourceKey: o.resourceKey,
+        quantity: o.quantity,
+        unit: o.unit,
+      })),
     craftTime: r.craftTime,
     techRequired: r.techRequired,
   }))

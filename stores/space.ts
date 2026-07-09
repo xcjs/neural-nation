@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { $fetch } from 'ofetch'
 import type { SpaceSummary } from '~/lib/types/space'
 
 export const useSpaceStore = defineStore('space', () => {

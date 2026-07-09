@@ -1,8 +1,7 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 
 export const meta = sqliteTable('meta', {
   key: text('key').primaryKey(),
-  value: text('value'),
   token: text('token'),
   publicToken: text('public_token'),
   createdAt: text('created_at'),

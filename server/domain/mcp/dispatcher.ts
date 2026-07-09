@@ -64,13 +64,15 @@ function dispatchTool(token: string, toolName: string, args: Record<string, unkn
     case 'search_facilities':
       return searchFacilities(token, args as Parameters<typeof searchFacilities>[1])
     // Transport tools
-    case 'build_transport':
-      return buildTransport(token, {
+    case 'build_transport': {
+      const transportParams: { type: TransportType; fromFacilityId: number; toFacilityId: number; resourceKey?: string } = {
         type: args.type as TransportType,
         fromFacilityId: args.fromFacilityId as number,
         toFacilityId: args.toFacilityId as number,
-        resourceKey: args.resourceKey as string | undefined,
-      })
+      }
+      if (args.resourceKey) transportParams.resourceKey = args.resourceKey as string
+      return buildTransport(token, transportParams)
+    }
     case 'demolish_transport':
       return demolishTransport(token, args.transportId as number)
     case 'list_transports':
@@ -132,7 +134,7 @@ function dispatchTool(token: string, toolName: string, args: Record<string, unkn
   }
 }
 
-function getGameState(token: string) {
+export function getGameState(token: string) {
   const db = createGameDb(token)
   const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
 
@@ -181,7 +183,7 @@ function logAction(
     stateSnapshot: null,
   }).run()
 
-  db.insert(schema.eventLog).values({
+  db.insert(schema.events).values({
     tick,
     timestamp: new Date().toISOString(),
     type: 'mcp_call',

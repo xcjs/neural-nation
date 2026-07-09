@@ -1,10 +1,8 @@
-import { existsSync, unlinkSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, unlinkSync } from 'node:fs'
 import {
   loadRegistry,
   saveRegistry,
   removeFromRegistry,
-  findRegistryEntry,
   updateRegistryEntry,
 } from './registry'
 import { closeGameDb } from '~/server/db/client'

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { $fetch } from 'ofetch'
 import type { TechTreeNode } from '~/lib/types/tech'
 import { TechStatus } from '~/lib/types/tech'
 

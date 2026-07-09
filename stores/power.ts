@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { $fetch } from 'ofetch'
 import type { PowerGridSummary } from '~/lib/types/power'
 
 export const usePowerStore = defineStore('power', () => {

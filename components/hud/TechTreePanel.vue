@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 import { useTechTreeStore } from '~/stores/techtree'
-import { TechBranch, type TechStatus } from '~/lib/types/tech'
+import { TechBranch, TechStatus } from '~/lib/types/tech'
 
 const techtree = useTechTreeStore()
 

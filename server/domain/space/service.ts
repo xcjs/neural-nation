@@ -1,8 +1,7 @@
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import type { SpaceSummary, SpaceFacilitySummary, SpaceMission } from '../../../lib/types/space'
-import type { PaginationParams, PaginatedResult } from '../../../lib/types/mcp'
 
 export function getSpaceStatus(token: string): SpaceSummary {
   const db = createGameDb(token)

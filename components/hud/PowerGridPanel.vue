@@ -6,7 +6,7 @@
       <div class="flex justify-between"><span class="text-cyan-700">Status:</span><span :class="gridStatusColor">{{ power.grid.status }}</span></div>
       <div class="flex justify-between"><span class="text-cyan-700">Capacity:</span><span class="text-cyan-300">{{ power.grid.totalCapacity.toFixed(0) }} MW</span></div>
       <div class="flex justify-between"><span class="text-cyan-700">Demand:</span><span class="text-cyan-300">{{ power.grid.totalDemand.toFixed(0) }} MW</span></div>
-      <div class="flex justify-between"><span class="text-cyan-700">Grids:</span><span class="text-cyan-300">{{ power.grid.connectedComponents }}</span></div>
+      <div class="flex justify-between"><span class="text-cyan-700">Grids:</span><span class="text-cyan-300">{{ power.grid.connectedGrids.length }}</span></div>
       <div v-if="power.grid.lines && power.grid.lines.length > 0" class="mt-2">
         <p class="text-cyan-500 font-bold mb-0.5">LINES</p>
         <div v-for="line in power.grid.lines" :key="line.id" class="flex justify-between">

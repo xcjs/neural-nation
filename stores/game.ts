@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { $fetch } from 'ofetch'
 import { GameStatus, type GameMeta, type TickState, type FullGameState } from '~/lib/types/game'
 
 export const useGameStore = defineStore('game', () => {

@@ -1,6 +1,6 @@
 import { defineEventHandler, getQuery } from 'h3'
-import { findRegistryEntry, findRegistryEntryByPublicToken } from '../../domain/game/registry'
-import { getGameState } from '../../domain/mcp/dispatcher'
+import { findRegistryEntry, findRegistryEntryByPublicToken } from '../domain/game/registry'
+import { getGameState } from '../domain/mcp/dispatcher'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)

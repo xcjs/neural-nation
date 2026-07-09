@@ -1,7 +1,6 @@
 import { resolve } from 'node:path'
 import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import type { RegistryEntry } from '../../../lib/types/game'
-import { GameStatus } from '../../../lib/types/game'
 
 const REGISTRY_PATH = resolve('data', 'games', 'registry.json')
 
@@ -38,7 +37,7 @@ export function updateRegistryEntry(
   const entries = loadRegistry()
   const idx = entries.findIndex((e) => e.token === token)
   if (idx >= 0) {
-    entries[idx] = { ...entries[idx], ...update }
+    entries[idx] = { ...entries[idx], ...update } as RegistryEntry
     saveRegistry(entries)
   }
 }

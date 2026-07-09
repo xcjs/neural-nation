@@ -19,13 +19,13 @@ export function processTick(token: string): TickResult {
 
   if (meta.status === GameStatus.GameOver || meta.status === GameStatus.Paused) {
     return {
-      tickCount: meta.tickCount,
+      tickCount: meta.tickCount ?? 0,
       status: meta.status as GameStatus,
       advanced: false,
     }
   }
 
-  const newTick = meta.tickCount + 1
+  const newTick = (meta.tickCount ?? 0) + 1
   const now = new Date().toISOString()
 
   db.transaction((tx) => {
@@ -123,7 +123,7 @@ function processFacilityProduction(db: GameDb, _tick: number): void {
   }
 }
 
-function processTransportFlows(db: GameDb, _tick: number): void {
+function processTransportFlows(_db: GameDb, _tick: number): void {
   // Stub: transport flow processing
   // Will move resources along transport links based on flow rates
 }

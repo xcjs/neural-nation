@@ -1,4 +1,4 @@
-import { mkdirSync, existsSync, copyFileSync } from 'node:fs'
+import { mkdirSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -344,7 +344,7 @@ async function main() {
   insertRecipe.run('fuel_refining', 'Fuel Refining', 'Refinery', 3, 'basic_construction')
 
   // Seed recipe inputs/outputs for iron smelting
-  const insertInput = db.prepare(`INSERT INTO recipe_inputs (recipe_id, resource_key, quantity, unit, optional) VALUES (?, ?, ?, ?, 0)`)
+  const insertInput = db.prepare(`INSERT INTO recipe_inputs (recipe_id, resource_key, quantity, unit, optional) VALUES (?, ?, ?, ?, ?)`)
   const insertOutput = db.prepare(`INSERT INTO recipe_outputs (recipe_id, resource_key, quantity, unit) VALUES (?, ?, ?, ?)`)
   insertInput.run('iron_smelting', 'fe', 2, 't', 0)
   insertOutput.run('iron_smelting', 'iron', 1, 't')

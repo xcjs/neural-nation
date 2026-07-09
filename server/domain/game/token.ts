@@ -6,7 +6,8 @@ export function generateToken(): string {
   const bytes = randomBytes(32)
   let result = ''
   for (let i = 0; i < bytes.length; i++) {
-    result += BASE62_CHARSET[bytes[i] % 62]
+    const char = BASE62_CHARSET[bytes[i]! % 62]
+    result += char ?? '0'
   }
   return result
 }

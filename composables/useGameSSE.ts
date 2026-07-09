@@ -1,4 +1,4 @@
-import { ref, onUnmounted } from 'vue'
+import { onUnmounted } from 'vue'
 import { useGameStore } from '~/stores/game'
 import { useResourcesStore } from '~/stores/resources'
 import { useFacilitiesStore } from '~/stores/facilities'

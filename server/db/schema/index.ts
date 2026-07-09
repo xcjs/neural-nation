@@ -1,14 +1,14 @@
-export { meta } from './meta'
-export { resources, stockpiles, surveyLog } from './resource'
-export { facilities, facilityBuffers } from './facility'
-export { transports } from './transport'
-export { terrain, terrainModifications } from './terrain'
-export { powerLines, batteryBanks } from './power'
-export { humanity, environment, incidents } from './humanity'
-export { spaceFacilities, spaceMissions } from './space'
-export { actions } from './action'
-export { events } from './event'
-export {
+import { meta } from './meta'
+import { resources, stockpiles, surveyLog } from './resource'
+import { facilities, facilityBuffers } from './facility'
+import { transports } from './transport'
+import { terrain, terrainModifications } from './terrain'
+import { powerLines, batteryBanks } from './power'
+import { humanity, environment, incidents } from './humanity'
+import { spaceFacilities, spaceMissions } from './space'
+import { actions } from './action'
+import { events } from './event'
+import {
   recipes,
   recipeInputs,
   recipeOutputs,
@@ -18,3 +18,61 @@ export {
   techPrerequisites,
   gameResearch,
 } from './tech'
+
+export const schema = {
+  meta,
+  resources,
+  stockpiles,
+  surveyLog,
+  facilities,
+  facilityBuffers,
+  transports,
+  terrain,
+  terrainModifications,
+  powerLines,
+  batteryBanks,
+  humanity,
+  environment,
+  incidents,
+  spaceFacilities,
+  spaceMissions,
+  actions,
+  events,
+  recipes,
+  recipeInputs,
+  recipeOutputs,
+  techNodes,
+  techCosts,
+  techUnlocks,
+  techPrerequisites,
+  gameResearch,
+}
+
+export {
+  meta,
+  resources,
+  stockpiles,
+  surveyLog,
+  facilities,
+  facilityBuffers,
+  transports,
+  terrain,
+  terrainModifications,
+  powerLines,
+  batteryBanks,
+  humanity,
+  environment,
+  incidents,
+  spaceFacilities,
+  spaceMissions,
+  actions,
+  events,
+  recipes,
+  recipeInputs,
+  recipeOutputs,
+  techNodes,
+  techCosts,
+  techUnlocks,
+  techPrerequisites,
+  gameResearch,
+}

@@ -23,13 +23,10 @@ export enum GridStatus {
 
 export interface PowerGridSummary {
   totalCapacity: number
-  totalGeneration: number
-  totalConsumption: number
-  gridStatus: GridStatus
-  connectedComponents: number
-  storage: number
-  storageCapacity: number
+  totalDemand: number
+  status: GridStatus
   lines: PowerLineSummary[]
+  connectedGrids: number[][]
 }
 
 export interface PowerLineSummary {

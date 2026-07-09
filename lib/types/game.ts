@@ -1,3 +1,11 @@
+import type { ResourceOverviewRow } from './resource'
+import type { FacilitySummary } from './facility'
+import type { TransportSummary } from './transport'
+import type { EnvironmentState } from './humanity'
+import type { TechTreeNode } from './tech'
+import type { PowerGridSummary } from './power'
+import type { SpaceSummary } from './space'
+
 export enum GameStatus {
   Active = 'Active',
   Paused = 'Paused',

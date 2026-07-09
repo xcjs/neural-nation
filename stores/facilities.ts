@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { $fetch } from 'ofetch'
 import type { FacilitySummary, FacilityDetail } from '~/lib/types/facility'
 
 export const useFacilitiesStore = defineStore('facilities', () => {

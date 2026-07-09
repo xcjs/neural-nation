@@ -1,5 +1,5 @@
-import type { DifficultyPreset } from '../types/game'
-import type { ResourceUnit } from '../types/resource'
+import { DifficultyPreset } from '../types/game'
+import { ResourceUnit } from '../types/resource'
 
 export interface StartingResource {
   resourceKey: string

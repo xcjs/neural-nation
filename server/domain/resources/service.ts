@@ -6,8 +6,6 @@ import { ResourceCategory, ResourceUnit, TrendDirection } from '../../../lib/typ
 import { ELEMENTS } from '../../../lib/constants/elements'
 import type { PaginationParams, PaginatedResult } from '../../../lib/types/mcp'
 
-const GRID_SIZE = 0.1
-
 export function surveyRegion(
   token: string,
   lat: number,
@@ -67,7 +65,7 @@ export function surveyRegion(
 export function getDiscoveredResources(
   token: string,
   params: PaginationParams = {},
-): PaginatedResult<{ id: number; resourceKey: string; name: string; lat: number; lon: number; quantity: number; remaining: number; grade: number; surface: boolean; depth: number | null }> {
+): PaginatedResult<{ id: number; resourceKey: string; name: string; lat: number; lon: number; quantity: number; remaining: number; grade: number; surface: number; depth: number | null; unit: string; category: string; discovered: number }> {
   const db = createGameDb(token)
   const limit = params.limit || 50
   const offset = params.offset || 0

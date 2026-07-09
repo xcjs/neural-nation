@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { $fetch } from 'ofetch'
 import type { TerrainModification } from '~/lib/types/terrain'
 
 export const useTerrainStore = defineStore('terrain', () => {

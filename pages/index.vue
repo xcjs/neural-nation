@@ -79,7 +79,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { DifficultyPreset, type RegistryEntry } from '~/lib/types/game'
+import { $fetch } from 'ofetch'
+import { DifficultyPreset } from '~/lib/types/game'
 
 const difficulty = ref<DifficultyPreset>(DifficultyPreset.Normal)
 const loading = ref(false)

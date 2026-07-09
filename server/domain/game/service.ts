@@ -2,7 +2,7 @@ import { copyFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createGameDb, getTemplateDbPath } from '../../db/client'
 import { DifficultyConfigs } from '../../../lib/constants/difficulty'
-import { DifficultyPreset, type RegistryEntry } from '../../../lib/types/game'
+import { DifficultyPreset, GameStatus, type RegistryEntry } from '../../../lib/types/game'
 import { generateTokenPair } from './token'
 import { addToRegistry, ensureDataDir } from './registry'
 import { schema } from '../../db/schema'
@@ -52,7 +52,7 @@ export function createGame(difficulty: DifficultyPreset): CreateGameResult {
     publicToken,
     createdAt: now,
     lastActive: now,
-    status: 'Active' as GameStatus,
+    status: GameStatus.Active,
     cleanupEligibleAt: null,
   }
   addToRegistry(entry)

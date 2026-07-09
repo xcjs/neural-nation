@@ -2,7 +2,7 @@ import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import type { TerrainCell, TerrainModification } from '../../../lib/types/terrain'
-import { TerraformAction, TerrainClass } from '../../../lib/types/terrain'
+import { TerraformAction } from '../../../lib/types/terrain'
 import type { PaginationParams, PaginatedResult } from '../../../lib/types/mcp'
 
 export function getEffectiveTerrain(token: string, lat: number, lon: number) {
@@ -91,7 +91,7 @@ export function getTerrainPath(
     Math.pow(toLat - fromLat, 2) + Math.pow(toLon - fromLon, 2),
   ) * 111
 
-  return { cells, modifiers, distance }
+  return { cells: cells as unknown as TerrainCell[], modifiers, distance }
 }
 
 export function terraform(
@@ -118,7 +118,7 @@ export function terraform(
       lonIndex: target.lonIndex,
       elevationDelta,
       newTerrainClass,
-      modifiedBy: params.facilityId,
+      modifiedBy: String(params.facilityId),
       modifiedAtTick: tick,
       operationId,
       reason: action,
@@ -157,7 +157,7 @@ export function getTerrainModifications(
 }
 
 export function getTerraformCostEstimate(
-  token: string,
+  _token: string,
   action: TerraformAction,
   _params: { targetCells: Array<{ latIndex: number; lonIndex: number }> },
 ): { costs: Array<{ resourceKey: string; quantity: number; unit: string }>; environmentalImpact: string; estimatedIncidents: string[] } {
@@ -232,10 +232,10 @@ function getTerraformDefaults(action: TerraformAction): {
 }
 
 function classifyByElevation(elevation: number): string {
-  if (elevation \u003c 0) return 'Ocean'
-  if (elevation \u003c 200) return 'Coastal'
-  if (elevation \u003c 800) return 'Plain'
-  if (elevation \u003c 1500) return 'Hill'
-  if (elevation \u003c 3000) return 'Mountain'
+  if (elevation < 0) return 'Ocean'
+  if (elevation < 200) return 'Coastal'
+  if (elevation < 800) return 'Plain'
+  if (elevation < 1500) return 'Hill'
+  if (elevation < 3000) return 'Mountain'
   return 'HighMountain'
 }

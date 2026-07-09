@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { $fetch } from 'ofetch'
 import { ResourceCategory, type ResourceOverviewRow } from '~/lib/types/resource'
 
 export const useResourcesStore = defineStore('resources', () => {

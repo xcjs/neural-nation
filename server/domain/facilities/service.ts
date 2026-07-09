@@ -119,6 +119,7 @@ export function getFacilityDetails(token: string, facilityId: number): FacilityD
     elevation: facility.elevation,
     terrainClass: facility.terrainClass,
     constructionProgress: facility.constructionProgress,
+    throughput: facility.targetOutputRate,
   }
 }
 

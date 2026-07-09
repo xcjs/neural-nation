@@ -1,10 +1,6 @@
 export interface SpaceSummary {
-  stations: SpaceFacilitySummary[]
-  drones: SpaceFacilitySummary[]
-  lunarFacilities: SpaceFacilitySummary[]
-  deepSpaceProbes: SpaceFacilitySummary[]
-  activeMissions: SpaceMission[]
-  totalCrewAssigned: number
+  facilities: SpaceFacilitySummary[]
+  missions: SpaceMission[]
 }
 
 export interface SpaceFacilitySummary {
@@ -14,6 +10,7 @@ export interface SpaceFacilitySummary {
   status: string
   crewAssigned: number
   crewCapacity: number
+  orbital: boolean
 }
 
 export interface SpaceMission {
@@ -21,7 +18,8 @@ export interface SpaceMission {
   type: string
   status: string
   target: string
-  launchTick: number
+  launchTick: number | null
   returnTick: number | null
   payload: string | null
+  facilityId: number | null
 }

@@ -1,6 +1,5 @@
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq, sql } from 'drizzle-orm'
 import type { PowerGridSummary, PowerLineSummary } from '../../../lib/types/power'
 import { GridStatus } from '../../../lib/types/power'
 import { greatCircleDistance, transmissionLossPercent } from '../../shared/geo/distance'

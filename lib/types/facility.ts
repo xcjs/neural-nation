@@ -80,6 +80,7 @@ export interface FacilityDetail {
   elevation: number
   terrainClass: string
   constructionProgress: number
+  throughput: number
 }
 
 export interface FacilityBufferEntry {

@@ -1,7 +1,7 @@
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
-import type { TransportSummary, RouteAssignment } from '../../../lib/types/transport'
+import type { TransportSummary } from '../../../lib/types/transport'
 import { TransportType } from '../../../lib/types/transport'
 import { greatCircleDistance } from '../../shared/geo/distance'
 import type { PaginationParams, PaginatedResult } from '../../../lib/types/mcp'
@@ -187,6 +187,10 @@ function mapToSummary(t: typeof schema.transports.$inferSelect): TransportSummar
     type: t.type as TransportType,
     fromFacilityId: t.fromFacilityId,
     toFacilityId: t.toFacilityId,
+    fromLat: t.fromLat,
+    fromLon: t.fromLon,
+    toLat: t.toLat,
+    toLon: t.toLon,
     resourceKey: t.resourceKey,
     flowRate: t.flowRate,
     capacity: t.capacity,

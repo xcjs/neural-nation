@@ -21,6 +21,7 @@ export interface TransportSummary {
   toLon: number
   flowRate: number
   resourceKey: string | null
+  capacity: number
   terrainModifiers: string[]
 }
 

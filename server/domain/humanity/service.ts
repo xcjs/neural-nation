@@ -17,18 +17,33 @@ export function getEnvironmentalStatus(token: string): { population: PopulationS
 
   return {
     population: {
-      population: human.population,
+      count: human.population,
       growthRate: human.growthRate,
       welfare: human.welfare,
       foodSatisfaction: human.foodSatisfaction,
       energySatisfaction: human.energySatisfaction,
       assignedToSpace: human.assignedToSpace,
+      trend: 'stable',
     },
     environment: {
+      population: {
+        count: human.population,
+        growthRate: human.growthRate,
+        welfare: human.welfare,
+        foodSatisfaction: human.foodSatisfaction,
+        energySatisfaction: human.energySatisfaction,
+        assignedToSpace: human.assignedToSpace,
+        trend: 'stable',
+      },
       pollutionLevel: env.pollutionLevel,
       forestCoverage: env.forestCoverage,
       waterQuality: env.waterQuality,
       biodiversity: env.biodiversity,
+      pollutionTrend: 'stable',
+      forestTrend: 'stable',
+      waterTrend: 'stable',
+      biodiversityTrend: 'stable',
+      activeIncidents: [],
     },
   }
 }

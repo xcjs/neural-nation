@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useResourcesStore } from '~/stores/resources'
 import { useUiStore } from '~/stores/ui'
 import { ResourceCategory } from '~/lib/types/resource'

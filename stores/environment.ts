@@ -1,13 +1,28 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { $fetch } from 'ofetch'
 import type { EnvironmentState } from '~/lib/types/humanity'
 
 export const useEnvironmentStore = defineStore('environment', () => {
   const state = ref<EnvironmentState>({
+    population: {
+      count: 0,
+      growthRate: 0,
+      welfare: 100,
+      foodSatisfaction: 100,
+      energySatisfaction: 100,
+      assignedToSpace: 0,
+      trend: 'stable',
+    },
     pollutionLevel: 0,
     forestCoverage: 100,
     waterQuality: 100,
     biodiversity: 100,
+    pollutionTrend: 'stable',
+    forestTrend: 'stable',
+    waterTrend: 'stable',
+    biodiversityTrend: 'stable',
+    activeIncidents: [],
   })
   const showPollutionHeatmap = ref(false)
   const showBiomeDegradation = ref(false)
@@ -31,7 +46,26 @@ export const useEnvironmentStore = defineStore('environment', () => {
   }
 
   function reset() {
-    state.value = { pollutionLevel: 0, forestCoverage: 100, waterQuality: 100, biodiversity: 100 }
+    state.value = {
+      population: {
+        count: 0,
+        growthRate: 0,
+        welfare: 100,
+        foodSatisfaction: 100,
+        energySatisfaction: 100,
+        assignedToSpace: 0,
+        trend: 'stable',
+      },
+      pollutionLevel: 0,
+      forestCoverage: 100,
+      waterQuality: 100,
+      biodiversity: 100,
+      pollutionTrend: 'stable',
+      forestTrend: 'stable',
+      waterTrend: 'stable',
+      biodiversityTrend: 'stable',
+      activeIncidents: [],
+    }
     showPollutionHeatmap.value = false
     showBiomeDegradation.value = false
   }
