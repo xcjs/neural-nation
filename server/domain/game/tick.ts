@@ -109,6 +109,11 @@ function processEnvironmentUpdate(db: GameDb, _tick: number): void {
 }
 
 const EXTRACTOR_TYPES = new Set(['Extractor', 'Farm', 'Forestry', 'WaterPump', 'Excavator', 'Dredger'])
+const POWER_GENERATING_TYPES = new Set([
+  'PowerPlant', 'SolarFarm', 'WindFarm', 'HydroPlant', 'NuclearReactor',
+  'BreederReactor', 'FusionReactor', 'BiomassPlant', 'BiogasPlant',
+  'DieselGenerator', 'CoalPlant', 'GasPlant', 'OilPlant', 'GeothermalPlant',
+])
 const DEFAULT_BUFFER_CAPACITY = 100
 const STORAGE_BUFFER_CAPACITY = 1000
 const EXTRACTOR_RANGE_DEG = 2
@@ -160,8 +165,12 @@ function processFacilityProduction(db: GameDb, _tick: number): void {
     .all()
 
   for (const facility of activeFacilities) {
-    // Power check: unpowered facilities produce nothing
-    if (!facility.powerConnected) {
+    // Power check: unpowered facilities produce nothing.
+    // Extractors and power-generating facilities are exempt (extractors run on
+    // their own diesel/fuel; generators are self-powered by definition).
+    const isExtractor = EXTRACTOR_TYPES.has(facility.type)
+    const isPowerGenerator = POWER_GENERATING_TYPES.has(facility.type)
+    if (!facility.powerConnected && !isExtractor && !isPowerGenerator) {
       db.update(schema.facilities)
         .set({ throughput: 0 })
         .where(eq(schema.facilities.id, facility.id))
@@ -169,7 +178,7 @@ function processFacilityProduction(db: GameDb, _tick: number): void {
       continue
     }
 
-    if (EXTRACTOR_TYPES.has(facility.type)) {
+    if (isExtractor) {
       processExtractorProduction(db, facility)
     } else if (facility.activeRecipeId) {
       processRecipeProduction(db, facility)
