@@ -4,6 +4,8 @@ import type { RegistryEntry } from '../../../lib/types/game'
 
 const REGISTRY_PATH = resolve('data', 'games', 'registry.json')
 
+let cache: RegistryEntry[] | null = null
+
 export function ensureDataDir(): void {
   const dir = resolve('data', 'games')
   if (!existsSync(dir)) {
@@ -12,15 +14,19 @@ export function ensureDataDir(): void {
 }
 
 export function loadRegistry(): RegistryEntry[] {
+  if (cache !== null) return cache
   if (!existsSync(REGISTRY_PATH)) {
-    return []
+    cache = []
+    return cache
   }
   const raw = readFileSync(REGISTRY_PATH, 'utf-8').replace(/^\uFEFF/, '')
-  return JSON.parse(raw) as RegistryEntry[]
+  cache = JSON.parse(raw) as RegistryEntry[]
+  return cache
 }
 
 export function saveRegistry(entries: RegistryEntry[]): void {
   ensureDataDir()
+  cache = entries
   writeFileSync(REGISTRY_PATH, JSON.stringify(entries, null, 2), 'utf-8')
 }
 
@@ -55,4 +61,8 @@ export function findRegistryEntryByPublicToken(
   publicToken: string,
 ): RegistryEntry | undefined {
   return loadRegistry().find((e) => e.publicToken === publicToken)
+}
+
+export function clearRegistryCache(): void {
+  cache = null
 }

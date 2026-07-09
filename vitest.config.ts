@@ -26,6 +26,9 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['lib/**/*.test.ts', 'server/**/*.test.ts', 'stores/**/*.test.ts', 'composables/**/*.test.ts'],
+          poolOptions: {
+            forks: { singleFork: true },
+          },
         },
       },
       {
