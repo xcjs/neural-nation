@@ -367,6 +367,16 @@ async function main() {
   insertOutput.run('aluminum_smelting', 'aluminum', 1, 't')
   insertInput.run('silicon_extraction', 'si', 2, 't', 0)
   insertOutput.run('silicon_extraction', 'silicon', 1, 't')
+  insertInput.run('machinery', 'iron', 2, 't', 0)
+  insertInput.run('machinery', 'copper', 1, 't', 0)
+  insertOutput.run('machinery', 'machinery', 1, 't')
+  insertInput.run('electronics', 'copper', 1, 't', 0)
+  insertInput.run('electronics', 'silicon', 1, 't', 0)
+  insertOutput.run('electronics', 'electronics', 1, 't')
+  insertInput.run('plastics', 'oil', 1, 't', 0)
+  insertOutput.run('plastics', 'plastics', 1, 't')
+  insertInput.run('fuel_refining', 'oil', 2, 't', 0)
+  insertOutput.run('fuel_refining', 'fuel', 1, 't')
 
   // Seed terrain grid (deterministic value-noise, 1° resolution).
   // Idempotent — no-ops if terrain table already populated.

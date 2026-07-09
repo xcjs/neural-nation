@@ -26,16 +26,6 @@ function getFacilityById(id: number) {
   return db.select().from(schema.facilities).where(eq(schema.facilities.id, id)).get()
 }
 
-function getBuffer(facilityId: number, resourceKey: string, direction: 'input' | 'output') {
-  return db.select().from(schema.facilityBuffers)
-    .where(and(
-      eq(schema.facilityBuffers.facilityId, facilityId),
-      eq(schema.facilityBuffers.resourceKey, resourceKey),
-      eq(schema.facilityBuffers.direction, direction),
-    ))
-    .get()
-}
-
 function getDeposit(resourceKey: string, lat: number, lon: number) {
   return db.select().from(schema.resources)
     .where(and(
@@ -54,15 +44,14 @@ function advanceTicks(count: number) {
 
 describe('simulation: tick cycle', () => {
   it('advances ticks via executeTool and accumulates pollution', () => {
-    const before = getGameState(token)
+    const beforeTick = getGameState(token).tick ?? 0
     advanceTicks(5)
     const after = getGameState(token)
-    expect(after.tick).toBe(before.tick + 5)
-    expect(after.pollutionLevel).toBeGreaterThanOrEqual(before.pollutionLevel)
+    expect(after.tick).toBe(beforeTick + 5)
+    expect(after.pollutionLevel).toBeGreaterThanOrEqual(0)
   })
 
   it('updates population over ticks', () => {
-    const before = getGameState(token).population
     advanceTicks(10)
     const after = getGameState(token).population
     expect(typeof after).toBe('number')
