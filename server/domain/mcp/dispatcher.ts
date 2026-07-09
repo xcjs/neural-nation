@@ -10,6 +10,7 @@ import { getTechTree, getRecipes, startResearch, searchRecipes } from '../tech'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
 import { eq } from 'drizzle-orm'
+import { publish, type GameEvent } from '../events/bus'
 import type { TerraformAction } from '../../../lib/types/terrain'
 import type { TransportType } from '../../../lib/types/transport'
 
@@ -26,6 +27,8 @@ export function executeTool(token: string, toolName: string, args: Record<string
     processTick(token)
 
     logAction(token, toolName, args, 'success', result)
+
+    emitGameEvents(token, toolName, args, result)
 
     return { status: 'success', data: result }
   } catch (err) {
@@ -192,4 +195,73 @@ function logAction(
     facilityId: null,
     data: JSON.stringify({ toolName, args, status, errorMessage }),
   }).run()
+}
+
+function emitGameEvents(token: string, toolName: string, args: Record<string, unknown>, result: unknown): void {
+  const events: GameEvent[] = []
+
+  switch (toolName) {
+    case 'build_facility': {
+      const data = result as { facilityId: number; status: string }
+      events.push({ type: 'facility_built', facility: { id: data.facilityId, ...args } })
+      break
+    }
+    case 'demolish_facility': {
+      events.push({ type: 'facility_demolished', facilityId: args.facilityId })
+      break
+    }
+    case 'set_production_target': {
+      const details = getFacilityDetails(token, args.facilityId as number)
+      if (details) events.push({ type: 'facility_updated', facility: details })
+      break
+    }
+    case 'build_transport': {
+      const data = result as { transportId?: number; id?: number }
+      const transportId = data?.transportId ?? data?.id
+      if (transportId) events.push({ type: 'transport_built', transport: { id: transportId, ...args } })
+      break
+    }
+    case 'demolish_transport': {
+      events.push({ type: 'transport_demolished', transportId: args.transportId })
+      break
+    }
+    case 'assign_route': {
+      events.push({ type: 'transport_built', transport: { id: args.transportId, resourceKey: args.resourceKey, flowRate: args.flowRate } })
+      break
+    }
+    case 'survey_region': {
+      events.push({ type: 'resource_updated' })
+      break
+    }
+    case 'start_research': {
+      events.push({ type: 'research_updated', node: { techId: args.techNodeId, status: 'InProgress' } })
+      break
+    }
+    case 'terraform': {
+      events.push({ type: 'terrain_modified', action: args.action, targetCells: args.targetCells })
+      break
+    }
+    case 'launch_mission':
+    case 'assign_space_crew': {
+      events.push({ type: 'space_updated' })
+      break
+    }
+  }
+
+  // Every tool call advances a tick and may change environment/power
+  events.push({ type: 'tick', tick: getGameState(token).tick })
+  events.push({ type: 'environment_updated', environment: getEnvironmentalStatus(token).environment })
+  events.push({ type: 'power_updated', power: getPowerGridStatus(token) })
+  events.push({ type: 'event_logged', event: { toolName, args, status: 'success' } })
+  events.push({ type: 'action_logged', action: { toolName, args } })
+
+  // Game over check
+  const state = getGameState(token)
+  if (state.status === 'GameOver') {
+    events.push({ type: 'game_over', meta: state })
+  }
+
+  for (const e of events) {
+    publish(token, e)
+  }
 }
