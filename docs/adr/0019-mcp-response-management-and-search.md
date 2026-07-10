@@ -1,10 +1,10 @@
 # ADR-0019: MCP Response Management & Search
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                  |
+| ---------- | -------------------------------------- |
+| Status     | Proposed                               |
+| Date       | 2026-07-08                             |
+| Deciders   | Project owner                          |
 | Relates to | ADR-0004, ADR-0007, ADR-0012, ADR-0018 |
 
 ## Context
@@ -26,15 +26,15 @@ produces Electronics?"), or by free-text query.
 All MCP tools that return lists **must support pagination** via `limit` and
 `offset` parameters. Default limits are tuned to keep responses concise:
 
-| Tool | Default Limit | Max Limit |
-|------|---------------|-----------|
-| `get_discovered_resources` | 50 | 200 |
-| `list_facilities` | 50 | 200 |
-| `list_transports` | 50 | 200 |
-| `get_event_log` | 25 | 100 |
-| `get_resource_overview` | 50 | 200 |
-| `get_recipes` | 50 | 200 |
-| `get_tech_tree` | 50 | 100 |
+| Tool                       | Default Limit | Max Limit |
+| -------------------------- | ------------- | --------- |
+| `get_discovered_resources` | 50            | 200       |
+| `list_facilities`          | 50            | 200       |
+| `list_transports`          | 50            | 200       |
+| `get_event_log`            | 25            | 100       |
+| `get_resource_overview`    | 50            | 200       |
+| `get_recipes`              | 50            | 200       |
+| `get_tech_tree`            | 50            | 100       |
 
 Each paginated response includes:
 
@@ -93,6 +93,7 @@ or construction dependency.
 ```
 
 Examples:
+
 - `search_resources({ Query: "iron" })` → returns Iron (element),
   Iron Ore (deposit), Iron Smelting (recipe reference).
 - `search_resources({ NeededForFacility: "nuclear_reactor" })` →
@@ -118,6 +119,7 @@ tech requirement, or input resource.
 ```
 
 Examples:
+
 - `search_recipes({ OutputResource: "Electronics" })` → returns
   Electronics Assembly recipe with full inputs/outputs.
 - `search_recipes({ InputResource: "Iron", FacilityType: "Smelter" })` →
@@ -164,6 +166,7 @@ to use pagination or filtering.
 ## Consequences
 
 **Positive:**
+
 - LLM context window is protected — no single tool call dumps the entire
   game state.
 - Search tools let the LLM ask targeted questions ("what do I need for X?")
@@ -173,9 +176,9 @@ to use pagination or filtering.
   for details only when needed.
 
 **Negative:**
+
 - More MCP tool calls per "turn" — the agent may need 2-3 calls to gather
-  full context for a decision. This is acceptable: event-driven ticks (ADR-
-  0006) mean each call also advances the game.
+  full context for a decision. This is acceptable: event-driven ticks (ADR- 0006) mean each call also advances the game.
 - Search implementation adds query complexity to the MCP domain layer.
 - Free-text search via `LIKE` is not as powerful as FTS5; acceptable for v1
   data volume.

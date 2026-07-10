@@ -1,10 +1,10 @@
 # ADR-0006: Game Loop & Player Interaction
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                            |
+| ---------- | ------------------------------------------------ |
+| Status     | Proposed                                         |
+| Date       | 2026-07-08                                       |
+| Deciders   | Project owner                                    |
 | Relates to | ADR-0003, ADR-0009, ADR-0015, ADR-0016, ADR-0024 |
 
 ## Context
@@ -99,12 +99,14 @@ collapse — ADR-0009):
 
 The player does NOT have any direct game-mechanical actions in the web UI. They
 cannot:
+
 - Build facilities
 - Place transport links
 - Assign production targets
 - Move resources
 
 The player CAN from the web UI:
+
 - **Pan/zoom/rotate** the 3D earth.
 - **Click facilities/deposits** to inspect their state (read-only info panels).
 - **View stockpiles**, production graphs, and event log.
@@ -150,6 +152,7 @@ deck for the simulation.
 ## Consequences
 
 **Positive:**
+
 - Clean separation: web UI = observation, MCP client = interaction. No
   duplicated chat infrastructure.
 - The "passive overseer" loop is inherently satisfying — watching autonomous
@@ -162,6 +165,7 @@ deck for the simulation.
   on its actions.
 
 **Negative:**
+
 - Player has no in-game corrective action if the LLM misbehaves (other than
   revoking the token or messaging via their chat client). This is by design —
   it's a sandbox for observing LLM behavior.

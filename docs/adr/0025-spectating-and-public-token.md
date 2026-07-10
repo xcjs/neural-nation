@@ -1,10 +1,10 @@
 # ADR-0025: Spectating & Public Token
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                  |
+| ---------- | -------------------------------------- |
+| Status     | Proposed                               |
+| Date       | 2026-07-08                             |
+| Deciders   | Project owner                          |
 | Relates to | ADR-0004, ADR-0005, ADR-0009, ADR-0012 |
 
 ## Context
@@ -135,6 +135,7 @@ The registry entry (ADR-0005) is updated to include the public token:
 ## Consequences
 
 **Positive:**
+
 - Players can share their game with friends without risking MCP control.
 - Simple token pair model — no separate auth system or user accounts.
 - Spectating URL is a single link — no signup or login for spectators.
@@ -142,6 +143,7 @@ The registry entry (ADR-0005) is updated to include the public token:
   endpoints.
 
 **Negative:**
+
 - Additional token management complexity (pair generation, resolution).
 - No spectator revocation per-person — the link is either valid or
   regenerated. If a specific person should lose access, the only option is

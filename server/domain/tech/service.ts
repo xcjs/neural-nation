@@ -1,9 +1,9 @@
+import type { PaginatedResult } from '../../../lib/types/mcp'
+import type { Recipe, RecipeInput, TechBranch, TechTreeNode, TechUnlock } from '../../../lib/types/tech'
+import { and, eq, like, sql } from 'drizzle-orm'
+import { TechStatus } from '../../../lib/types/tech'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq, and, sql, like } from 'drizzle-orm'
-import type { TechTreeNode, Recipe, RecipeInput, TechUnlock } from '../../../lib/types/tech'
-import { TechBranch, TechStatus } from '../../../lib/types/tech'
-import type { PaginatedResult } from '../../../lib/types/mcp'
 
 export function getTechTree(token: string): TechTreeNode[] {
   const db = createGameDb(token)
@@ -15,34 +15,36 @@ export function getTechTree(token: string): TechTreeNode[] {
   const unlocks = db.select().from(schema.techUnlocks).all()
 
   return nodes.map((node) => {
-    const researchEntry = research.find((r) => r.techId === node.id)
-    const nodePrerequisites = prerequisites.filter((p) => p.techId === node.id).map((p) => p.prerequisiteId)
+    const researchEntry = research.find(r => r.techId === node.id)
+    const nodePrerequisites = prerequisites.filter(p => p.techId === node.id).map(p => p.prerequisiteId)
 
     let status: TechStatus
     if (researchEntry?.status === 'Completed') {
       status = TechStatus.Completed
-    } else if (researchEntry?.status === 'InProgress') {
+    }
+    else if (researchEntry?.status === 'InProgress') {
       status = TechStatus.InProgress
-    } else {
+    }
+    else {
       // Check if all prerequisites are completed
       const completedTechIds = research
-        .filter((r) => r.status === 'Completed')
-        .map((r) => r.techId)
-      const allPrereqsMet = nodePrerequisites.every((p) => completedTechIds.includes(p))
+        .filter(r => r.status === 'Completed')
+        .map(r => r.techId)
+      const allPrereqsMet = nodePrerequisites.every(p => completedTechIds.includes(p))
       status = allPrereqsMet ? TechStatus.Available : TechStatus.Locked
     }
 
     const nodeCosts: RecipeInput[] = costs
-      .filter((c) => c.techId === node.id)
-      .map((c) => ({
+      .filter(c => c.techId === node.id)
+      .map(c => ({
         resourceKey: c.resourceKey,
         quantity: c.quantity,
         unit: c.unit,
         optional: false,
       }))
     const nodeUnlocks: TechUnlock[] = unlocks
-      .filter((u) => u.techId === node.id)
-      .map((u) => ({
+      .filter(u => u.techId === node.id)
+      .map(u => ({
         type: u.unlockType as TechUnlock['type'],
         id: u.unlockId,
       }))
@@ -93,26 +95,27 @@ export function getRecipes(
   const recipeRows = queryBuilder.limit(limit).offset(offset).all()
   const totalCount = db.select({ count: sql<number>`count(*)` })
     .from(schema.recipes)
-    .get()?.count || 0
+    .get()
+    ?.count || 0
 
   const allInputs = db.select().from(schema.recipeInputs).all()
   const allOutputs = db.select().from(schema.recipeOutputs).all()
 
-  const recipes: Recipe[] = recipeRows.map((row) => ({
+  const recipes: Recipe[] = recipeRows.map(row => ({
     id: row.id,
     name: row.name,
     facilityType: row.facilityType,
     inputs: allInputs
-      .filter((i) => i.recipeId === row.id)
-      .map((i) => ({
+      .filter(i => i.recipeId === row.id)
+      .map(i => ({
         resourceKey: i.resourceKey,
         quantity: i.quantity,
         unit: i.unit,
         optional: Boolean(i.optional),
       })),
     outputs: allOutputs
-      .filter((o) => o.recipeId === row.id)
-      .map((o) => ({
+      .filter(o => o.recipeId === row.id)
+      .map(o => ({
         resourceKey: o.resourceKey,
         quantity: o.quantity,
         unit: o.unit,
@@ -122,12 +125,9 @@ export function getRecipes(
   }))
 
   if (params.unlockedOnly) {
-    const completedTech = db.select().from(schema.gameResearch)
-      .where(eq(schema.gameResearch.status, 'Completed'))
-      .all()
-      .map((r) => r.techId)
+    const completedTech = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.status, 'Completed')).all().map(r => r.techId)
 
-    const filtered = recipes.filter((r) => !r.techRequired || completedTech.includes(r.techRequired))
+    const filtered = recipes.filter(r => !r.techRequired || completedTech.includes(r.techRequired))
     return {
       items: filtered,
       totalCount: filtered.length,
@@ -150,48 +150,37 @@ export function startResearch(
   token: string,
   techNodeId: string,
   labFacilityId: number,
-): { success: boolean; researchId: number } {
+): { success: boolean, researchId: number } {
   const db = createGameDb(token)
 
   const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
   const tick = meta?.tickCount || 0
 
   // Validate the tech node exists
-  const techNode = db.select().from(schema.techNodes)
-    .where(eq(schema.techNodes.id, techNodeId))
-    .get()
+  const techNode = db.select().from(schema.techNodes).where(eq(schema.techNodes.id, techNodeId)).get()
   if (!techNode) {
     throw new Error(`Tech node not found: ${techNodeId}`)
   }
 
   // Reject if already started or completed
-  const existing = db.select().from(schema.gameResearch)
-    .where(eq(schema.gameResearch.techId, techNodeId))
-    .get()
+  const existing = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.techId, techNodeId)).get()
   if (existing) {
     throw new Error(`Research already ${existing.status} for ${techNodeId}`)
   }
 
   // Check prerequisites are all Completed
-  const prereqs = db.select().from(schema.techPrerequisites)
-    .where(eq(schema.techPrerequisites.techId, techNodeId))
-    .all()
+  const prereqs = db.select().from(schema.techPrerequisites).where(eq(schema.techPrerequisites.techId, techNodeId)).all()
   if (prereqs.length > 0) {
-    const completedTechIds = db.select().from(schema.gameResearch)
-      .where(eq(schema.gameResearch.status, 'Completed'))
-      .all()
-      .map((r) => r.techId)
-    const missing = prereqs.filter((p) => !completedTechIds.includes(p.prerequisiteId))
+    const completedTechIds = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.status, 'Completed')).all().map(r => r.techId)
+    const missing = prereqs.filter(p => !completedTechIds.includes(p.prerequisiteId))
     if (missing.length > 0) {
-      const missingIds = missing.map((p) => p.prerequisiteId).join(', ')
+      const missingIds = missing.map(p => p.prerequisiteId).join(', ')
       throw new Error(`Tech prerequisites not met for ${techNodeId}: requires ${missingIds}`)
     }
   }
 
   // Validate the lab facility exists, is a ResearchLab, and is Active
-  const lab = db.select().from(schema.facilities)
-    .where(eq(schema.facilities.id, labFacilityId))
-    .get()
+  const lab = db.select().from(schema.facilities).where(eq(schema.facilities.id, labFacilityId)).get()
   if (!lab) {
     throw new Error(`Facility not found: ${labFacilityId}`)
   }
@@ -249,27 +238,18 @@ export function searchRecipes(
   let recipes = recipeQuery.all()
 
   if (params.outputResource) {
-    const matchingOutputs = db.select().from(schema.recipeOutputs)
-      .where(eq(schema.recipeOutputs.resourceKey, params.outputResource))
-      .all()
-      .map((r) => r.recipeId)
-    recipes = recipes.filter((r) => matchingOutputs.includes(r.id))
+    const matchingOutputs = db.select().from(schema.recipeOutputs).where(eq(schema.recipeOutputs.resourceKey, params.outputResource)).all().map(r => r.recipeId)
+    recipes = recipes.filter(r => matchingOutputs.includes(r.id))
   }
 
   if (params.inputResource) {
-    const matchingInputs = db.select().from(schema.recipeInputs)
-      .where(eq(schema.recipeInputs.resourceKey, params.inputResource))
-      .all()
-      .map((r) => r.recipeId)
-    recipes = recipes.filter((r) => matchingInputs.includes(r.id))
+    const matchingInputs = db.select().from(schema.recipeInputs).where(eq(schema.recipeInputs.resourceKey, params.inputResource)).all().map(r => r.recipeId)
+    recipes = recipes.filter(r => matchingInputs.includes(r.id))
   }
 
   if (params.unlockedOnly) {
-    const completedTechIds = db.select().from(schema.gameResearch)
-      .where(eq(schema.gameResearch.status, 'Completed'))
-      .all()
-      .map((r) => r.techId)
-    recipes = recipes.filter((r) => !r.techRequired || completedTechIds.includes(r.techRequired))
+    const completedTechIds = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.status, 'Completed')).all().map(r => r.techId)
+    recipes = recipes.filter(r => !r.techRequired || completedTechIds.includes(r.techRequired))
   }
 
   // Apply pagination AFTER all filtering for correct totalCount + hasMore
@@ -279,21 +259,21 @@ export function searchRecipes(
   const allInputs = db.select().from(schema.recipeInputs).all()
   const allOutputs = db.select().from(schema.recipeOutputs).all()
 
-  const result: Recipe[] = pagedRecipes.map((r) => ({
+  const result: Recipe[] = pagedRecipes.map(r => ({
     id: r.id,
     name: r.name,
     facilityType: r.facilityType,
     inputs: allInputs
-      .filter((i) => i.recipeId === r.id)
-      .map((i) => ({
+      .filter(i => i.recipeId === r.id)
+      .map(i => ({
         resourceKey: i.resourceKey,
         quantity: i.quantity,
         unit: i.unit,
         optional: Boolean(i.optional),
       })),
     outputs: allOutputs
-      .filter((o) => o.recipeId === r.id)
-      .map((o) => ({
+      .filter(o => o.recipeId === r.id)
+      .map(o => ({
         resourceKey: o.resourceKey,
         quantity: o.quantity,
         unit: o.unit,

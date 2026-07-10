@@ -1,10 +1,10 @@
 # ADR-0003: Resource Distribution Model
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                  |
+| ---------- | -------------------------------------- |
+| Status     | Proposed                               |
+| Date       | 2026-07-08                             |
+| Deciders   | Project owner                          |
 | Relates to | ADR-0011, ADR-0013, ADR-0015, ADR-0018 |
 
 ## Context
@@ -92,14 +92,14 @@ Renewable resources grow at realistic rates each tick:
 - **Population**: Grows based on a logistic model modulated by welfare
   (food surplus, energy access, clean environment). Growth rate:
   - Base growth: ~2% per tick (simplified, scaled to game pace)
-  - + Bonus if food surplus, energy surplus, high welfare
+  - - Bonus if food surplus, energy surplus, high welfare
   - − Penalty if pollution high, food deficit, low welfare
   - − Penalty if environment degraded (deforestation, water contamination)
   - If population growth rate goes negative for sustained ticks,
-  population declines. Severe decline (to zero) triggers lose condition
-  (ADR-0009).
+    population declines. Severe decline (to zero) triggers lose condition
+    (ADR-0009).
   - Population is not spatially distributed in v1 — it's a global number
-  affected by global metrics. Future expansion could regionalize it.
+    affected by global metrics. Future expansion could regionalize it.
 
 ### Data Sources (to be sourced and bundled or downloaded)
 
@@ -180,6 +180,7 @@ trivially optimizing from full knowledge.
 ## Consequences
 
 **Positive:**
+
 - Real-world data makes the earth feel authentic; players recognize that "gold
   is in South Africa" etc.
 - Full periodic table allows deep supply chains (ore → metal → alloy →
@@ -187,6 +188,7 @@ trivially optimizing from full knowledge.
 - Synthetic elements create an endgame research/synthesis goal.
 
 **Negative:**
+
 - Data compilation effort is significant; need to bundle geological datasets
   with the game.
 - 118-element schema with real coordinates is a large initial dataset per game.

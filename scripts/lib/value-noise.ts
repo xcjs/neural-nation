@@ -13,7 +13,7 @@ function hash2(ix: number, iy: number, seed: number): number {
   let h = (ix * 374761393 + iy * 668265263 + seed * 1597334677) | 0
   h = (h ^ (h >>> 13)) * 1274126177
   h = h ^ (h >>> 16)
-  return ((h >>> 0) / 0xffffffff)
+  return ((h >>> 0) / 0xFFFFFFFF)
 }
 
 /** Smooth Hermite interpolation between a and b with t∈[0,1]. */
@@ -101,11 +101,16 @@ export const DEFAULT_TERRAIN_CONFIG: TerrainGridConfig = {
 
 /** Classify elevation into a terrain class (matches terrain/service.ts). */
 export function classifyTerrainClass(elevation: number): string {
-  if (elevation < 0) return 'Ocean'
-  if (elevation < 200) return 'Coastal'
-  if (elevation < 800) return 'Plain'
-  if (elevation < 1500) return 'Hill'
-  if (elevation < 3000) return 'Mountain'
+  if (elevation < 0)
+    return 'Ocean'
+  if (elevation < 200)
+    return 'Coastal'
+  if (elevation < 800)
+    return 'Plain'
+  if (elevation < 1500)
+    return 'Hill'
+  if (elevation < 3000)
+    return 'Mountain'
   return 'HighMountain'
 }
 
@@ -156,7 +161,8 @@ export function generateTerrainGrid(config: TerrainGridConfig = DEFAULT_TERRAIN_
       if (continentFactor >= 0) {
         // Land: scale up with some relief variation
         elevation = continentFactor * elevationScale * 0.6 + relief * elevationScale * 0.4
-      } else {
+      }
+      else {
         // Ocean: scale down (deeper ocean)
         elevation = continentFactor * elevationScale * 0.4 - relief * 200
       }

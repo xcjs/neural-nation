@@ -1,7 +1,7 @@
+import type { EnvironmentState } from '~/lib/types/humanity'
+import { $fetch } from 'ofetch'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { $fetch } from 'ofetch'
-import type { EnvironmentState } from '~/lib/types/humanity'
 
 export const useEnvironmentStore = defineStore('environment', () => {
   const state = ref<EnvironmentState>({
@@ -34,12 +34,13 @@ export const useEnvironmentStore = defineStore('environment', () => {
         body: { token, tool: 'get_environmental_status', args: {} },
       })
       state.value = res
-    } catch {
+    }
+    catch {
       // SSE will update
     }
   }
 
-  function applyUpdate(patch: { type: string; environment?: EnvironmentState }) {
+  function applyUpdate(patch: { type: string, environment?: EnvironmentState }) {
     if (patch.type === 'environment_updated' && patch.environment) {
       state.value = patch.environment
     }

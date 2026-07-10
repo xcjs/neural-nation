@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { ELEMENT_BY_ATOMIC_NUMBER, NATURALLY_OCCURRING_ELEMENTS, SYNTHETIC_ELEMENTS } from './elements'
 
 describe('periodic table constants', () => {

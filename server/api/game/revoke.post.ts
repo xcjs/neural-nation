@@ -22,7 +22,8 @@ export default defineEventHandler(async (event) => {
   try {
     revokeToken(token)
     return { success: true }
-  } catch (err) {
+  }
+  catch (err) {
     return { status: 500, error: err instanceof Error ? err.message : 'Failed to revoke' }
   }
 })

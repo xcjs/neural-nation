@@ -1,7 +1,7 @@
 import { defineEventHandler, getQuery } from 'h3'
 import { findRegistryEntry, findRegistryEntryByPublicToken } from '../domain/game/registry'
-import { buildFullGameState } from '../domain/game/state'
 import { updateLastActive, updateLastActiveInRegistry } from '../domain/game/service'
+import { buildFullGameState } from '../domain/game/state'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)

@@ -12,7 +12,7 @@ export function generateToken(): string {
   return result
 }
 
-export function generateTokenPair(): { token: string; publicToken: string } {
+export function generateTokenPair(): { token: string, publicToken: string } {
   return {
     token: generateToken(),
     publicToken: generateToken(),

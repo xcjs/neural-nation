@@ -1,10 +1,10 @@
 # ADR-0011: Template Database for Game Instantiation
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                                      |
+| ---------- | ---------------------------------------------------------- |
+| Status     | Proposed                                                   |
+| Date       | 2026-07-08                                                 |
+| Deciders   | Project owner                                              |
 | Relates to | ADR-0003, ADR-0005, ADR-0010, ADR-0013, ADR-0018, ADR-0023 |
 
 ## Context
@@ -73,6 +73,7 @@ script is idempotent — it skips datasets already present. See ADR-0003 for
 data source details.
 
 The build step:
+
 1. Deletes `data/games/_template.db` if it exists.
 2. Creates a fresh DB and runs all Drizzle migrations.
 3. Runs the geological data seeding pipeline (ADR-0003): parses USGS data,
@@ -145,6 +146,7 @@ data/
 ## Consequences
 
 **Positive:**
+
 - Game creation is a file copy + a few inserts — sub-second regardless of
   deposit count.
 - All games start from identical resource data — no inconsistency from
@@ -155,8 +157,9 @@ data/
 - File copy is atomic and reliable on all OSes.
 
 **Negative:**
+
 - Template file can be large (thousands of deposit rows + ~840K terrain cells
-  + reference data). Compressable; acceptable for a game artifact.
+  - reference data). Compressable; acceptable for a game artifact.
 - Schema changes require template rebuild (or migration-on-copy, which is
   handled by the version check).
 - Template file must be kept in sync with schema migrations; a CI step should

@@ -61,7 +61,7 @@ export interface FacilitySummary {
   activeRecipeId: string | null
   powerConnected: boolean
   throughput: number
-  footprint: Array<{ lat: number; lon: number }> | null
+  footprint: Array<{ lat: number, lon: number }> | null
 }
 
 export interface FacilityDetail {
@@ -82,7 +82,7 @@ export interface FacilityDetail {
   terrainClass: string
   constructionProgress: number
   throughput: number
-  footprint: Array<{ lat: number; lon: number }> | null
+  footprint: Array<{ lat: number, lon: number }> | null
 }
 
 export interface FacilityBufferEntry {

@@ -1,8 +1,8 @@
+import { desc, like, or, sql } from 'drizzle-orm'
 import { defineEventHandler, getQuery } from 'h3'
-import { findRegistryEntry, findRegistryEntryByPublicToken } from '../../domain/game/registry'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { like, or, sql, desc } from 'drizzle-orm'
+import { findRegistryEntry, findRegistryEntryByPublicToken } from '../../domain/game/registry'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -17,8 +17,8 @@ export default defineEventHandler(async (event) => {
     return { status: 404, error: 'Game not found' }
   }
 
-  const limit = Math.min(parseInt(String(query.limit)) || 25, 200)
-  const offset = Math.max(parseInt(String(query.offset)) || 0, 0)
+  const limit = Math.min(Number.parseInt(String(query.limit)) || 25, 200)
+  const offset = Math.max(Number.parseInt(String(query.offset)) || 0, 0)
   const search = (query.search as string | undefined)?.trim()
 
   const db = createGameDb(entry.token)

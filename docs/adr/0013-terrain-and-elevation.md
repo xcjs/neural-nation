@@ -1,10 +1,10 @@
 # ADR-0013: Terrain & Elevation System
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                            |
+| ---------- | ------------------------------------------------ |
+| Status     | Proposed                                         |
+| Date       | 2026-07-08                                       |
+| Deciders   | Project owner                                    |
 | Relates to | ADR-0002, ADR-0003, ADR-0007, ADR-0011, ADR-0023 |
 
 ## Context
@@ -112,6 +112,7 @@ which terrain obstacles were encountered and what modifier is needed.
 ### Terrain Visualization (ADR-0002 link)
 
 The earth's surface geometry is displaced by elevation data:
+
 - The IcosahedronGeometry base mesh vertices are displaced along normals by
   elevation (scaled — not real-world proportions, but enough to show
   mountain ranges as raised areas and ocean trenches as depressed areas).
@@ -158,6 +159,7 @@ prerequisites, environmental consequences, visualization).
 ## Consequences
 
 **Positive:**
+
 - Terrain adds a rich strategic layer — the LLM must plan routes around or
   through mountains, factor in tunnel/bridge costs, and choose facility
   locations with terrain in mind.
@@ -169,6 +171,7 @@ prerequisites, environmental consequences, visualization).
   objects for the LLM and more glowing markers on the globe.
 
 **Negative:**
+
 - SRTM data download + downsampling adds complexity to the template build
   pipeline. The downsampled grid (~840K rows) increases template DB size.
 - Pathfinding with terrain constraints is more complex than simple

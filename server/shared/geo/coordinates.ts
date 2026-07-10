@@ -13,7 +13,7 @@ export function latLonToVector3(lat: number, lon: number, radius: number = EARTH
   return new Vector3(x, y, z)
 }
 
-export function vector3ToLatLon(vec: Vector3): { lat: number; lon: number } {
+export function vector3ToLatLon(vec: Vector3): { lat: number, lon: number } {
   const radius = vec.length()
   const phi = Math.acos(vec.y / radius)
   const theta = Math.atan2(vec.z, -vec.x)

@@ -40,7 +40,8 @@ export const useUiStore = defineStore('ui', () => {
 
   function selectFacility(id: number | null) {
     selectedFacilityId.value = id
-    if (id !== null) panelVisibility.value.facilityDetail = true
+    if (id !== null)
+      panelVisibility.value.facilityDetail = true
   }
 
   function selectTransport(id: number | null) {
@@ -52,7 +53,8 @@ export const useUiStore = defineStore('ui', () => {
   }
 
   function detectMobile() {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined')
+      return
     const ua = navigator.userAgent
     isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
   }

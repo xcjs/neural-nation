@@ -12,7 +12,7 @@ export interface DifficultyConfig {
   label: string
   description: string
   startingResources: StartingResource[]
-  populationRange: { min: number; max: number }
+  populationRange: { min: number, max: number }
 }
 
 export const DifficultyConfigs: Record<DifficultyPreset, DifficultyConfig> = {

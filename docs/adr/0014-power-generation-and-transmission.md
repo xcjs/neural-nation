@@ -1,10 +1,10 @@
 # ADR-0014: Power Generation & Transmission System
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                        |
+| ---------- | ---------------------------- |
+| Status     | Proposed                     |
+| Date       | 2026-07-08                   |
+| Deciders   | Project owner                |
 | Relates to | ADR-0003, ADR-0007, ADR-0013 |
 
 ## Context
@@ -31,6 +31,7 @@ Each type is a Tier 2 facility (or Tier 1 for simple generators) that produces
 electricity as its output:
 
 **Fossil / Fuel-based:**
+
 - `coal_plant` — consumes coal → electricity. High output, high pollution
   (cosmetic). Sitable anywhere land is available.
 - `gas_plant` — consumes natural gas → electricity. Medium output, lower
@@ -40,6 +41,7 @@ electricity as its output:
   construction cost. Good early-game / remote power.
 
 **Biomass / Biofuel:**
+
 - `biomass_plant` — consumes wood/organic matter → electricity. Medium output.
   Renewable if forests are managed (replanting via farms); non-renewable if
   forests are clear-cut. Requires nearby `farm` or forest deposit as input.
@@ -59,6 +61,7 @@ electricity as its output:
   idles and civilization collapses. Extreme "bad for humanity" path.
 
 **Nuclear:**
+
 - `nuclear_reactor` — consumes uranium → electricity. Very high output, high
   construction cost, requires uranium (rare deposit). No terrain constraint
   but water for cooling is required (must be near water deposit or coast).
@@ -67,6 +70,7 @@ electricity as its output:
   synthesis (ADR-0007).
 
 **Renewable (no fuel input, but terrain/location-dependent):**
+
 - `solar_farm` — output proportional to latitude (more sun near equator, less
   near poles) and biome (desert > grassland > forest > tundra). No fuel cost.
   Low output per facility, scalable. Cannot be placed in `high_mountain` or
@@ -84,29 +88,30 @@ electricity as its output:
   regions, tracked as a special resource). Low output, location-locked.
 
 **Tier 3 Advanced:**
+
 - `fusion_reactor` — consumes deuterium/tritium (synthesized from heavy water
   via Tier 3 facilities) → electricity. Highest output, no terrain
   constraint, very high construction cost. Endgame power solution.
 
 ### Power Output Summary
 
-| Type | Output | Fuel | Terrain Constraint | Cost |
-|------|--------|------|--------------------|------|
-| diesel_generator | Low | fuel | none | Very low |
-| biomass_plant | Med | wood/organic | near farm/forest | Low |
-| biogas_plant | Low–Med | organic waste | near farm | Low |
-| ethanol_refinery | Med | crops/food | arable land | Med |
-| soylent_plant | Very High | population (human) | none | Med |
-| solar_farm | Low–Med | none | latitude/biome | Low |
-| wind_farm | Low–Med | none | coastal/hill/mountain | Low |
-| hydro_plant | Med | water (pass-through) | river + elevation gradient | Med |
-| geothermal_plant | Low | none | geothermal deposit | Med |
-| coal_plant | High | coal | none | Med |
-| gas_plant | Med–High | natural gas | none | Med |
-| oil_plant | Med | oil | none | Med |
-| nuclear_reactor | Very High | uranium | near water (cooling) | High |
-| breeder_reactor | Very High | uranium | near water | Very High |
-| fusion_reactor | Highest | deuterium/tritium | none | Very High |
+| Type             | Output    | Fuel                 | Terrain Constraint         | Cost      |
+| ---------------- | --------- | -------------------- | -------------------------- | --------- |
+| diesel_generator | Low       | fuel                 | none                       | Very low  |
+| biomass_plant    | Med       | wood/organic         | near farm/forest           | Low       |
+| biogas_plant     | Low–Med   | organic waste        | near farm                  | Low       |
+| ethanol_refinery | Med       | crops/food           | arable land                | Med       |
+| soylent_plant    | Very High | population (human)   | none                       | Med       |
+| solar_farm       | Low–Med   | none                 | latitude/biome             | Low       |
+| wind_farm        | Low–Med   | none                 | coastal/hill/mountain      | Low       |
+| hydro_plant      | Med       | water (pass-through) | river + elevation gradient | Med       |
+| geothermal_plant | Low       | none                 | geothermal deposit         | Med       |
+| coal_plant       | High      | coal                 | none                       | Med       |
+| gas_plant        | Med–High  | natural gas          | none                       | Med       |
+| oil_plant        | Med       | oil                  | none                       | Med       |
+| nuclear_reactor  | Very High | uranium              | near water (cooling)       | High      |
+| breeder_reactor  | Very High | uranium              | near water                 | Very High |
+| fusion_reactor   | Highest   | deuterium/tritium    | none                       | Very High |
 
 ### Power Transmission Network
 
@@ -175,6 +180,7 @@ see below). It must be **transmitted live** from generators to consumers via
 ## Consequences
 
 **Positive:**
+
 - Multiple generation types give the LLM rich strategic choices: cheap
   diesel for early game, solar/wind for sustainable mid-game, nuclear for
   high-output industrial, fusion for endgame.
@@ -188,6 +194,7 @@ see below). It must be **transmitted live** from generators to consumers via
   resource transport (other colors), enriching the globe.
 
 **Negative:**
+
 - Power grid balancing (computing connected components, checking generation vs
   demand, applying brownout/throttle) adds tick-processing complexity.
 - Transmission loss calculation requires distance-aware power line model.

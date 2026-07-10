@@ -22,7 +22,8 @@ export default defineEventHandler(async (event) => {
   try {
     const result = mintNewToken(token)
     return result
-  } catch (err) {
+  }
+  catch (err) {
     return { status: 500, error: err instanceof Error ? err.message : 'Failed to mint new token' }
   }
 })

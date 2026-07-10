@@ -1,6 +1,6 @@
+import { $fetch } from 'ofetch'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { $fetch } from 'ofetch'
 
 export interface EventLogEntry {
   id: number
@@ -23,20 +23,22 @@ export const useEventsStore = defineStore('events', () => {
   async function fetchPage(token: string, p: number = 0) {
     loading.value = true
     try {
-      const res = await $fetch<{ items: EventLogEntry[]; totalCount: number }>(
-        `/api/game/events?token=${token}&limit=${pageSize.value}&offset=${p * pageSize.value}`
+      const res = await $fetch<{ items: EventLogEntry[], totalCount: number }>(
+        `/api/game/events?token=${token}&limit=${pageSize.value}&offset=${p * pageSize.value}`,
       )
       items.value = res.items || []
       total.value = res.totalCount || 0
       page.value = p
-    } catch {
+    }
+    catch {
       // ignore
-    } finally {
+    }
+    finally {
       loading.value = false
     }
   }
 
-  function applyUpdate(patch: { type: string; event?: EventLogEntry }) {
+  function applyUpdate(patch: { type: string, event?: EventLogEntry }) {
     if (patch.type === 'event_logged' && patch.event) {
       items.value.unshift(patch.event)
       total.value++

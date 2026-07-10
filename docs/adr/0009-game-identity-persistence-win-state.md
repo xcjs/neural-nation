@@ -1,10 +1,10 @@
 # ADR-0009: Game Identity, Persistence & Win State
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                                                |
+| ---------- | -------------------------------------------------------------------- |
+| Status     | Proposed                                                             |
+| Date       | 2026-07-08                                                           |
+| Deciders   | Project owner                                                        |
 | Relates to | ADR-0003, ADR-0006, ADR-0015, ADR-0016, ADR-0020, ADR-0025, ADR-0026 |
 
 ## Context
@@ -147,6 +147,7 @@ endlessly consuming finite deposits.
 ## Consequences
 
 **Positive:**
+
 - Zero-friction onboarding — no signup, no email, no password. Click "New Game"
   and play.
 - Token = identity is simple and matches the MCP architecture perfectly.
@@ -161,6 +162,7 @@ endlessly consuming finite deposits.
   token must be remembered by the player.
 
 **Negative:**
+
 - Token loss = game loss. If a player doesn't save their MCP URL and closes
   the tab, the game is irrecoverable without the token. Mitigated by "Remember
   on this device" option and the fact that the player also has it in their MCP

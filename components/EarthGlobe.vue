@@ -1,23 +1,15 @@
-<template>
-  <div ref="container" class="w-full h-full"></div>
-</template>
-
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import type { FacilitySummary } from '~/lib/types/facility'
+import type { TerrainModification } from '~/lib/types/terrain'
+import type { TransportSummary } from '~/lib/types/transport'
 import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { feature } from 'topojson-client'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import landTopo from 'world-atlas/land-110m.json'
-import type { FacilitySummary } from '~/lib/types/facility'
-import type { TransportSummary } from '~/lib/types/transport'
-import type { TerrainModification } from '~/lib/types/terrain'
-
-const emit = defineEmits<{
-  (e: 'facility-click', facilityId: number): void
-}>()
 
 const props = defineProps<{
   facilities: FacilitySummary[]
@@ -29,6 +21,10 @@ const props = defineProps<{
   biodiversity?: number
   waterQuality?: number
   token?: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'facility-click', facilityId: number): void
 }>()
 
 const container = ref<HTMLDivElement | null>(null)
@@ -66,20 +62,20 @@ function latLonToVec3(lat: number, lon: number, r: number = EARTH_RADIUS): THREE
   return new THREE.Vector3(
     -r * Math.sin(phi) * Math.cos(theta),
     r * Math.cos(phi),
-    r * Math.sin(phi) * Math.sin(theta)
+    r * Math.sin(phi) * Math.sin(theta),
   )
 }
 
 function buildCoastlines(): THREE.Group {
   const group = new THREE.Group()
   const lineMat = new THREE.LineBasicMaterial({
-    color: 0x00aaff,
+    color: 0x00AAFF,
     transparent: true,
     opacity: 0.5,
   })
 
   // Convert TopoJSON to GeoJSON FeatureCollection
-  const geojson = feature(landTopo as never, (landTopo as never as { objects: { land: unknown } }).objects.land as never) as unknown as { type: string; features: Array<{ geometry: { type: string; coordinates: number[][] | number[][][] } }> }
+  const geojson = feature(landTopo as never, (landTopo as never as { objects: { land: unknown } }).objects.land as never) as unknown as { type: string, features: Array<{ geometry: { type: string, coordinates: number[][] | number[][][] } }> }
 
   for (const feat of geojson.features) {
     const geom = feat.geometry
@@ -87,7 +83,8 @@ function buildCoastlines(): THREE.Group {
       for (const ring of geom.coordinates as number[][][]) {
         addRing(group, ring, lineMat)
       }
-    } else if (geom.type === 'MultiPolygon') {
+    }
+    else if (geom.type === 'MultiPolygon') {
       for (const polygon of geom.coordinates as number[][][][]) {
         for (const ring of polygon) {
           addRing(group, ring, lineMat)
@@ -104,14 +101,16 @@ function addRing(group: THREE.Group, ring: number[][], mat: THREE.LineBasicMater
   for (const [lon, lat] of ring) {
     points.push(latLonToVec3(lat, lon, EARTH_RADIUS * 1.002))
   }
-  if (points.length < 2) return
+  if (points.length < 2)
+    return
   const geo = new THREE.BufferGeometry().setFromPoints(points)
   const line = new THREE.Line(geo, mat)
   group.add(line)
 }
 
 function init() {
-  if (!container.value) return
+  if (!container.value)
+    return
   const w = container.value.clientWidth
   const h = container.value.clientHeight
 
@@ -151,7 +150,7 @@ function init() {
   // Wireframe overlay
   const wireGeo = new THREE.WireframeGeometry(geometry)
   const wireMat = new THREE.LineBasicMaterial({
-    color: 0x00ccff,
+    color: 0x00CCFF,
     transparent: true,
     opacity: 0.15,
   })
@@ -226,7 +225,7 @@ function buildEnvironmentOverlay(): void {
 
   // Fetch forest density data (pre-built from Köppen-Geiger climate classification)
   fetch('/data/geological/forest-density.json')
-    .then((res) => res.json() as Promise<{ width: number; height: number; data: number[] }>)
+    .then(res => res.json() as Promise<{ width: number, height: number, data: number[] }>)
     .then((result) => {
       const { width: tw, height: th, data } = result
       // Convert density values (0-1) to RGBA pixel data, flipping Y (row 0=lat 90 → bottom of texture)
@@ -238,11 +237,12 @@ function buildEnvironmentOverlay(): void {
           const d = data[srcIdx]!
           if (d <= 0) {
             rgba[dstIdx * 4] = 0; rgba[dstIdx * 4 + 1] = 0; rgba[dstIdx * 4 + 2] = 0; rgba[dstIdx * 4 + 3] = 0
-          } else {
-            rgba[dstIdx * 4] = Math.round(20 + (1 - d) * 40)      // R
-            rgba[dstIdx * 4 + 1] = Math.round(80 + d * 120)       // G
-            rgba[dstIdx * 4 + 2] = Math.round(20 + d * 30)        // B
-            rgba[dstIdx * 4 + 3] = Math.round(d * 180)            // A
+          }
+          else {
+            rgba[dstIdx * 4] = Math.round(20 + (1 - d) * 40) // R
+            rgba[dstIdx * 4 + 1] = Math.round(80 + d * 120) // G
+            rgba[dstIdx * 4 + 2] = Math.round(20 + d * 30) // B
+            rgba[dstIdx * 4 + 3] = Math.round(d * 180) // A
           }
         }
       }
@@ -318,7 +318,8 @@ const FOREST_TEX_W = 720
 const FOREST_TEX_H = 360
 
 async function updateForestGrid(): Promise<void> {
-  if (!props.token || !forestTexture) return
+  if (!props.token || !forestTexture)
+    return
   try {
     const res = await fetch(`/api/game/forest-grid?token=${props.token}&minDensity=0.01`)
     const data = await res.json() as { cells: [number, number, number][] }
@@ -328,7 +329,8 @@ async function updateForestGrid(): Promise<void> {
     for (const [latIdx, lonIdx, density] of data.cells) {
       const x = lonIdx
       const dstY = FOREST_TEX_H - 1 - latIdx
-      if (x < 0 || x >= FOREST_TEX_W || dstY < 0 || dstY >= FOREST_TEX_H) continue
+      if (x < 0 || x >= FOREST_TEX_W || dstY < 0 || dstY >= FOREST_TEX_H)
+        continue
       const i = dstY * FOREST_TEX_W + x
       const d = Math.max(0, Math.min(1, density))
       rgba[i * 4] = Math.round(20 + (1 - d) * 40)
@@ -337,7 +339,8 @@ async function updateForestGrid(): Promise<void> {
       rgba[i * 4 + 3] = Math.round(d * 180)
     }
     forestTexture.needsUpdate = true
-  } catch {
+  }
+  catch {
     // API not available — keep static texture
   }
 }
@@ -424,7 +427,8 @@ function getMarkerGeometry(type: string, size: number): THREE.BufferGeometry {
 }
 
 function onPointerDown(event: PointerEvent) {
-  if (!container.value) return
+  if (!container.value)
+    return
   const rect = renderer.domElement.getBoundingClientRect()
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
@@ -435,8 +439,12 @@ function onPointerDown(event: PointerEvent) {
   markerGroup.children.forEach((child) => {
     const lod = child as THREE.LOD
     if (lod.isLOD) {
-      lod.children.forEach((c) => { if (c.type === 'Mesh') meshes.push(c) })
-    } else {
+      lod.children.forEach((c) => {
+        if (c.type === 'Mesh')
+          meshes.push(c)
+      })
+    }
+    else {
       meshes.push(child)
     }
   })
@@ -451,9 +459,10 @@ function onPointerDown(event: PointerEvent) {
   }
 }
 
-function buildFootprintPolygon(footprint: Array<{lat: number; lon: number}>, color: number): THREE.Group {
+function buildFootprintPolygon(footprint: Array<{ lat: number, lon: number }>, color: number): THREE.Group {
   const group = new THREE.Group()
-  if (footprint.length < 3) return group
+  if (footprint.length < 3)
+    return group
   const r = EARTH_RADIUS * 1.002
   const points3d = footprint.map(p => latLonToVec3(p.lat, p.lon, r))
   const centroid = new THREE.Vector3()
@@ -495,18 +504,46 @@ function updateMarkers() {
   transportUniforms = null
 
   const markerColors: Record<string, number> = {
-    Extractor: 0xff8800, Farm: 0x44ff44, Forestry: 0x22aa22, WaterPump: 0x4488ff,
-    Processor: 0xff4400, Smelter: 0xff6600, Refinery: 0xff8800, ChemicalPlant: 0xffaa00,
-    Factory: 0xff44ff, AdvancedFactory: 0xaa00ff, ResearchLab: 0xff00ff,
-    PowerPlant: 0xffff00, SolarFarm: 0xffff00, WindFarm: 0x00ffff, HydroPlant: 0x0088ff,
-    NuclearReactor: 0xff8800, BreederReactor: 0xff6600, FusionReactor: 0xaaffff,
-    BiomassPlant: 0x44aa00, BiogasPlant: 0x66aa00, EthanolRefinery: 0x88aa00,
-    SoylentPlant: 0xaa0033, DieselGenerator: 0x888888, CoalPlant: 0x666666,
-    GasPlant: 0x888888, OilPlant: 0x666688, GeothermalPlant: 0xff4422,
-    Storage: 0x00aaff, BatteryBank: 0x00aaff, Spaceport: 0x00ffff,
-    RocketAssembly: 0x00ccff, SpaceStation: 0xffffff, OrbitalRefinery: 0xaaccff,
-    LunarMine: 0xddccaa, DeepSpaceProbe: 0xaaaaff, SpaceHabitat: 0xffffff,
-    Excavator: 0xcc8844, Dredger: 0xcc8844, Terraformer: 0xcc6622, PlanetaryEngine: 0xff4400,
+    Extractor: 0xFF8800,
+    Farm: 0x44FF44,
+    Forestry: 0x22AA22,
+    WaterPump: 0x4488FF,
+    Processor: 0xFF4400,
+    Smelter: 0xFF6600,
+    Refinery: 0xFF8800,
+    ChemicalPlant: 0xFFAA00,
+    Factory: 0xFF44FF,
+    AdvancedFactory: 0xAA00FF,
+    ResearchLab: 0xFF00FF,
+    PowerPlant: 0xFFFF00,
+    SolarFarm: 0xFFFF00,
+    WindFarm: 0x00FFFF,
+    HydroPlant: 0x0088FF,
+    NuclearReactor: 0xFF8800,
+    BreederReactor: 0xFF6600,
+    FusionReactor: 0xAAFFFF,
+    BiomassPlant: 0x44AA00,
+    BiogasPlant: 0x66AA00,
+    EthanolRefinery: 0x88AA00,
+    SoylentPlant: 0xAA0033,
+    DieselGenerator: 0x888888,
+    CoalPlant: 0x666666,
+    GasPlant: 0x888888,
+    OilPlant: 0x666688,
+    GeothermalPlant: 0xFF4422,
+    Storage: 0x00AAFF,
+    BatteryBank: 0x00AAFF,
+    Spaceport: 0x00FFFF,
+    RocketAssembly: 0x00CCFF,
+    SpaceStation: 0xFFFFFF,
+    OrbitalRefinery: 0xAACCFF,
+    LunarMine: 0xDDCCAA,
+    DeepSpaceProbe: 0xAAAAFF,
+    SpaceHabitat: 0xFFFFFF,
+    Excavator: 0xCC8844,
+    Dredger: 0xCC8844,
+    Terraformer: 0xCC6622,
+    PlanetaryEngine: 0xFF4400,
   }
 
   // Facility type → motion type for particle shader:
@@ -514,19 +551,47 @@ function updateMarkers() {
   // 4=stream(factory), 5=smoke(power), 6=flash(nuclear), 7=flat(solar),
   // 8=rotate(wind), 9=halo(storage), 10=lissajous(research)
   const motionByType: Record<string, number> = {
-    Extractor: 1, Farm: 2, Forestry: 2, WaterPump: 2,
-    Processor: 3, Smelter: 3, Refinery: 3, ChemicalPlant: 3,
-    Factory: 4, AdvancedFactory: 4,
-    PowerPlant: 5, CoalPlant: 5, GasPlant: 5, OilPlant: 5, DieselGenerator: 5,
-    BiomassPlant: 5, BiogasPlant: 5, GeothermalPlant: 5,
-    NuclearReactor: 6, BreederReactor: 6, FusionReactor: 6,
-    SolarFarm: 7, WindFarm: 8, HydroPlant: 2,
-    EthanolRefinery: 3, SoylentPlant: 4,
-    Storage: 9, BatteryBank: 9,
-    ResearchLab: 10, AdvancedFactory: 10,
-    Spaceport: 1, RocketAssembly: 1, SpaceStation: 10,
-    OrbitalRefinery: 3, LunarMine: 1, DeepSpaceProbe: 10, SpaceHabitat: 9,
-    Excavator: 1, Dredger: 2, Terraformer: 1, PlanetaryEngine: 1,
+    Extractor: 1,
+    Farm: 2,
+    Forestry: 2,
+    WaterPump: 2,
+    Processor: 3,
+    Smelter: 3,
+    Refinery: 3,
+    ChemicalPlant: 3,
+    Factory: 4,
+    AdvancedFactory: 4,
+    PowerPlant: 5,
+    CoalPlant: 5,
+    GasPlant: 5,
+    OilPlant: 5,
+    DieselGenerator: 5,
+    BiomassPlant: 5,
+    BiogasPlant: 5,
+    GeothermalPlant: 5,
+    NuclearReactor: 6,
+    BreederReactor: 6,
+    FusionReactor: 6,
+    SolarFarm: 7,
+    WindFarm: 8,
+    HydroPlant: 2,
+    EthanolRefinery: 3,
+    SoylentPlant: 4,
+    Storage: 9,
+    BatteryBank: 9,
+    ResearchLab: 10,
+    AdvancedFactory: 10,
+    Spaceport: 1,
+    RocketAssembly: 1,
+    SpaceStation: 10,
+    OrbitalRefinery: 3,
+    LunarMine: 1,
+    DeepSpaceProbe: 10,
+    SpaceHabitat: 9,
+    Excavator: 1,
+    Dredger: 2,
+    Terraformer: 1,
+    PlanetaryEngine: 1,
   }
 
   const PARTICLES_PER_FACILITY = props.quality === 'low' ? 10 : props.quality === 'medium' ? 25 : 40
@@ -541,7 +606,7 @@ function updateMarkers() {
   for (const f of props.facilities) {
     const pos = latLonToVec3(f.lat, f.lon, EARTH_RADIUS * 1.02)
 
-    const color = markerColors[f.type] ?? 0x00ffff
+    const color = markerColors[f.type] ?? 0x00FFFF
     const size = f.status === 'Active' ? 0.02 : 0.015
 
     // LOD: high detail (type-specific shape + glow) up close, billboard far away
@@ -576,7 +641,7 @@ function updateMarkers() {
     // Footprint polygon (if facility has one)
     if (f.footprint && f.footprint.length >= 3) {
       const fpGroup = buildFootprintPolygon(f.footprint, color)
-      fpGroup.children.forEach(child => { child.userData.facilityId = f.id })
+      fpGroup.children.forEach((child) => { child.userData.facilityId = f.id })
       markerGroup.add(fpGroup)
     }
 
@@ -600,7 +665,7 @@ function updateMarkers() {
   }
 
   // Transport arcs + flow particles
-  const arcData: { points: THREE.Vector3[]; color: number; active: boolean }[] = []
+  const arcData: { points: THREE.Vector3[], color: number, active: boolean }[] = []
   for (const t of props.transports) {
     const fromPos = latLonToVec3(t.fromLat, t.fromLon, EARTH_RADIUS * 1.02)
     const toPos = latLonToVec3(t.toLat, t.toLon, EARTH_RADIUS * 1.02)
@@ -610,7 +675,7 @@ function updateMarkers() {
     const points = curve.getPoints(30)
     const arcGeo = new THREE.BufferGeometry().setFromPoints(points)
     const isActive = (t as { flowRate?: number }).flowRate && (t as { flowRate?: number }).flowRate > 0
-    const arcColor = (t as { resourceKey?: string }).resourceKey ? 0x00ffff : 0x446688
+    const arcColor = (t as { resourceKey?: string }).resourceKey ? 0x00FFFF : 0x446688
     const arcMat = new THREE.LineBasicMaterial({
       color: arcColor,
       transparent: true,
@@ -630,23 +695,23 @@ function updateMarkers() {
   while (terrainModGroup.children.length > 0) terrainModGroup.remove(terrainModGroup.children[0]!)
   if (props.terrainModifications && props.terrainModifications.length > 0) {
     const modColors: Record<string, number> = {
-      flatten_terrain: 0xcc8844,
-      dig_canal: 0x4488ff,
+      flatten_terrain: 0xCC8844,
+      dig_canal: 0x4488FF,
       build_road_embankment: 0x886644,
-      create_reservoir: 0x44aaff,
-      drain_area: 0xaa8844,
-      divert_river: 0x44aaff,
-      level_mountain: 0xcc6622,
-      raise_land: 0xcc8844,
+      create_reservoir: 0x44AAFF,
+      drain_area: 0xAA8844,
+      divert_river: 0x44AAFF,
+      level_mountain: 0xCC6622,
+      raise_land: 0xCC8844,
       excavate_mine_shaft: 0x884422,
-      create_mountain: 0xaa4422,
-      shift_continental_plate: 0xff4400,
-      ocean_to_land: 0xcc8844,
-      land_to_ocean: 0x4488ff,
+      create_mountain: 0xAA4422,
+      shift_continental_plate: 0xFF4400,
+      ocean_to_land: 0xCC8844,
+      land_to_ocean: 0x4488FF,
     }
     for (const mod of props.terrainModifications) {
       const pos = latLonToVec3(mod.latIndex, mod.lonIndex, EARTH_RADIUS * 1.03)
-      const color = modColors[mod.reason] ?? 0xff8800
+      const color = modColors[mod.reason] ?? 0xFF8800
       const raiseAmt = mod.elevationDelta > 0 ? 1 : 0
       const size = 0.015 + Math.min(Math.abs(mod.elevationDelta) / 5000, 1) * 0.02
       const ringGeo = new THREE.RingGeometry(size, size * 1.5, 16)
@@ -692,7 +757,7 @@ function patchCoastline(lat: number, lon: number, toLand: boolean): void {
   if (toLand) {
     // Add a filled land patch (cyan outline + semi-transparent fill)
     const fillMat = new THREE.MeshBasicMaterial({
-      color: 0x00aaff,
+      color: 0x00AAFF,
       transparent: true,
       opacity: 0.15,
       side: THREE.DoubleSide,
@@ -705,9 +770,10 @@ function patchCoastline(lat: number, lon: number, toLand: boolean): void {
 
     // Outline matching existing coastlines
     const lineGeo = new THREE.BufferGeometry().setFromPoints(points)
-    const lineMat = new THREE.LineBasicMaterial({ color: 0x00aaff, transparent: true, opacity: 0.5 })
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x00AAFF, transparent: true, opacity: 0.5 })
     coastlineGroup.add(new THREE.Line(lineGeo, lineMat))
-  } else {
+  }
+  else {
     // Land to ocean: overlay a dark blue water patch that obscures the existing coastline
     const fillMat = new THREE.MeshBasicMaterial({
       color: 0x002233,
@@ -723,7 +789,7 @@ function patchCoastline(lat: number, lon: number, toLand: boolean): void {
 
     // Blue outline to indicate new water boundary
     const lineGeo = new THREE.BufferGeometry().setFromPoints(points)
-    const lineMat = new THREE.LineBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.4 })
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x4488FF, transparent: true, opacity: 0.4 })
     coastlineGroup.add(new THREE.Line(lineGeo, lineMat))
   }
 }
@@ -743,7 +809,8 @@ function buildShape(points: THREE.Vector3[]): THREE.Shape {
   const normal = points[0]!.clone().normalize()
   const up = new THREE.Vector3(0, 1, 0)
   let tangent = new THREE.Vector3().crossVectors(normal, up)
-  if (tangent.lengthSq() < 0.01) tangent = new THREE.Vector3(1, 0, 0)
+  if (tangent.lengthSq() < 0.01)
+    tangent = new THREE.Vector3(1, 0, 0)
   tangent.normalize()
   const bitangent = new THREE.Vector3().crossVectors(normal, tangent).normalize()
 
@@ -758,7 +825,7 @@ function buildShape(points: THREE.Vector3[]): THREE.Shape {
 }
 
 function buildParticleSystem(
-  facilities: { pos: THREE.Vector3; color: THREE.Color; motion: number; activity: number }[],
+  facilities: { pos: THREE.Vector3, color: THREE.Color, motion: number, activity: number }[],
   particlesPerFacility: number,
 ): void {
   const totalParticles = facilities.length * particlesPerFacility
@@ -937,7 +1004,7 @@ function buildParticleSystem(
   particleGroup.add(particleSystem)
 }
 
-function buildTransportParticles(arcs: { points: THREE.Vector3[]; color: number; active: boolean }[]): void {
+function buildTransportParticles(arcs: { points: THREE.Vector3[], color: number, active: boolean }[]): void {
   const PARTICLES_PER_ARC = 20
   const total = arcs.length * PARTICLES_PER_ARC
   const positions = new Float32Array(total * 3)
@@ -1052,8 +1119,10 @@ function animate() {
   transportGroup.rotation.y += 0.0005
   particleGroup.rotation.y += 0.0005
   terrainModGroup.rotation.y += 0.0005
-  if (pollutionMesh) pollutionMesh.rotation.y += 0.0005
-  if (forestMesh) forestMesh.rotation.y += 0.0005
+  if (pollutionMesh)
+    pollutionMesh.rotation.y += 0.0005
+  if (forestMesh)
+    forestMesh.rotation.y += 0.0005
 
   // Moon orbit
   // Pulse markers (handle LOD children)
@@ -1069,7 +1138,8 @@ function animate() {
           mat.opacity = 0.2 + Math.sin(time * 2 + level.id) * 0.15
         }
       }
-    } else if (child.type === 'Mesh') {
+    }
+    else if (child.type === 'Mesh') {
       const mat = (child as THREE.Mesh).material as THREE.MeshBasicMaterial
       if (mat.transparent) {
         mat.opacity = 0.2 + Math.sin(time * 2 + child.id) * 0.15
@@ -1087,13 +1157,15 @@ function animate() {
 
   if (composer) {
     composer.render()
-  } else {
+  }
+  else {
     renderer.render(scene, camera)
   }
 }
 
 function onResize() {
-  if (!container.value) return
+  if (!container.value)
+    return
   const w = container.value.clientWidth
   const h = container.value.clientHeight
   camera.aspect = w / h
@@ -1135,3 +1207,7 @@ onUnmounted(() => {
   renderer?.dispose()
 })
 </script>
+
+<template>
+  <div ref="container" class="w-full h-full" />
+</template>

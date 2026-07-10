@@ -1,12 +1,12 @@
-import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 import { rmSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { createGame } from '../game/service'
-import { executeTool, getGameState } from '../mcp/dispatcher'
+import { and, eq } from 'drizzle-orm'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { DifficultyPreset } from '../../../lib/types/game'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq, and } from 'drizzle-orm'
+import { createGame } from '../game/service'
+import { executeTool, getGameState } from '../mcp/dispatcher'
 
 const result = createGame(DifficultyPreset.Normal)
 const token = result.token
@@ -16,7 +16,8 @@ afterAll(() => {
   for (const ext of ['', '-shm', '-wal']) {
     try {
       rmSync(resolve('data', 'games', `${token}.db${ext}`), { force: true })
-    } catch {
+    }
+    catch {
       // ignore
     }
   }
@@ -27,13 +28,11 @@ function getFacilityById(id: number) {
 }
 
 function getDeposit(resourceKey: string, lat: number, lon: number) {
-  return db.select().from(schema.resources)
-    .where(and(
-      eq(schema.resources.resourceKey, resourceKey),
-      eq(schema.resources.lat, lat),
-      eq(schema.resources.lon, lon),
-    ))
-    .get()
+  return db.select().from(schema.resources).where(and(
+    eq(schema.resources.resourceKey, resourceKey),
+    eq(schema.resources.lat, lat),
+    eq(schema.resources.lon, lon),
+  )).get()
 }
 
 function advanceTicks(count: number) {
@@ -174,20 +173,19 @@ describe('simulation: recipe production chain', () => {
     // Manually insert iron ore AND coal into the input buffers to simulate transport delivery
     // iron_smelting requires fe:2t + c:0.5t per cycle
     for (const key of ['fe', 'c']) {
-      const existing = db.select().from(schema.facilityBuffers)
-        .where(and(
-          eq(schema.facilityBuffers.facilityId, smelterId),
-          eq(schema.facilityBuffers.resourceKey, key),
-          eq(schema.facilityBuffers.direction, 'input'),
-        ))
-        .get()
+      const existing = db.select().from(schema.facilityBuffers).where(and(
+        eq(schema.facilityBuffers.facilityId, smelterId),
+        eq(schema.facilityBuffers.resourceKey, key),
+        eq(schema.facilityBuffers.direction, 'input'),
+      )).get()
 
       if (existing) {
         db.update(schema.facilityBuffers)
           .set({ quantity: 10 })
           .where(eq(schema.facilityBuffers.id, existing.id))
           .run()
-      } else {
+      }
+      else {
         db.insert(schema.facilityBuffers).values({
           facilityId: smelterId,
           resourceKey: key,
@@ -202,13 +200,11 @@ describe('simulation: recipe production chain', () => {
     advanceTicks(2)
 
     // Check output buffer for 'iron'
-    const outputBuffer = db.select().from(schema.facilityBuffers)
-      .where(and(
-        eq(schema.facilityBuffers.facilityId, smelterId),
-        eq(schema.facilityBuffers.resourceKey, 'iron'),
-        eq(schema.facilityBuffers.direction, 'output'),
-      ))
-      .get()
+    const outputBuffer = db.select().from(schema.facilityBuffers).where(and(
+      eq(schema.facilityBuffers.facilityId, smelterId),
+      eq(schema.facilityBuffers.resourceKey, 'iron'),
+      eq(schema.facilityBuffers.direction, 'output'),
+    )).get()
 
     if (outputBuffer) {
       expect(outputBuffer.quantity).toBeGreaterThan(0)
@@ -248,24 +244,20 @@ describe('simulation: transport flows', () => {
     // Let the mine extract and fill output buffer
     advanceTicks(5)
 
-    const sourceOutput = db.select().from(schema.facilityBuffers)
-      .where(and(
-        eq(schema.facilityBuffers.facilityId, mineId),
-        eq(schema.facilityBuffers.resourceKey, 'fe'),
-        eq(schema.facilityBuffers.direction, 'output'),
-      ))
-      .get()
+    const sourceOutput = db.select().from(schema.facilityBuffers).where(and(
+      eq(schema.facilityBuffers.facilityId, mineId),
+      eq(schema.facilityBuffers.resourceKey, 'fe'),
+      eq(schema.facilityBuffers.direction, 'output'),
+    )).get()
 
     // Run more ticks to let transport move resources
     advanceTicks(5)
 
-    const destInput = db.select().from(schema.facilityBuffers)
-      .where(and(
-        eq(schema.facilityBuffers.facilityId, smelterId),
-        eq(schema.facilityBuffers.resourceKey, 'fe'),
-        eq(schema.facilityBuffers.direction, 'input'),
-      ))
-      .get()
+    const destInput = db.select().from(schema.facilityBuffers).where(and(
+      eq(schema.facilityBuffers.facilityId, smelterId),
+      eq(schema.facilityBuffers.resourceKey, 'fe'),
+      eq(schema.facilityBuffers.direction, 'input'),
+    )).get()
 
     // If source had ore, destination should have received some
     if (sourceOutput && sourceOutput.quantity > 0) {
@@ -294,9 +286,7 @@ describe('simulation: tech progression', () => {
     // Advance 5+ ticks for research to complete (researchTime=5)
     advanceTicks(6)
 
-    const research = db.select().from(schema.gameResearch)
-      .where(eq(schema.gameResearch.techId, 'basic_construction'))
-      .get()
+    const research = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.techId, 'basic_construction')).get()
 
     expect(research?.status).toBe('Completed')
     expect(research?.completedAtTick).not.toBeNull()

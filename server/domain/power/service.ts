@@ -1,7 +1,7 @@
-import { createGameDb } from '../../db/client'
-import { schema } from '../../db/schema'
 import type { PowerGridSummary, PowerLineSummary } from '../../../lib/types/power'
 import { GridStatus } from '../../../lib/types/power'
+import { createGameDb } from '../../db/client'
+import { schema } from '../../db/schema'
 import { greatCircleDistance, transmissionLossPercent } from '../../shared/geo/distance'
 
 export function getPowerGridStatus(token: string): PowerGridSummary {
@@ -10,19 +10,21 @@ export function getPowerGridStatus(token: string): PowerGridSummary {
   const facilities = db.select().from(schema.facilities).all()
   const powerLines = db.select().from(schema.powerLines).all()
 
-  const generators = facilities.filter((f) => f.type.includes('plant') || f.type.includes('reactor') || f.type.includes('generator') || f.type.includes('farm') || f.type === 'solar_farm' || f.type === 'wind_farm')
-  const consumers = facilities.filter((f) => f.powerConsumption > 0)
+  const generators = facilities.filter(f => f.type.includes('plant') || f.type.includes('reactor') || f.type.includes('generator') || f.type.includes('farm') || f.type === 'solar_farm' || f.type === 'wind_farm')
+  const consumers = facilities.filter(f => f.powerConsumption > 0)
 
   const totalCapacity = generators.reduce((sum, g) => sum + (g.targetOutputRate || 0), 0)
   const totalDemand = consumers.reduce((sum, c) => sum + c.powerConsumption, 0)
 
   let status = GridStatus.Normal
-  if (totalDemand > totalCapacity * 0.9) status = GridStatus.Brownout
-  if (totalDemand > totalCapacity) status = GridStatus.Blackout
+  if (totalDemand > totalCapacity * 0.9)
+    status = GridStatus.Brownout
+  if (totalDemand > totalCapacity)
+    status = GridStatus.Blackout
 
   const lines: PowerLineSummary[] = powerLines.map((line) => {
-    const from = facilities.find((f) => f.id === line.fromFacilityId)
-    const to = facilities.find((f) => f.id === line.toFacilityId)
+    const from = facilities.find(f => f.id === line.fromFacilityId)
+    const to = facilities.find(f => f.id === line.toFacilityId)
 
     let loss = line.transmissionLoss
     if (from && to && loss === 0) {
@@ -40,7 +42,7 @@ export function getPowerGridStatus(token: string): PowerGridSummary {
     }
   })
 
-  const connectedComponents = computeConnectedComponents(facilities.map((f) => f.id), powerLines)
+  const connectedComponents = computeConnectedComponents(facilities.map(f => f.id), powerLines)
 
   return {
     totalCapacity,
@@ -53,7 +55,7 @@ export function getPowerGridStatus(token: string): PowerGridSummary {
 
 function computeConnectedComponents(
   facilityIds: number[],
-  powerLines: Array<{ fromFacilityId: number; toFacilityId: number }>,
+  powerLines: Array<{ fromFacilityId: number, toFacilityId: number }>,
 ): number[][] {
   const adj = new Map<number, Set<number>>()
   for (const id of facilityIds) {
@@ -68,16 +70,19 @@ function computeConnectedComponents(
   const components: number[][] = []
 
   for (const id of facilityIds) {
-    if (visited.has(id)) continue
+    if (visited.has(id))
+      continue
     const component: number[] = []
     const queue = [id]
     while (queue.length > 0) {
       const current = queue.shift()!
-      if (visited.has(current)) continue
+      if (visited.has(current))
+        continue
       visited.add(current)
       component.push(current)
       for (const neighbor of adj.get(current) || new Set()) {
-        if (!visited.has(neighbor)) queue.push(neighbor)
+        if (!visited.has(neighbor))
+          queue.push(neighbor)
       }
     }
     components.push(component)

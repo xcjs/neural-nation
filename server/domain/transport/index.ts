@@ -1,7 +1,7 @@
 export {
+  assignRoute,
   buildTransport,
   demolishTransport,
-  listTransports,
-  assignRoute,
   getSupplyChainStatus,
+  listTransports,
 } from './service'

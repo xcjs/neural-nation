@@ -1,10 +1,10 @@
 # ADR-0007: Facility & Supply Chain System
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                            |
+| ---------- | ------------------------------------------------ |
+| Status     | Proposed                                         |
+| Date       | 2026-07-08                                       |
+| Deciders   | Project owner                                    |
 | Relates to | ADR-0003, ADR-0013, ADR-0014, ADR-0018, ADR-0023 |
 
 ## Context
@@ -20,6 +20,7 @@ facilities.
 ### Facility Types (Hierarchical Tiers)
 
 **Tier 0 — Extractors** (gather raw resources from deposits):
+
 - `mine` — extracts mineral/element deposits (ore, coal, etc.)
 - `well` — extracts oil/gas deposits
 - `farm` — produces wood (from forest regions) or food (from arable land)
@@ -27,6 +28,7 @@ facilities.
 - `quarry` — extracts stone, gravel, bulk minerals
 
 **Tier 1 — Processors** (transform raw resources):
+
 - `smelter` — ore → metal (e.g., iron ore → iron, bauxite → aluminum)
 - `refinery` — oil → fuel, plastics precursors
 - `sawmill` — wood (logs) → lumber
@@ -34,6 +36,7 @@ facilities.
 - `water_treatment` — raw water → potable water
 
 **Tier 2 — Factories** (manufacture from processed materials):
+
 - `factory` — metal + components → machinery, parts
 - `chemical_plant` — elements/compounds → chemicals, alloys
 - `power_plant` — fuel/coal/uranium → electricity (powers other facilities).
@@ -43,6 +46,7 @@ facilities.
 - `electronics_plant` — rare elements + metals → electronic components
 
 **Tier 3 — Advanced / Synthesis** (endgame):
+
 - `research_lab` — researches tech tree nodes (ADR-0018). Consumes research
   costs (resources) over time to unlock recipes, facility types, and
   infrastructure. Each lab works on one tech at a time; multiple labs can
@@ -61,12 +65,14 @@ facilities.
   ADR-0023.
 
 **Tier 1-2 — Terraforming** (progressive capability, see ADR-0023):
+
 - `excavator` (Tier 1) — early earthworks (flatten, dig canal, embankment).
   Requires Earthworks tech.
 - `dredger` (Tier 2) — hydraulic engineering (reservoir, drain, divert).
   Requires Hydraulic Engineering tech.
 
 **Tier — Infrastructure** (not production, but required):
+
 - `storage` — stockpile point for resources (warehouses, tanks, silos)
 - `power_line` — transports electricity between facilities
 - `pipeline` — transports fluids (oil, water, gas)
@@ -75,6 +81,7 @@ facilities.
 
 **Terrain Infrastructure** (modifiers that enable transport through difficult
 terrain — see ADR-0013):
+
 - `tunnel` — enables roads/conveyors through mountain cells
 - `bridge` — enables roads/conveyors across ocean/coastal cells
 - `pumping_station` — enables pipelines through mountains
@@ -224,6 +231,7 @@ at realistic values per deposit/extractor, not a single global number.
 ## Consequences
 
 **Positive:**
+
 - Full supply chain gives the LLM rich decision-making: where to build, what
   to connect, how to balance inputs/outputs.
 - Explicit transport infrastructure creates a visually compelling globe —
@@ -232,6 +240,7 @@ at realistic values per deposit/extractor, not a single global number.
   factories → advanced synthesis.
 
 **Negative:**
+
 - Complexity of the supply chain is high; the LLM must understand input/output
   dependencies. The MCP tools must return enough state info for the LLM to
   reason about gaps.

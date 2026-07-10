@@ -1,7 +1,7 @@
 export {
   getEffectiveTerrain,
+  getTerraformCostEstimate,
+  getTerrainModifications,
   getTerrainPath,
   terraform,
-  getTerrainModifications,
-  getTerraformCostEstimate,
 } from './service'

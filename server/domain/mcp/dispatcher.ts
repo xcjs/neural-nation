@@ -1,21 +1,21 @@
-import { processTick } from '../game/tick'
-import { surveyRegion, getDiscoveredResources, getResourceOverview, getResourceDetails, getResourceStockpile, searchResources } from '../resources'
-import { buildFacility, demolishFacility, listFacilities, getFacilityDetails, setProductionTarget, searchFacilities } from '../facilities'
-import { buildTransport, demolishTransport, listTransports, assignRoute, getSupplyChainStatus } from '../transport'
-import { getEffectiveTerrain, getTerrainPath, terraform, getTerrainModifications, getTerraformCostEstimate } from '../terrain'
-import { getPowerGridStatus } from '../power'
-import { getEnvironmentalStatus, getImpactForecast, getIncidents } from '../humanity'
-import { getSpaceStatus, launchMission, assignSpaceCrew } from '../space'
-import { getTechTree, getRecipes, startResearch, searchRecipes } from '../tech'
-import { createGameDb } from '../../db/client'
-import { schema } from '../../db/schema'
-import { eq, desc, sql } from 'drizzle-orm'
-import { publish, type GameEvent } from '../events/bus'
-import { GameStatus } from '../../../lib/types/game'
-import { updateLastActive } from '../game/service'
-import { buildFullGameState } from '../game/state'
 import type { TerraformAction } from '../../../lib/types/terrain'
 import type { TransportType } from '../../../lib/types/transport'
+import { desc, eq, sql } from 'drizzle-orm'
+import { GameStatus } from '../../../lib/types/game'
+import { createGameDb } from '../../db/client'
+import { schema } from '../../db/schema'
+import { type GameEvent, publish } from '../events/bus'
+import { buildFacility, demolishFacility, getFacilityDetails, listFacilities, searchFacilities, setProductionTarget } from '../facilities'
+import { updateLastActive } from '../game/service'
+import { buildFullGameState } from '../game/state'
+import { processTick } from '../game/tick'
+import { getEnvironmentalStatus, getImpactForecast, getIncidents } from '../humanity'
+import { getPowerGridStatus } from '../power'
+import { getDiscoveredResources, getResourceDetails, getResourceOverview, getResourceStockpile, searchResources, surveyRegion } from '../resources'
+import { assignSpaceCrew, getSpaceStatus, launchMission } from '../space'
+import { getRecipes, getTechTree, searchRecipes, startResearch } from '../tech'
+import { getEffectiveTerrain, getTerraformCostEstimate, getTerrainModifications, getTerrainPath, terraform } from '../terrain'
+import { assignRoute, buildTransport, demolishTransport, getSupplyChainStatus, listTransports } from '../transport'
 
 export interface ToolCallResult {
   status: 'success' | 'warning' | 'error'
@@ -24,13 +24,29 @@ export interface ToolCallResult {
 }
 
 const READ_ONLY_TOOLS = new Set([
-  'get_game_state', 'get_event_log', 'list_facilities', 'get_facility_details',
-  'get_discovered_resources', 'get_resource_overview', 'get_resource_details',
-  'get_resource_stockpile', 'search_resources', 'search_facilities',
-  'list_transports', 'get_supply_chain_status', 'get_terrain_path',
-  'get_tech_tree', 'get_recipes', 'search_recipes', 'get_terrain_modifications',
-  'get_effective_terrain', 'get_terraform_cost_estimate', 'get_power_grid_status',
-  'get_environmental_status', 'get_impact_forecast', 'get_space_status',
+  'get_game_state',
+  'get_event_log',
+  'list_facilities',
+  'get_facility_details',
+  'get_discovered_resources',
+  'get_resource_overview',
+  'get_resource_details',
+  'get_resource_stockpile',
+  'search_resources',
+  'search_facilities',
+  'list_transports',
+  'get_supply_chain_status',
+  'get_terrain_path',
+  'get_tech_tree',
+  'get_recipes',
+  'search_recipes',
+  'get_terrain_modifications',
+  'get_effective_terrain',
+  'get_terraform_cost_estimate',
+  'get_power_grid_status',
+  'get_environmental_status',
+  'get_impact_forecast',
+  'get_space_status',
 ])
 
 export function executeTool(token: string, toolName: string, args: Record<string, unknown>): ToolCallResult {
@@ -55,7 +71,8 @@ export function executeTool(token: string, toolName: string, args: Record<string
     emitGameEvents(token, toolName, args, result, loggedEvent)
 
     return { status: 'success', data: result }
-  } catch (err) {
+  }
+  catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err)
     logAction(token, toolName, args, 'error', null, errorMessage)
     return { status: 'error', data: null, errorMessage }
@@ -79,14 +96,14 @@ function dispatchTool(token: string, toolName: string, args: Record<string, unkn
       return searchResources(token, args as Parameters<typeof searchResources>[1])
     // Facility tools
     case 'build_facility': {
-      const buildArgs: { type: string; name: string; lat: number; lon: number; footprint?: Array<{ lat: number; lon: number }> } = {
+      const buildArgs: { type: string, name: string, lat: number, lon: number, footprint?: Array<{ lat: number, lon: number }> } = {
         type: args.type as string,
         name: args.name as string,
         lat: args.lat as number,
         lon: args.lon as number,
       }
       if (args.footprint) {
-        buildArgs.footprint = args.footprint as Array<{ lat: number; lon: number }>
+        buildArgs.footprint = args.footprint as Array<{ lat: number, lon: number }>
       }
       return buildFacility(token, buildArgs)
     }
@@ -102,12 +119,13 @@ function dispatchTool(token: string, toolName: string, args: Record<string, unkn
       return searchFacilities(token, args as Parameters<typeof searchFacilities>[1])
     // Transport tools
     case 'build_transport': {
-      const transportParams: { type: TransportType; fromFacilityId: number; toFacilityId: number; resourceKey?: string } = {
+      const transportParams: { type: TransportType, fromFacilityId: number, toFacilityId: number, resourceKey?: string } = {
         type: args.type as TransportType,
         fromFacilityId: args.fromFacilityId as number,
         toFacilityId: args.toFacilityId as number,
       }
-      if (args.resourceKey) transportParams.resourceKey = args.resourceKey as string
+      if (args.resourceKey)
+        transportParams.resourceKey = args.resourceKey as string
       return buildTransport(token, transportParams)
     }
     case 'demolish_transport':
@@ -133,14 +151,14 @@ function dispatchTool(token: string, toolName: string, args: Record<string, unkn
     case 'terraform':
       return terraform(token, args.action as TerraformAction, {
         facilityId: args.facilityId as number,
-        targetCells: args.targetCells as Array<{ latIndex: number; lonIndex: number }>,
+        targetCells: args.targetCells as Array<{ latIndex: number, lonIndex: number }>,
       })
     case 'get_terrain_modifications':
       return getTerrainModifications(token, { limit: args.limit as number, offset: args.offset as number })
     case 'get_effective_terrain':
       return getEffectiveTerrain(token, args.lat as number, args.lon as number)
     case 'get_terraform_cost_estimate':
-      return getTerraformCostEstimate(token, args.action as TerraformAction, { targetCells: args.targetCells as Array<{ latIndex: number; lonIndex: number }> })
+      return getTerraformCostEstimate(token, args.action as TerraformAction, { targetCells: args.targetCells as Array<{ latIndex: number, lonIndex: number }> })
     // Power tools
     case 'get_power_grid_status':
       return getPowerGridStatus(token)
@@ -168,11 +186,7 @@ function dispatchTool(token: string, toolName: string, args: Record<string, unkn
       const db = createGameDb(token)
       const limit = Math.min((args.limit as number) || 50, 200)
       const offset = (args.offset as number) || 0
-      const items = db.select().from(schema.events)
-        .orderBy(desc(schema.events.id))
-        .limit(limit)
-        .offset(offset)
-        .all()
+      const items = db.select().from(schema.events).orderBy(desc(schema.events.id)).limit(limit).offset(offset).all()
       const countRow = db.select({ count: sql<number>`count(*)` }).from(schema.events).get()
       return { items, totalCount: countRow?.count ?? items.length, limit, offset }
     }
@@ -187,7 +201,8 @@ export function getGameState(token: string) {
   const db = createGameDb(token)
   const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
 
-  if (!meta) throw new Error('Game not found')
+  if (!meta)
+    throw new Error('Game not found')
 
   const facilityCount = db.select().from(schema.facilities).all().length
   const transportCount = db.select().from(schema.transports).all().length
@@ -216,7 +231,7 @@ function logAction(
   status: 'success' | 'warning' | 'error',
   data: unknown,
   errorMessage?: string,
-): { id: number; tick: number; timestamp: string; type: string; message: string; severity: string; facilityId: number | null; data: string | null } {
+): { id: number, tick: number, timestamp: string, type: string, message: string, severity: string, facilityId: number | null, data: string | null } {
   const db = createGameDb(token)
   const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
   const tick = meta?.tickCount || 0
@@ -257,12 +272,12 @@ function logAction(
   }
 }
 
-function emitGameEvents(token: string, toolName: string, args: Record<string, unknown>, result: unknown, loggedEvent: { id: number; tick: number; timestamp: string; type: string; message: string; severity: string; facilityId: number | null; data: string | null }): void {
+function emitGameEvents(token: string, toolName: string, args: Record<string, unknown>, result: unknown, loggedEvent: { id: number, tick: number, timestamp: string, type: string, message: string, severity: string, facilityId: number | null, data: string | null }): void {
   const events: GameEvent[] = []
 
   switch (toolName) {
     case 'build_facility': {
-      const data = result as { facilityId: number; status: string }
+      const data = result as { facilityId: number, status: string }
       events.push({ type: 'facility_built', facility: { id: data.facilityId, ...args } })
       break
     }
@@ -272,13 +287,15 @@ function emitGameEvents(token: string, toolName: string, args: Record<string, un
     }
     case 'set_production_target': {
       const details = getFacilityDetails(token, args.facilityId as number)
-      if (details) events.push({ type: 'facility_updated', facility: details })
+      if (details)
+        events.push({ type: 'facility_updated', facility: details })
       break
     }
     case 'build_transport': {
-      const data = result as { transportId?: number; id?: number }
+      const data = result as { transportId?: number, id?: number }
       const transportId = data?.transportId ?? data?.id
-      if (transportId) events.push({ type: 'transport_built', transport: { id: transportId, ...args } })
+      if (transportId)
+        events.push({ type: 'transport_built', transport: { id: transportId, ...args } })
       break
     }
     case 'demolish_transport': {

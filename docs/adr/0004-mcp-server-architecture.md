@@ -1,10 +1,10 @@
 # ADR-0004: MCP Server Architecture
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                                                                    |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| Status     | Proposed                                                                                 |
+| Date       | 2026-07-08                                                                               |
+| Deciders   | Project owner                                                                            |
 | Relates to | ADR-0003, ADR-0007, ADR-0009, ADR-0012, ADR-0018, ADR-0019, ADR-0021, ADR-0023, ADR-0025 |
 
 ## Context
@@ -75,22 +75,26 @@ Example Claude Desktop config snippet (also shown on the creation screen):
 The MCP server exposes these tools to the LLM:
 
 **Exploration:**
+
 - `survey_region` — survey a lat/lon region for resource deposits (discovers
   nearby undiscovered deposits).
 - `get_discovered_resources` — list all discovered deposits in the game.
 
 **Construction:**
+
 - `build_facility` — place a facility at lat/lon with a specified type.
 - `demolish_facility` — remove a facility.
 - `list_facilities` — list all facilities (read-only).
 - `get_facility_details` — inspect a facility's state, inputs, outputs.
 
 **Transport:**
+
 - `build_transport` — create a transport link between two facilities.
 - `demolish_transport` — remove a transport link.
 - `list_transports` — list all transport links (read-only).
 
 **Logistics:**
+
 - `set_production_target` — set a facility's active recipe and target output
   rate. The LLM selects which recipe a facility executes from the recipes
   available to that facility type (ADR-0018).
@@ -98,6 +102,7 @@ The MCP server exposes these tools to the LLM:
 - `get_supply_chain_status` — read-only overview of production/flow.
 
 **Research & Technology (ADR-0018):**
+
 - `start_research` — begin researching a tech node at a research_lab. Consumes
   the tech's research costs over time. Fails if prerequisites are not met or
   if no research_lab is available.
@@ -110,6 +115,7 @@ The MCP server exposes these tools to the LLM:
   and tech requirement for each recipe. Supports pagination (ADR-0019).
 
 **Search (ADR-0019):**
+
 - `search_resources` — search resources by name, element symbol, category, or
   construction dependency. Find what's needed to build a facility, what a
   recipe produces, what a tech requires.
@@ -120,6 +126,7 @@ The MCP server exposes these tools to the LLM:
   produced/consumed, or geographic proximity.
 
 **Terraforming (ADR-0023):**
+
 - `terraform` — execute a terraforming operation (flatten, dig_canal,
   level_mountain, raise_land, etc.). Parameters include action type, target
   cell range, and the terraforming facility ID. Returns cost estimate,
@@ -136,6 +143,7 @@ The MCP server exposes these tools to the LLM:
   be triggered.
 
 **Game State (read-only):**
+
 - `get_game_state` — high-level game stats (tick count, total production,
   resource stockpiles).
 - `get_resource_overview` — full resource tracker: all 118 elements + bulk
@@ -172,6 +180,7 @@ The MCP server exposes these tools to the LLM:
 ## Consequences
 
 **Positive:**
+
 - HTTP/SSE works with Claude Desktop, Cursor, and any MCP-compliant client
   without local bridge processes.
 - Token-in-query-string is simple for players to configure (just paste the URL).
@@ -179,6 +188,7 @@ The MCP server exposes these tools to the LLM:
 - Lazy per-game server instances keep memory usage proportional to active games.
 
 **Negative:**
+
 - Token in query string may appear in server logs — must ensure Nitro logs are
   scrubbed or the `/mcp` route is excluded from access logging.
 - No per-tool granular permissions in v1 — token grants all resource tools.

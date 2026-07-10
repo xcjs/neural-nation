@@ -1,12 +1,12 @@
-import { copyFileSync, existsSync, unlinkSync, renameSync } from 'node:fs'
+import type { DifficultyPreset, GameStatus, type RegistryEntry } from '../../../lib/types/game'
+import { copyFileSync, existsSync, renameSync, unlinkSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { createGameDb, getTemplateDbPath, getGameDbPath, closeGameDb } from '../../db/client'
-import { DifficultyConfigs } from '../../../lib/constants/difficulty'
-import { DifficultyPreset, GameStatus, type RegistryEntry } from '../../../lib/types/game'
-import { generateTokenPair } from './token'
-import { addToRegistry, ensureDataDir, removeFromRegistry, updateRegistryEntry, findRegistryEntry } from './registry'
-import { schema } from '../../db/schema'
 import { eq } from 'drizzle-orm'
+import { DifficultyConfigs } from '../../../lib/constants/difficulty'
+import { closeGameDb, createGameDb, getGameDbPath, getTemplateDbPath } from '../../db/client'
+import { schema } from '../../db/schema'
+import { addToRegistry, ensureDataDir, findRegistryEntry, removeFromRegistry, updateRegistryEntry } from './registry'
+import { generateTokenPair } from './token'
 
 export interface CreateGameResult {
   token: string
@@ -152,14 +152,15 @@ export function revokeToken(token: string): { success: boolean } {
   for (const ext of ['', '-wal', '-shm']) {
     const filePath = `${basePath}${ext}`
     if (existsSync(filePath)) {
-      try { unlinkSync(filePath) } catch { /* ignore */ }
+      try { unlinkSync(filePath) }
+      catch { /* ignore */ }
     }
   }
   removeFromRegistry(token)
   return { success: true }
 }
 
-export function mintNewToken(oldToken: string): { token: string; publicToken: string; mcpUrl: string } {
+export function mintNewToken(oldToken: string): { token: string, publicToken: string, mcpUrl: string } {
   const entry = findRegistryEntry(oldToken)
   if (!entry) {
     throw new Error('Game not found')
@@ -172,7 +173,8 @@ export function mintNewToken(oldToken: string): { token: string; publicToken: st
   renameSync(oldDbPath, newDbPath)
   for (const ext of ['-wal', '-shm']) {
     if (existsSync(`${oldDbPath}${ext}`)) {
-      try { renameSync(`${oldDbPath}${ext}`, `${newDbPath}${ext}`) } catch { /* ignore */ }
+      try { renameSync(`${oldDbPath}${ext}`, `${newDbPath}${ext}`) }
+      catch { /* ignore */ }
     }
   }
 

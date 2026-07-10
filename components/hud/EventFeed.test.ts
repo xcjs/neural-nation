@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { setActivePinia, createPinia } from 'pinia'
-import EventFeed from './EventFeed.vue'
-import { useEventsStore, type EventLogEntry } from '~/stores/events'
+import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { type EventLogEntry, useEventsStore } from '~/stores/events'
 import { useGameStore } from '~/stores/game'
+import EventFeed from './EventFeed.vue'
 
 function makeEntry(overrides: Partial<EventLogEntry> = {}): EventLogEntry {
   return {
@@ -19,7 +19,7 @@ function makeEntry(overrides: Partial<EventLogEntry> = {}): EventLogEntry {
   }
 }
 
-describe('EventFeed.vue', () => {
+describe('eventFeed.vue', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     const game = useGameStore()

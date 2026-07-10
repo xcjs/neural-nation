@@ -1,10 +1,10 @@
 # ADR-0017: Code Organization & Domain-Driven Design
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                                                                    |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| Status     | Proposed                                                                                 |
+| Date       | 2026-07-08                                                                               |
+| Deciders   | Project owner                                                                            |
 | Relates to | ADR-0001, ADR-0006, ADR-0007, ADR-0004, ADR-0013, ADR-0014, ADR-0015, ADR-0016, ADR-0022 |
 
 ## Context
@@ -245,15 +245,16 @@ neural-nation/
 
 Each domain module under `server/domain/{domain}/` follows:
 
-| File | Purpose |
-|------|---------|
-| `{domain}.service.ts` | Core business logic — the primary public API of the domain |
-| `{domain}.repository.ts` | DB queries via Drizzle; no business logic |
-| `{domain}.validation.ts` | Input validation for that domain's operations |
-| `{domain}.constants.ts` | Domain-specific constants (when needed) |
-| `tools/` or `tools.ts` | MCP tool definitions (MCP domain only) |
+| File                     | Purpose                                                    |
+| ------------------------ | ---------------------------------------------------------- |
+| `{domain}.service.ts`    | Core business logic — the primary public API of the domain |
+| `{domain}.repository.ts` | DB queries via Drizzle; no business logic                  |
+| `{domain}.validation.ts` | Input validation for that domain's operations              |
+| `{domain}.constants.ts`  | Domain-specific constants (when needed)                    |
+| `tools/` or `tools.ts`   | MCP tool definitions (MCP domain only)                     |
 
 **Import rules:**
+
 - Domains may import from `lib/types`, `server/db`, `server/shared`, and
   other domains' service files (via explicit import, not auto-import).
 - Domains may NOT import from `server/api/` (no circular dependency).
@@ -286,26 +287,26 @@ by reading one directory, not hunting across technical layers.
 
 Use **PascalCase (StartCasing)** for all type-level constructs:
 
-| Construct | Convention | Example |
-|-----------|-----------|---------|
-| Classes | PascalCase | `GameService`, `PowerGrid` |
-| Enums | PascalCase | `FacilityType`, `TerrainClass`, `ResourceCategory` |
-| Enum members | PascalCase | `FacilityType.Extractor`, `TerrainClass.Mountain` |
-| Interfaces / Types | PascalCase | `GameMeta`, `TickState`, `GridStatus` |
-| Union literal types | PascalCase | `DifficultyPreset = 'Easy' \| 'Normal' \| 'Hard'` |
+| Construct           | Convention | Example                                            |
+| ------------------- | ---------- | -------------------------------------------------- |
+| Classes             | PascalCase | `GameService`, `PowerGrid`                         |
+| Enums               | PascalCase | `FacilityType`, `TerrainClass`, `ResourceCategory` |
+| Enum members        | PascalCase | `FacilityType.Extractor`, `TerrainClass.Mountain`  |
+| Interfaces / Types  | PascalCase | `GameMeta`, `TickState`, `GridStatus`              |
+| Union literal types | PascalCase | `DifficultyPreset = 'Easy' \| 'Normal' \| 'Hard'`  |
 
 Use **camelCase** for variables, functions, methods, and properties:
 
-| Construct | Convention | Example |
-|-----------|-----------|---------|
-| Functions / methods | camelCase | `createGame()`, `surveyRegion()` |
-| Variables / properties | camelCase | `tickCount`, `pollutionLevel` |
-| Drizzle table objects | camelCase | `games`, `facilities`, `terrainCells` |
-| File names | kebab-case | `game.service.ts`, `lose-condition.service.ts` |
-| Vue components | PascalCase | `EarthGlobe.vue`, `ResourceTracker.vue` |
-| Composables | camelCase with `use` prefix | `useGame()`, `usePower()` |
-| Constants (runtime values) | camelCase | `maxFacilities = 500` |
-| Constants (config objects) | PascalCase | `const DifficultyPresets = { ... }` |
+| Construct                  | Convention                  | Example                                        |
+| -------------------------- | --------------------------- | ---------------------------------------------- |
+| Functions / methods        | camelCase                   | `createGame()`, `surveyRegion()`               |
+| Variables / properties     | camelCase                   | `tickCount`, `pollutionLevel`                  |
+| Drizzle table objects      | camelCase                   | `games`, `facilities`, `terrainCells`          |
+| File names                 | kebab-case                  | `game.service.ts`, `lose-condition.service.ts` |
+| Vue components             | PascalCase                  | `EarthGlobe.vue`, `ResourceTracker.vue`        |
+| Composables                | camelCase with `use` prefix | `useGame()`, `usePower()`                      |
+| Constants (runtime values) | camelCase                   | `maxFacilities = 500`                          |
+| Constants (config objects) | PascalCase                  | `const DifficultyPresets = { ... }`            |
 
 ### Enum Style
 
@@ -328,6 +329,7 @@ String enums ensure serialized values are self-documenting (`"Extractor"` not
 ## Consequences
 
 **Positive:**
+
 - Each domain is self-contained — reading `server/domain/power/` tells you
   everything about the power system.
 - Adding a new domain means creating a new folder, not scattering files across
@@ -341,6 +343,7 @@ String enums ensure serialized values are self-documenting (`"Extractor"` not
   feature-folder organization.
 
 **Negative:**
+
 - More directories than a flat Nuxt structure; navigation requires knowing
   which domain owns what.
 - Nuxt auto-import doesn't cover `server/domain/` — explicit imports required

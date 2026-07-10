@@ -1,7 +1,7 @@
+import type { TransportSummary } from '~/lib/types/transport'
+import { $fetch } from 'ofetch'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { $fetch } from 'ofetch'
-import type { TransportSummary } from '~/lib/types/transport'
 
 export const useTransportsStore = defineStore('transports', () => {
   const list = ref<TransportSummary[]>([])
@@ -15,18 +15,22 @@ export const useTransportsStore = defineStore('transports', () => {
         body: { token, tool: 'list_transports', args: {} },
       })
       list.value = res.items || []
-    } catch {
+    }
+    catch {
       // SSE will update
-    } finally {
+    }
+    finally {
       loading.value = false
     }
   }
 
-  function applyUpdate(patch: { type: string; transport?: TransportSummary }) {
+  function applyUpdate(patch: { type: string, transport?: TransportSummary }) {
     if (patch.type === 'transport_built' && patch.transport) {
       const t = patch.transport
-      if (!list.value.find(x => x.id === t.id)) list.value.push(t)
-    } else if (patch.type === 'transport_demolished') {
+      if (!list.value.find(x => x.id === t.id))
+        list.value.push(t)
+    }
+    else if (patch.type === 'transport_demolished') {
       // remove by id
     }
   }

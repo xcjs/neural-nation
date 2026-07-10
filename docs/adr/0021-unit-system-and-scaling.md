@@ -1,10 +1,10 @@
 # ADR-0021: Unit System & Scaling
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                  |
+| ---------- | -------------------------------------- |
+| Status     | Proposed                               |
+| Date       | 2026-07-08                             |
+| Deciders   | Project owner                          |
 | Relates to | ADR-0003, ADR-0007, ADR-0014, ADR-0018 |
 
 ## Context
@@ -23,15 +23,15 @@ The user wants metric units at human scales (kilograms, kilometers, etc.).
 
 All game quantities use **metric units at human-scale magnitudes**:
 
-| Dimension | Unit | Symbol | Rationale |
-|---|---|---|---|
-| Mass | tonne (metric) | t | Industrial scale — a mine doesn't extract 5 kg of iron, it extracts tonnes. Tonne keeps numbers manageable (1-999 range for most quantities). |
-| Distance | kilometer | km | Earth-scale distances. A facility-to-facility transport is 10-500 km, not 10,000 m. |
-| Area | square kilometer | km² | Deposit coverage, facility footprint. |
-| Volume | cubic meter | m³ | Water, oil — where mass is impractical (water density ≈ 1 t/m³, so often interchangeable). |
-| Energy | megajoule | MJ | Power plant output, fuel energy content. 1 MJ = 1 J × 10⁶. Industrial-scale energy. |
-| Power | megawatt | MW | Power generation/consumption rate. MW is natural for plants (coal plant: 50-500 MW). |
-| Time | tick | tick | 1 tick = the simulation time unit (ADR-0006). See Time Scale below. |
+| Dimension | Unit             | Symbol | Rationale                                                                                                                                     |
+| --------- | ---------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mass      | tonne (metric)   | t      | Industrial scale — a mine doesn't extract 5 kg of iron, it extracts tonnes. Tonne keeps numbers manageable (1-999 range for most quantities). |
+| Distance  | kilometer        | km     | Earth-scale distances. A facility-to-facility transport is 10-500 km, not 10,000 m.                                                           |
+| Area      | square kilometer | km²    | Deposit coverage, facility footprint.                                                                                                         |
+| Volume    | cubic meter      | m³     | Water, oil — where mass is impractical (water density ≈ 1 t/m³, so often interchangeable).                                                    |
+| Energy    | megajoule        | MJ     | Power plant output, fuel energy content. 1 MJ = 1 J × 10⁶. Industrial-scale energy.                                                           |
+| Power     | megawatt         | MW     | Power generation/consumption rate. MW is natural for plants (coal plant: 50-500 MW).                                                          |
+| Time      | tick             | tick   | 1 tick = the simulation time unit (ADR-0006). See Time Scale below.                                                                           |
 
 ### Mass Convention
 
@@ -53,20 +53,20 @@ for volume-based resources:
 
 ```typescript
 interface RecipeInput {
-  ResourceKey: string    // 'Fe_ore', 'Water'
-  Quantity: number        // in tonnes (mass) or m³ (volume)
-  Unit: Unit              // 't' | 'm³' | 'MW' | 'count'
+  ResourceKey: string // 'Fe_ore', 'Water'
+  Quantity: number // in tonnes (mass) or m³ (volume)
+  Unit: Unit // 't' | 'm³' | 'MW' | 'count'
   Optional?: boolean
 }
 ```
 
 Example recipes with units:
 
-| Recipe | Inputs | Outputs |
-|--------|--------|---------|
-| Iron Smelting | 2 t Iron Ore + 1 t Coal + 5 MW·tick power | 2 t Iron + 0.5 t Slag |
-| Concrete | 2 t Limestone + 1 m³ Water | 3 t Concrete |
-| Electronics Assembly | 0.1 t Silicon + 0.05 t Copper + 0.01 t Gold + 0.02 t Plastics + 2 MW·tick | 0.1 t Electronics |
+| Recipe               | Inputs                                                                    | Outputs               |
+| -------------------- | ------------------------------------------------------------------------- | --------------------- |
+| Iron Smelting        | 2 t Iron Ore + 1 t Coal + 5 MW·tick power                                 | 2 t Iron + 0.5 t Slag |
+| Concrete             | 2 t Limestone + 1 m³ Water                                                | 3 t Concrete          |
+| Electronics Assembly | 0.1 t Silicon + 0.05 t Copper + 0.01 t Gold + 0.02 t Plastics + 2 MW·tick | 0.1 t Electronics     |
 
 Power in recipes is expressed as **MW·tick** (energy consumed per cycle),
 not instantaneous MW. This makes energy cost explicit per production cycle.
@@ -85,16 +85,16 @@ Transport links (ADR-0007) move resources at a rate of **tonnes per tick**
 
 Power generation/consumption (ADR-0014) uses MW:
 
-| Plant Type | Output (MW) |
-|---|---|
-| Diesel generator | 1-5 |
-| Coal plant | 50-500 |
-| Gas plant | 50-300 |
-| Nuclear reactor | 500-2000 |
-| Fusion reactor | 2000-10000 |
-| Solar farm | 10-100 (daytime) |
-| Wind farm | 5-200 |
-| Hydro plant | 50-500 |
+| Plant Type       | Output (MW)      |
+| ---------------- | ---------------- |
+| Diesel generator | 1-5              |
+| Coal plant       | 50-500           |
+| Gas plant        | 50-300           |
+| Nuclear reactor  | 500-2000         |
+| Fusion reactor   | 2000-10000       |
+| Solar farm       | 10-100 (daytime) |
+| Wind farm        | 5-200            |
+| Hydro plant      | 50-500           |
 
 Transmission loss: % per 100 km (e.g., 2%/100 km for power lines).
 
@@ -130,26 +130,26 @@ km. Terrain effects scale by distance:
 One tick represents **one day** of game time. This anchors all time-based
 calculations:
 
-| Metric | Per-Tick Rate | Rationale |
-|---|---|---|
-| Population growth | ~0.05%/tick | ~2% annual growth → daily rate |
-| Wood regeneration | ~0.01%/tick of standing biomass | Slow regrowth |
-| Water replenishment | rainfall-based, ~0.1%/tick | Moderate |
-| Research progress | 1 unit per tick per lab | See ADR-0018 |
-| Construction | 1 tick = 1 day of construction | A small facility takes 1-5 ticks (days) |
+| Metric              | Per-Tick Rate                   | Rationale                               |
+| ------------------- | ------------------------------- | --------------------------------------- |
+| Population growth   | ~0.05%/tick                     | ~2% annual growth → daily rate          |
+| Wood regeneration   | ~0.01%/tick of standing biomass | Slow regrowth                           |
+| Water replenishment | rainfall-based, ~0.1%/tick      | Moderate                                |
+| Research progress   | 1 unit per tick per lab         | See ADR-0018                            |
+| Construction        | 1 tick = 1 day of construction  | A small facility takes 1-5 ticks (days) |
 
 ### Starting Resources
 
 Starting stockpiles (ADR-0009) use the same units:
 
-| Resource | Easy | Normal | Hard |
-|---|---|---|---|
-| Fuel | 50 t | 30 t | 15 t |
-| Steel | 100 t | 50 t | 25 t |
-| Concrete | 200 t | 100 t | 50 t |
-| Machinery | 10 t | 5 t | 2 t |
-| Food | 500 t | 200 t | 100 t |
-| Population | 1000 | 500 | 200 |
+| Resource        | Easy   | Normal | Hard  |
+| --------------- | ------ | ------ | ----- |
+| Fuel            | 50 t   | 30 t   | 15 t  |
+| Steel           | 100 t  | 50 t   | 25 t  |
+| Concrete        | 200 t  | 100 t  | 50 t  |
+| Machinery       | 10 t   | 5 t    | 2 t   |
+| Food            | 500 t  | 200 t  | 100 t |
+| Population      | 1000   | 500    | 200   |
 | Energy (stored) | 500 MJ | 200 MJ | 50 MJ |
 
 ### Display Formatting
@@ -185,6 +185,7 @@ base unit.
 ## Consequences
 
 **Positive:**
+
 - Consistent units make recipe balancing and transport/power math
   verifiable against real-world references.
 - Tonnes at industrial scale keep numbers in a readable range (1-999 for
@@ -195,6 +196,7 @@ base unit.
 - Unit type in recipes prevents accidental mixing (e.g., treating m³ as t).
 
 **Negative:**
+
 - Some resources are naturally measured by volume, others by mass — the
   code must handle both, adding slight complexity to comparison/aggregation.
 - Tonnes are large for some rare elements (gold deposit of 5 t is

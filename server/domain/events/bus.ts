@@ -24,11 +24,13 @@ export function subscribe(token: string, handler: EventHandler): () => void {
 
 export function publish(token: string, event: GameEvent): void {
   const set = subscribers.get(token)
-  if (!set) return
+  if (!set)
+    return
   for (const handler of set) {
     try {
       handler(event)
-    } catch {
+    }
+    catch {
       // ignore handler errors
     }
   }

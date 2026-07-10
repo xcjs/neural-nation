@@ -1,8 +1,8 @@
 export {
   buildFacility,
   demolishFacility,
-  listFacilities,
   getFacilityDetails,
-  setProductionTarget,
+  listFacilities,
   searchFacilities,
+  setProductionTarget,
 } from './service'

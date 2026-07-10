@@ -1,13 +1,13 @@
-export { createGame, getGameMeta, type CreateGameResult } from './service'
-export { generateToken, generateTokenPair } from './token'
 export { runCleanup } from './cleanup'
-export { processTick } from './tick'
 export {
-  loadRegistry,
-  saveRegistry,
   addToRegistry,
-  updateRegistryEntry,
-  removeFromRegistry,
   findRegistryEntry,
   findRegistryEntryByPublicToken,
+  loadRegistry,
+  removeFromRegistry,
+  saveRegistry,
+  updateRegistryEntry,
 } from './registry'
+export { createGame, type CreateGameResult, getGameMeta } from './service'
+export { processTick } from './tick'
+export { generateToken, generateTokenPair } from './token'

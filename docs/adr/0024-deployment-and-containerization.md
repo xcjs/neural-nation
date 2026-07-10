@@ -1,10 +1,10 @@
 # ADR-0024: Deployment & Containerization
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                        |
+| ---------- | ---------------------------- |
+| Status     | Proposed                     |
+| Date       | 2026-07-08                   |
+| Deciders   | Project owner                |
 | Relates to | ADR-0001, ADR-0005, ADR-0020 |
 
 ## Context
@@ -64,15 +64,15 @@ CMD ["node", ".output/server/index.mjs"]
 ### docker-compose.yml
 
 ```yaml
-version: "3.9"
+version: '3.9'
 services:
   neural-nation:
     build: .
     image: registry.gitlab.example.com/neural-nation:latest
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
-      - ./data:/app/data          # Persistent SQLite game DBs + registry
+      - ./data:/app/data # Persistent SQLite game DBs + registry
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
@@ -83,7 +83,7 @@ services:
       - GAME_CLEANUP_INTERVAL_HOURS=6
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: [CMD, curl, -f, 'http://localhost:3000/api/health']
       interval: 30s
       timeout: 5s
       retries: 3
@@ -144,7 +144,7 @@ deploy:
     - docker compose up -d
   only:
     - master
-  when: manual   # Manual deploy trigger for v1; can switch to auto later
+  when: manual # Manual deploy trigger for v1; can switch to auto later
   tags:
     - production-runner
 ```
@@ -161,15 +161,15 @@ deploy:
 
 All game configuration via environment variables (no config files in v1):
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `NODE_ENV` | `production` | Node environment |
-| `HOST` | `0.0.0.0` | Bind address |
-| `PORT` | `3000` | HTTP port |
-| `GAME_CLEANUP_ENABLED` | `true` | Enable automatic cleanup (ADR-0020) |
-| `GAME_CLEANUP_AGE_DAYS` | `7` | Stale game age threshold |
-| `GAME_CLEANUP_GRACE_DAYS` | `1` | Grace period before deletion |
-| `GAME_CLEANUP_INTERVAL_HOURS` | `6` | Cleanup check frequency |
+| Variable                      | Default      | Purpose                             |
+| ----------------------------- | ------------ | ----------------------------------- |
+| `NODE_ENV`                    | `production` | Node environment                    |
+| `HOST`                        | `0.0.0.0`    | Bind address                        |
+| `PORT`                        | `3000`       | HTTP port                           |
+| `GAME_CLEANUP_ENABLED`        | `true`       | Enable automatic cleanup (ADR-0020) |
+| `GAME_CLEANUP_AGE_DAYS`       | `7`          | Stale game age threshold            |
+| `GAME_CLEANUP_GRACE_DAYS`     | `1`          | Grace period before deletion        |
+| `GAME_CLEANUP_INTERVAL_HOURS` | `6`          | Cleanup check frequency             |
 
 ### Persistent Data
 
@@ -196,6 +196,7 @@ All game configuration via environment variables (no config files in v1):
 ### Health Endpoint
 
 `GET /api/health` returns:
+
 ```json
 { "status": "ok", "uptime": 12345, "games": 12 }
 ```
@@ -206,6 +207,7 @@ sensitive data (no tokens, no game details).
 ## Consequences
 
 **Positive:**
+
 - Docker image is self-contained and reproducible — same artifact in CI and
   production.
 - docker compose provides simple single-host orchestration with volume
@@ -216,6 +218,7 @@ sensitive data (no tokens, no game details).
 - Health endpoint enables Docker auto-restart on failure.
 
 **Negative:**
+
 - Single-host deployment — no horizontal scaling without shared filesystem
   (NFS/POSIX volumes). Acceptable for v1; user deferred scalability concerns.
 - `better-sqlite3` native compilation adds build complexity. Mitigated by

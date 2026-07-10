@@ -1,5 +1,5 @@
-import { mkdirSync, existsSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { existsSync, mkdirSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -27,13 +27,16 @@ async function main() {
         const { writeFile } = await import('node:fs/promises')
         await writeFile(mrdsPath, buf)
         console.log('  MRDS downloaded:', mrdsPath)
-      } else {
+      }
+      else {
         console.log('  MRDS download failed (HTTP', res.status, ') — will need manual download')
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.log('  MRDS download error:', e instanceof Error ? e.message : 'unknown')
     }
-  } else {
+  }
+  else {
     console.log('  MRDS already downloaded')
   }
 
@@ -61,13 +64,16 @@ async function main() {
         const { writeFile } = await import('node:fs/promises')
         await writeFile(kgPath, text, 'utf-8')
         console.log('  Köppen-Geiger downloaded:', kgPath)
-      } else {
+      }
+      else {
         console.log('  Köppen-Geiger download failed (HTTP', res.status, ')')
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.log('  Köppen-Geiger download error:', e instanceof Error ? e.message : 'unknown')
     }
-  } else {
+  }
+  else {
     console.log('  Köppen-Geiger already downloaded')
   }
 

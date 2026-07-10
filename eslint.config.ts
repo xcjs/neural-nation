@@ -16,7 +16,7 @@ export default antfu({
     'ts/no-unused-vars': 'error',
     'prefer-const': 'error',
     'no-console': 'warn',
-    'newlines/require-final-newline': 'error',
+    'style/eol-last': 'error',
   },
   ignores: [
     '.nuxt/**',

@@ -1,10 +1,10 @@
+import type { PaginatedResult, PaginationParams } from '../../../lib/types/mcp'
+import type { TransportSummary } from '../../../lib/types/transport'
+import { and, eq, sql } from 'drizzle-orm'
+import { TransportType } from '../../../lib/types/transport'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq, and, sql } from 'drizzle-orm'
-import type { TransportSummary } from '../../../lib/types/transport'
-import { TransportType } from '../../../lib/types/transport'
 import { greatCircleDistance } from '../../shared/geo/distance'
-import type { PaginationParams, PaginatedResult } from '../../../lib/types/mcp'
 
 export function buildTransport(
   token: string,
@@ -14,15 +14,11 @@ export function buildTransport(
     toFacilityId: number
     resourceKey?: string
   },
-): { transportId: number; terrainModifiers: string[] } {
+): { transportId: number, terrainModifiers: string[] } {
   const db = createGameDb(token)
 
-  const fromFacility = db.select().from(schema.facilities)
-    .where(eq(schema.facilities.id, params.fromFacilityId))
-    .get()
-  const toFacility = db.select().from(schema.facilities)
-    .where(eq(schema.facilities.id, params.toFacilityId))
-    .get()
+  const fromFacility = db.select().from(schema.facilities).where(eq(schema.facilities.id, params.fromFacilityId)).get()
+  const toFacility = db.select().from(schema.facilities).where(eq(schema.facilities.id, params.toFacilityId)).get()
 
   if (!fromFacility || !toFacility) {
     throw new Error('Source or destination facility not found')
@@ -77,7 +73,8 @@ export function listTransports(
   const items = db.select().from(schema.transports).limit(limit).offset(offset).all()
   const totalCount = db.select({ count: sql<number>`count(*)` })
     .from(schema.transports)
-    .get()?.count || 0
+    .get()
+    ?.count || 0
 
   return {
     items: items.map(mapToSummary),
@@ -110,7 +107,7 @@ export function getSupplyChainStatus(token: string) {
   const facilities = db.select().from(schema.facilities).all()
   const transports = db.select().from(schema.transports).all()
 
-  const nodes = facilities.map((f) => ({
+  const nodes = facilities.map(f => ({
     id: f.id,
     type: f.type,
     name: f.name,
@@ -118,7 +115,7 @@ export function getSupplyChainStatus(token: string) {
     throughput: f.throughput,
   }))
 
-  const edges = transports.map((t) => ({
+  const edges = transports.map(t => ({
     id: t.id,
     from: t.fromFacilityId,
     to: t.toFacilityId,
@@ -145,21 +142,21 @@ function analyzeTerrain(
   const lonMin = Math.min(fromLon, toLon)
   const lonMax = Math.max(fromLon, toLon)
 
-  const terrainCells = db.select().from(schema.terrain)
-    .where(
-      and(
-        sql`${schema.terrain.lat} >= ${latMin} AND ${schema.terrain.lat} <= ${latMax}`,
-        sql`${schema.terrain.lon} >= ${lonMin} AND ${schema.terrain.lon} <= ${lonMax}`,
-      ),
-    )
-    .all()
+  const terrainCells = db.select().from(schema.terrain).where(
+    and(
+      sql`${schema.terrain.lat} >= ${latMin} AND ${schema.terrain.lat} <= ${latMax}`,
+      sql`${schema.terrain.lon} >= ${lonMin} AND ${schema.terrain.lon} <= ${lonMax}`,
+    ),
+  ).all()
 
   for (const cell of terrainCells) {
     if (cell.terrainClass === 'Mountain' || cell.terrainClass === 'HighMountain') {
-      if (!modifiers.includes('tunnel')) modifiers.push('tunnel')
+      if (!modifiers.includes('tunnel'))
+        modifiers.push('tunnel')
     }
     if (cell.terrainClass === 'Ocean') {
-      if (!modifiers.includes('bridge')) modifiers.push('bridge')
+      if (!modifiers.includes('bridge'))
+        modifiers.push('bridge')
     }
   }
 

@@ -1,7 +1,7 @@
+import type { SpaceSummary } from '~/lib/types/space'
+import { $fetch } from 'ofetch'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { $fetch } from 'ofetch'
-import type { SpaceSummary } from '~/lib/types/space'
 
 export const useSpaceStore = defineStore('space', () => {
   const status = ref<SpaceSummary | null>(null)
@@ -15,14 +15,16 @@ export const useSpaceStore = defineStore('space', () => {
         body: { token, tool: 'get_space_status', args: {} },
       })
       status.value = res
-    } catch {
+    }
+    catch {
       // SSE will update
-    } finally {
+    }
+    finally {
       loading.value = false
     }
   }
 
-  function applyUpdate(patch: { type: string; space?: SpaceSummary }) {
+  function applyUpdate(patch: { type: string, space?: SpaceSummary }) {
     if (patch.type === 'space_updated' && patch.space) {
       status.value = patch.space
     }

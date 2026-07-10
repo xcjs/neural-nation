@@ -1,8 +1,7 @@
+import type { TechStatus, TechTreeNode } from '~/lib/types/tech'
+import { $fetch } from 'ofetch'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { $fetch } from 'ofetch'
-import type { TechTreeNode } from '~/lib/types/tech'
-import { TechStatus } from '~/lib/types/tech'
 
 export const useTechTreeStore = defineStore('techtree', () => {
   const nodes = ref<TechTreeNode[]>([])
@@ -16,17 +15,20 @@ export const useTechTreeStore = defineStore('techtree', () => {
         body: { token, tool: 'get_tech_tree', args: {} },
       })
       nodes.value = res.items || []
-    } catch {
+    }
+    catch {
       // SSE will update
-    } finally {
+    }
+    finally {
       loading.value = false
     }
   }
 
-  function applyUpdate(patch: { type: string; node?: TechTreeNode }) {
+  function applyUpdate(patch: { type: string, node?: TechTreeNode }) {
     if (patch.type === 'research_updated' && patch.node) {
       const idx = nodes.value.findIndex(n => n.id === patch.node!.id)
-      if (idx >= 0) nodes.value[idx] = patch.node
+      if (idx >= 0)
+        nodes.value[idx] = patch.node
     }
   }
 

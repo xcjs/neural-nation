@@ -1,7 +1,7 @@
+import type { SpaceFacilitySummary, SpaceMission, SpaceSummary } from '../../../lib/types/space'
+import { eq } from 'drizzle-orm'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq } from 'drizzle-orm'
-import type { SpaceSummary, SpaceFacilitySummary, SpaceMission } from '../../../lib/types/space'
 
 export function getSpaceStatus(token: string): SpaceSummary {
   const db = createGameDb(token)
@@ -9,7 +9,7 @@ export function getSpaceStatus(token: string): SpaceSummary {
   const facilities = db.select().from(schema.spaceFacilities).all()
   const missions = db.select().from(schema.spaceMissions).all()
 
-  const facilitySummaries: SpaceFacilitySummary[] = facilities.map((f) => ({
+  const facilitySummaries: SpaceFacilitySummary[] = facilities.map(f => ({
     id: f.id,
     type: f.type,
     name: f.name,
@@ -19,7 +19,7 @@ export function getSpaceStatus(token: string): SpaceSummary {
     orbital: Boolean(f.orbital),
   }))
 
-  const missionSummaries: SpaceMission[] = missions.map((m) => ({
+  const missionSummaries: SpaceMission[] = missions.map(m => ({
     id: m.id,
     type: m.type,
     status: m.status,

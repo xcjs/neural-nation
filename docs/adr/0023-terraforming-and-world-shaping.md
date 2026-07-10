@@ -1,10 +1,10 @@
 # ADR-0023: Terraforming & World Shaping
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                                                                    |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| Status     | Proposed                                                                                 |
+| Date       | 2026-07-08                                                                               |
+| Deciders   | Project owner                                                                            |
 | Relates to | ADR-0002, ADR-0003, ADR-0007, ADR-0008, ADR-0011, ADR-0013, ADR-0015, ADR-0018, ADR-0021 |
 
 ## Context
@@ -13,7 +13,7 @@ ADR-0013 establishes a static terrain elevation grid — real SRTM data
 downsampled to 0.1° cells, stored in the template DB, consulted by transport
 pathfinding and facility placement, and rendered as the wireframe earth's
 surface geometry. This terrain is immutable; the agent can build tunnels and
-bridges to *overcome* terrain but cannot *change* it.
+bridges to _overcome_ terrain but cannot _change_ it.
 
 The user wants the agent to be able to **shape the world**: alter terrain
 elevation, create or fill bodies of water, flatten mountains, dig canals,
@@ -24,6 +24,7 @@ that makes the world feel like a living, agent-modified place rather than a
 static backdrop.
 
 Terraforming introduces several design challenges:
+
 - **Data model**: The terrain grid (ADR-0013) must become mutable per-game
   rather than static template data. Modifications must be tracked separately
   from the base terrain and applied as overlays.
@@ -56,11 +57,11 @@ Each action modifies the terrain grid within a defined area.
 
 **Tier 1 — Early Earthworks (available with Basic Construction tech):**
 
-| Action | Description | Effect | Cost Scale |
-|--------|-------------|--------|------------|
-| `flatten_terrain` | Level a small area for construction or agriculture | Reduces elevation variance within target cells to the average; lowers hills, fills dips | Machinery + Fuel, ∝ area × elevation change |
-| `dig_canal` | Excavate a channel to connect water bodies or create a water route | Creates a narrow strip of ocean-class cells through land; enables water transport | Machinery + Fuel, ∝ length × depth |
-| `build_road_embankment` | Raise low terrain for road stability | Slightly elevates target cells | Machinery + Stone |
+| Action                  | Description                                                        | Effect                                                                                  | Cost Scale                                  |
+| ----------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `flatten_terrain`       | Level a small area for construction or agriculture                 | Reduces elevation variance within target cells to the average; lowers hills, fills dips | Machinery + Fuel, ∝ area × elevation change |
+| `dig_canal`             | Excavate a channel to connect water bodies or create a water route | Creates a narrow strip of ocean-class cells through land; enables water transport       | Machinery + Fuel, ∝ length × depth          |
+| `build_road_embankment` | Raise low terrain for road stability                               | Slightly elevates target cells                                                          | Machinery + Stone                           |
 
 These are small-scale, cell-level modifications (1-10 cells per action).
 They use existing facility outputs (Machinery, Fuel, Stone) and require
@@ -69,27 +70,27 @@ transport routes or prepare building sites.
 
 **Tier 2 — Hydraulic Engineering (requires Hydraulic Engineering tech):**
 
-| Action | Description | Effect | Cost Scale |
-|--------|-------------|--------|------------|
-| `create_reservoir` | Dam a river valley to create an artificial lake | Fills a basin with water-class cells; provides water storage + hydro potential | Concrete + Machinery + Steel, ∝ dam size |
-| `drain_area` | Pump water out of a shallow area to create land | Converts shallow ocean/coastal cells to land; enables coastal expansion | Concrete + Machinery + Fuel, ∝ area × depth |
-| `divert_river` | Change river course | Alters water-class cell layout; impacts downstream water availability | Concrete + Machinery, ∝ diversion length |
+| Action             | Description                                     | Effect                                                                         | Cost Scale                                  |
+| ------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------- |
+| `create_reservoir` | Dam a river valley to create an artificial lake | Fills a basin with water-class cells; provides water storage + hydro potential | Concrete + Machinery + Steel, ∝ dam size    |
+| `drain_area`       | Pump water out of a shallow area to create land | Converts shallow ocean/coastal cells to land; enables coastal expansion        | Concrete + Machinery + Fuel, ∝ area × depth |
+| `divert_river`     | Change river course                             | Alters water-class cell layout; impacts downstream water availability          | Concrete + Machinery, ∝ diversion length    |
 
 **Tier 3 — Large-Scale Terraforming (requires Advanced Terraforming tech):**
 
-| Action | Description | Effect | Cost Scale |
-|--------|-------------|--------|------------|
-| `level_mountain` | Systematically reduce a mountain range | Lowers mountain/high_mountain cells to hill/plain over multiple operations | Machinery + Explosives + Fuel, ∝ area × elevation reduction |
-| `raise_land` | Create new land mass from ocean | Elevates ocean cells above sea level; creates artificial islands or coastal extension | Stone + Concrete + Steel, ∝ area × elevation gain |
-| `excavate_mine_shaft` | Deep excavation to access buried deposits | Lowers elevation significantly at a cell; may expose previously inaccessible deposits | Machinery + Fuel, ∝ depth |
-| `create_mountain` | Build artificial elevated terrain (for wind, defense, aesthetics) | Raises elevation at target cells | Stone + Concrete + Machinery, ∝ volume |
+| Action                | Description                                                       | Effect                                                                                | Cost Scale                                                  |
+| --------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `level_mountain`      | Systematically reduce a mountain range                            | Lowers mountain/high_mountain cells to hill/plain over multiple operations            | Machinery + Explosives + Fuel, ∝ area × elevation reduction |
+| `raise_land`          | Create new land mass from ocean                                   | Elevates ocean cells above sea level; creates artificial islands or coastal extension | Stone + Concrete + Steel, ∝ area × elevation gain           |
+| `excavate_mine_shaft` | Deep excavation to access buried deposits                         | Lowers elevation significantly at a cell; may expose previously inaccessible deposits | Machinery + Fuel, ∝ depth                                   |
+| `create_mountain`     | Build artificial elevated terrain (for wind, defense, aesthetics) | Raises elevation at target cells                                                      | Stone + Concrete + Machinery, ∝ volume                      |
 
 **Tier 4 — Planetary Engineering (requires Planetary Engineering tech):**
 
-| Action | Description | Effect | Cost Scale |
-|--------|-------------|--------|------------|
-| `shift_continental_plate` | Massive-scale terrain alteration across hundreds of cells | Changes elevation across a large region; extremely expensive and slow | Massive resource cost, multiple facilities, many ticks |
-| `ocean_to_land` / `land_to_ocean` | Large-scale conversion of terrain class | Changes biomes, water availability, and climate across a region | Massive resource cost |
+| Action                            | Description                                               | Effect                                                                | Cost Scale                                             |
+| --------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------ |
+| `shift_continental_plate`         | Massive-scale terrain alteration across hundreds of cells | Changes elevation across a large region; extremely expensive and slow | Massive resource cost, multiple facilities, many ticks |
+| `ocean_to_land` / `land_to_ocean` | Large-scale conversion of terrain class                   | Changes biomes, water availability, and climate across a region       | Massive resource cost                                  |
 
 Tier 4 actions are the "world looks very different" tier — they take many
 ticks, consume enormous resources, and have significant environmental impact.
@@ -123,15 +124,15 @@ terraforming facilities:
 
 ```typescript
 interface TerraformingRecipe {
-  Id: string                     // 'FlattenTerrain', 'DigCanal', 'LevelMountain'
+  Id: string // 'FlattenTerrain', 'DigCanal', 'LevelMountain'
   Name: string
-  FacilityType: FacilityType      // 'Excavator', 'Dredger', 'Terraformer', 'PlanetaryEngine'
-  Inputs: RecipeInput[]           // Machinery, Fuel, Stone, Concrete, etc.
-  TargetCells: CellRange          // area to modify
-  ElevationChange: number        // meters to add/subtract (negative = lower)
+  FacilityType: FacilityType // 'Excavator', 'Dredger', 'Terraformer', 'PlanetaryEngine'
+  Inputs: RecipeInput[] // Machinery, Fuel, Stone, Concrete, etc.
+  TargetCells: CellRange // area to modify
+  ElevationChange: number // meters to add/subtract (negative = lower)
   NewTerrainClass?: TerrainClass // if class changes (e.g., land → ocean)
-  CraftTime: number               // ticks to complete
-  TechRequired: string           // tech node prerequisite
+  CraftTime: number // ticks to complete
+  TechRequired: string // tech node prerequisite
 }
 ```
 
@@ -161,6 +162,7 @@ terrain_modifications
 **Effective terrain** at any cell = base `terrain.elevation_m` + sum of all
 `terrain_modifications.elevation_delta` for that cell. If
 `new_terrain_class` is set, it overrides the base class. This overlay model:
+
 - Preserves the original terrain (can be referenced for "what was here before")
 - Allows undo/reversal (a modification can be counteracted)
 - Keeps the template DB static (modifications are per-game state)
@@ -193,20 +195,21 @@ When terrain changes, dependent systems must re-evaluate:
 
 Terraforming has significant environmental impact, tracked per ADR-0015:
 
-| Operation | Pollution | Forest | Water Quality | Biodiversity |
-|-----------|-----------|--------|---------------|---------------|
-| Flatten terrain | +low | -low (if forested) | 0 | -low |
-| Dig canal | +low | 0 | -low (turbidity) | -low (habitat disruption) |
-| Create reservoir | +low | -medium (flooded valley) | -low (stagnation) | -medium (aquatic disruption) |
-| Drain area | +medium | 0 | -medium (altered hydrology) | -high (wetland loss) |
-| Divert river | +low | -low | -high (downstream) | -high |
-| Level mountain | +high (dust, blasting) | -high (if forested slopes) | -medium (runoff) | -high (habitat destruction) |
-| Raise land | +medium | 0 | -medium (coastal alteration) | -high (marine habitat buried) |
-| Excavate shaft | +low | 0 | -low (groundwater) | 0 |
-| Create mountain | +medium | 0 | 0 | -low (new habitat) |
-| Continental shift | +extreme | -extreme | -extreme | -extreme (biome shift) |
+| Operation         | Pollution              | Forest                     | Water Quality                | Biodiversity                  |
+| ----------------- | ---------------------- | -------------------------- | ---------------------------- | ----------------------------- |
+| Flatten terrain   | +low                   | -low (if forested)         | 0                            | -low                          |
+| Dig canal         | +low                   | 0                          | -low (turbidity)             | -low (habitat disruption)     |
+| Create reservoir  | +low                   | -medium (flooded valley)   | -low (stagnation)            | -medium (aquatic disruption)  |
+| Drain area        | +medium                | 0                          | -medium (altered hydrology)  | -high (wetland loss)          |
+| Divert river      | +low                   | -low                       | -high (downstream)           | -high                         |
+| Level mountain    | +high (dust, blasting) | -high (if forested slopes) | -medium (runoff)             | -high (habitat destruction)   |
+| Raise land        | +medium                | 0                          | -medium (coastal alteration) | -high (marine habitat buried) |
+| Excavate shaft    | +low                   | 0                          | -low (groundwater)           | 0                             |
+| Create mountain   | +medium                | 0                          | 0                            | -low (new habitat)            |
+| Continental shift | +extreme               | -extreme                   | -extreme                     | -extreme (biome shift)        |
 
 Large-scale terraforming can trigger environmental incidents (ADR-0015):
+
 - **Ecological collapse**: If terraforming destroys a biome (e.g., draining
   a major wetland, leveling a forested mountain range), the biome's
   biodiversity may collapse, affecting population welfare.
@@ -287,6 +290,7 @@ visually satisfying — the player watches mountains lower, canals fill with
 water, land rise from the sea.
 
 **Visual cues:**
+
 - **Active terraforming**: The terraforming facility emits a distinctive
   particle cloud — earth-toned particles (brown/amber) that churn and
   swirl violently during active operations. Density ∝ operation scale.
@@ -312,6 +316,7 @@ the player see at a glance how the agent has reshaped the world.
 
 Over hundreds or thousands of ticks, the earth can look dramatically
 different:
+
 - Mountains leveled into plains
 - New seas created by canal networks or reservoirs
 - Artificial islands and extended coastlines
@@ -324,6 +329,7 @@ player see the journey from original Earth to the agent's reshaped world.
 ## Consequences
 
 **Positive:**
+
 - Terraforming gives the agent a deeply satisfying late-game capability —
   the world is not static, it's a canvas the agent shapes over time.
 - Tiered progression (earthworks → hydraulic → advanced → planetary) creates
@@ -337,6 +343,7 @@ player see the journey from original Earth to the agent's reshaped world.
 - Dynamic mesh updates make terraforming visually rewarding.
 
 **Negative:**
+
 - Significant implementation complexity: dynamic terrain mesh updates,
   overlay resolution, transport re-evaluation on terrain change, facility
   re-evaluation, deposit accessibility changes.

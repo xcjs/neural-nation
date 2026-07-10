@@ -1,20 +1,19 @@
 import { existsSync, unlinkSync } from 'node:fs'
+import { GameStatus } from '~/lib/types/game'
+import { closeGameDb, getGameDbPath } from '~/server/db/client'
 import {
   loadRegistry,
-  saveRegistry,
   removeFromRegistry,
+  saveRegistry,
   updateRegistryEntry,
 } from './registry'
-import { closeGameDb } from '~/server/db/client'
-import { GameStatus } from '~/lib/types/game'
-import { getGameDbPath } from '~/server/db/client'
 
 interface CleanupOptions {
   ageDays: number
   graceDays: number
 }
 
-export async function runCleanup(opts: CleanupOptions): Promise<{ cleaned: number; pending: number }> {
+export async function runCleanup(opts: CleanupOptions): Promise<{ cleaned: number, pending: number }> {
   const registry = loadRegistry()
   const now = Date.now()
   const ageMs = opts.ageDays * 24 * 60 * 60 * 1000
@@ -27,7 +26,8 @@ export async function runCleanup(opts: CleanupOptions): Promise<{ cleaned: numbe
     const lastActive = new Date(entry.lastActive).getTime()
     const age = now - lastActive
 
-    if (age < ageMs) continue
+    if (age < ageMs)
+      continue
 
     // Game is old enough — check if already pending
     if (entry.status === GameStatus.PendingCleanup) {
@@ -36,10 +36,12 @@ export async function runCleanup(opts: CleanupOptions): Promise<{ cleaned: numbe
         // Grace period passed — delete
         deleteGame(entry.token)
         cleaned++
-      } else {
+      }
+      else {
         pending++
       }
-    } else if (entry.status === GameStatus.GameOver || age >= ageMs) {
+    }
+    else if (entry.status === GameStatus.GameOver || age >= ageMs) {
       // Mark as pending cleanup
       updateRegistryEntry(entry.token, {
         status: GameStatus.PendingCleanup,
@@ -64,7 +66,8 @@ function deleteGame(token: string): void {
     if (existsSync(file)) {
       try {
         unlinkSync(file)
-      } catch {
+      }
+      catch {
         // ignore
       }
     }

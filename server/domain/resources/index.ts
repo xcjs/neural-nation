@@ -1,8 +1,8 @@
 export {
-  surveyRegion,
   getDiscoveredResources,
-  getResourceOverview,
   getResourceDetails,
+  getResourceOverview,
   getResourceStockpile,
   searchResources,
+  surveyRegion,
 } from './service'

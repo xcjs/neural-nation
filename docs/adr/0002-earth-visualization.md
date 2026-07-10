@@ -1,10 +1,10 @@
 # ADR-0002: 3D Earth Visualization
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                        |
+| ---------- | ---------------------------- |
+| Status     | Proposed                     |
+| Date       | 2026-07-08                   |
+| Deciders   | Project owner                |
 | Relates to | ADR-0008, ADR-0013, ADR-0023 |
 
 ## Context
@@ -73,6 +73,7 @@ render a **wireframe/holographic** earth.
 ## Consequences
 
 **Positive:**
+
 - TresJS gives idiomatic Vue composables for Three.js — no imperative escape
   hatches needed for standard operations.
 - Wireframe/holographic style is performant (fewer textures/shaders) and
@@ -80,6 +81,7 @@ render a **wireframe/holographic** earth.
 - Glowing aesthetic makes facilities readable at orbital zoom.
 
 **Negative:**
+
 - Custom shaders needed for atmosphere glow, particle cloud motion, and
   transport flow effects.
 - **Dynamic terrain mesh** (ADR-0023): vertex updates on terraforming require

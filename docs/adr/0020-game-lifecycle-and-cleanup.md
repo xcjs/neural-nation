@@ -1,10 +1,10 @@
 # ADR-0020: Game Lifecycle & Cleanup
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                        |
+| ---------- | ---------------------------- |
+| Status     | Proposed                     |
+| Date       | 2026-07-08                   |
+| Deciders   | Project owner                |
 | Relates to | ADR-0005, ADR-0006, ADR-0009 |
 
 ## Context
@@ -12,6 +12,7 @@
 Games are stored as individual SQLite files on the server (ADR-0005). There
 is no account system (ADR-0009), so games are identified only by token. Over
 time, the server accumulates game files from:
+
 - Games the LLM agent lost (resource depletion — ADR-0009).
 - Games the player abandoned (stopped interacting, closed tab, lost token).
 - Games still actively being played.
@@ -46,12 +47,12 @@ cleaned up, regardless of age.
 
 ### Configuration
 
-| Env Variable | Default | Description |
-|---|---|---|
-| `GAME_CLEANUP_ENABLED` | `true` | Enable/disable automatic cleanup |
-| `GAME_CLEANUP_AGE_DAYS` | `7` | Days of inactivity before cleanup |
-| `GAME_CLEANUP_INTERVAL_HOURS` | `6` | How often the cleanup job runs |
-| `GAME_CLEANUP_GRACE_DAYS` | `1` | Grace period (in days) after a game becomes eligible before deletion (allows recovery if the player returns) |
+| Env Variable                  | Default | Description                                                                                                  |
+| ----------------------------- | ------- | ------------------------------------------------------------------------------------------------------------ |
+| `GAME_CLEANUP_ENABLED`        | `true`  | Enable/disable automatic cleanup                                                                             |
+| `GAME_CLEANUP_AGE_DAYS`       | `7`     | Days of inactivity before cleanup                                                                            |
+| `GAME_CLEANUP_INTERVAL_HOURS` | `6`     | How often the cleanup job runs                                                                               |
+| `GAME_CLEANUP_GRACE_DAYS`     | `1`     | Grace period (in days) after a game becomes eligible before deletion (allows recovery if the player returns) |
 
 ### Cleanup Process
 
@@ -108,8 +109,8 @@ deleted immediately after token confirmation.
   "token": "AbC123...",
   "createdAt": "2026-07-08T...",
   "lastActive": "2026-07-15T...",
-  "status": "Active",           // "Active" | "GameOver" | "PendingCleanup"
-  "cleanupEligibleAt": null      // ISO timestamp when grace period ends, or null
+  "status": "Active", // "Active" | "GameOver" | "PendingCleanup"
+  "cleanupEligibleAt": null // ISO timestamp when grace period ends, or null
 }
 ```
 
@@ -123,6 +124,7 @@ eligibility, and performs deletion.
 ## Consequences
 
 **Positive:**
+
 - Disk usage is bounded — old games are automatically reclaimed.
 - Configurable age threshold lets operators tune cleanup aggressiveness.
 - Grace period prevents accidental loss if a player takes a short break.
@@ -130,6 +132,7 @@ eligibility, and performs deletion.
 - Last-activity tracking is simple and unambiguous.
 
 **Negative:**
+
 - Players who lose their token and try to return after the cleanup window
   will find their game gone. Mitigated by the grace period and the Game Over
   overlay warning.

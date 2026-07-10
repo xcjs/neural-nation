@@ -1,10 +1,10 @@
 # ADR-0016: Space-Based Resource Gathering
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                  |
+| ---------- | -------------------------------------- |
+| Status     | Proposed                               |
+| Date       | 2026-07-08                             |
+| Deciders   | Project owner                          |
 | Relates to | ADR-0003, ADR-0007, ADR-0014, ADR-0015 |
 
 ## Context
@@ -29,6 +29,7 @@ Space resource gathering requires a **chain of advanced facilities** that the
 LLM must build in sequence. Each tier unlocks the next:
 
 **Tier 3a — Launch Capability:**
+
 - `spaceport` — Launch facility. Required to send payloads to orbit. Must be
   built on land near the equator (launch advantage — equatorial sites get
   Earth's rotational boost). Construction requires significant resources
@@ -39,6 +40,7 @@ LLM must build in sequence. Each tier unlocks the next:
   or recovered (reusable, higher tech, cheaper per launch long-term).
 
 **Tier 3b — Orbital Infrastructure:**
+
 - `space_station` — Orbital platform. Acts as the staging point for
   space-based operations. Must be launched in pieces (multiple rocket
   launches) and assembled in orbit. Houses crew (population assigned), power
@@ -49,6 +51,7 @@ LLM must build in sequence. Each tier unlocks the next:
   surface — only refined materials (much lighter) are sent back down.
 
 **Tier 3c — Space Resource Extraction:**
+
 - `asteroid_mining_drone` — Autonomous mining craft sent from the space
   station to near-Earth asteroids. Extracts elements (especially rare
   metals: platinum-group, iridium, rare earths) and returns ore to the
@@ -66,13 +69,13 @@ LLM must build in sequence. Each tier unlocks the next:
 
 Space sources provide resources that may be depleted or rare on Earth:
 
-| Source | Resources | Notes |
-|--------|-----------|-------|
+| Source               | Resources                                                     | Notes                                                                          |
+| -------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Near-Earth asteroids | Platinum-group metals, rare earths, iron, nickel, water (ice) | Most asteroids are metal/ice rich; water ice can be returned for fuel/hydrogen |
-| Moon | Helium-3, aluminum, titanium, silicon, oxygen | Helium-3 is critical for fusion reactors (ADR-0014) |
-| Asteroid belt | Everything in larger quantities, longer travel time | Belt probes take many ticks round-trip |
-| Gas giants | Helium-3, hydrogen, deuterium | Requires deep-space capability; very long round-trips |
-| Comets | Water ice, organic compounds, volatiles | Irregular availability (per-tick probability of a comet passing) |
+| Moon                 | Helium-3, aluminum, titanium, silicon, oxygen                 | Helium-3 is critical for fusion reactors (ADR-0014)                            |
+| Asteroid belt        | Everything in larger quantities, longer travel time           | Belt probes take many ticks round-trip                                         |
+| Gas giants           | Helium-3, hydrogen, deuterium                                 | Requires deep-space capability; very long round-trips                          |
+| Comets               | Water ice, organic compounds, volatiles                       | Irregular availability (per-tick probability of a comet passing)               |
 
 Space resources are **unlimited in aggregate** (the solar system is vast) but
 **rate-limited** by the number of mining drones, launch capacity, and orbital
@@ -149,6 +152,7 @@ productive enough). Bootstrapping is the challenge.
 ## Consequences
 
 **Positive:**
+
 - Gives the game a long-term progression arc: Earth depletion → space
   infrastructure → space-based economy. The LLM must plan ahead.
 - Space resources are unlimited but rate-limited, creating a sustainable
@@ -161,6 +165,7 @@ productive enough). Bootstrapping is the challenge.
   extend the wireframe aesthetic beyond the earth.
 
 **Negative:**
+
 - Significant complexity: new facility types, transport model, orbital
   visualization, crew management. This is a large feature — should be
   implemented after the core Earth-based game is working.

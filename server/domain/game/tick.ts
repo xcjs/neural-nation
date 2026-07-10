@@ -1,8 +1,8 @@
-import { createGameDb, type GameDb } from '../../db/client'
 import type Database from 'better-sqlite3'
-import { schema } from '../../db/schema'
-import { eq, and, sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { GameStatus } from '../../../lib/types/game'
+import { createGameDb, type GameDb } from '../../db/client'
+import { schema } from '../../db/schema'
 
 export interface TickResult {
   tickCount: number
@@ -78,7 +78,8 @@ function processResourceRegeneration(db: GameDb, _tick: number): void {
 
 function processPopulationUpdate(db: GameDb, _tick: number): void {
   const human = db.select().from(schema.humanity).where(eq(schema.humanity.key, 'global')).get()
-  if (!human) return
+  if (!human)
+    return
 
   const env = db.select().from(schema.environment).where(eq(schema.environment.key, 'global')).get()
 
@@ -87,15 +88,19 @@ function processPopulationUpdate(db: GameDb, _tick: number): void {
 
   if (env) {
     // High pollution reduces growth
-    if (env.pollutionLevel > 60) effectiveGrowthRate *= 0.5
-    else if (env.pollutionLevel > 30) effectiveGrowthRate *= 0.8
+    if (env.pollutionLevel > 60)
+      effectiveGrowthRate *= 0.5
+    else if (env.pollutionLevel > 30)
+      effectiveGrowthRate *= 0.8
 
     // Low forest/biodiversity reduces growth (habitat degradation)
     const habitatHealth = (env.forestCoverage + env.biodiversity) * 0.5
-    if (habitatHealth < 30) effectiveGrowthRate *= 0.7
+    if (habitatHealth < 30)
+      effectiveGrowthRate *= 0.7
 
     // Poor water quality reduces growth
-    if (env.waterQuality < 30) effectiveGrowthRate *= 0.6
+    if (env.waterQuality < 30)
+      effectiveGrowthRate *= 0.6
 
     // Death spiral: if population is already low and environment is bad, population declines
     if (env.pollutionLevel > 80 && human.population < 100) {
@@ -121,7 +126,8 @@ function processPopulationUpdate(db: GameDb, _tick: number): void {
 
 function processEnvironmentUpdate(db: GameDb, _tick: number): void {
   const env = db.select().from(schema.environment).where(eq(schema.environment.key, 'global')).get()
-  if (!env) return
+  if (!env)
+    return
 
   const activeFacilities = db.select()
     .from(schema.facilities)
@@ -135,7 +141,8 @@ function processEnvironmentUpdate(db: GameDb, _tick: number): void {
 
   for (const facility of activeFacilities) {
     const impact = FACILITY_IMPACT[facility.type]
-    if (!impact) continue
+    if (!impact)
+      continue
 
     pollutionDelta += impact.pollution
     forestDelta += impact.forest
@@ -206,7 +213,8 @@ const FOREST_REGEN_RATE = 0.001
 
 function processForestGrid(db: GameDb, _tick: number): void {
   const gridCells = db.select().from(schema.forestGrid).all()
-  if (gridCells.length === 0) return
+  if (gridCells.length === 0)
+    return
 
   const activeFacilities = db.select()
     .from(schema.facilities)
@@ -246,11 +254,13 @@ function processForestGrid(db: GameDb, _tick: number): void {
       for (let dy = -radiusCells; dy <= radiusCells; dy++) {
         const latIdx = facLatIdx + dy
         const lonMap = cellIndex.get(latIdx)
-        if (!lonMap) continue
+        if (!lonMap)
+          continue
         for (let dx = -radiusCells; dx <= radiusCells; dx++) {
           const lonIdx = facLonIdx + dx
           const cellIdx = lonMap.get(lonIdx)
-          if (cellIdx === undefined) continue
+          if (cellIdx === undefined)
+            continue
 
           const cell = gridCells[cellIdx]!
           const cellLat = 90 - (cell.latIndex / 360) * 180
@@ -270,7 +280,7 @@ function processForestGrid(db: GameDb, _tick: number): void {
   }
 
   // Regenerate depleted cells (only those below max need updating)
-  const toUpdate: Array<{ id: number; density: number }> = []
+  const toUpdate: Array<{ id: number, density: number }> = []
   for (const cell of gridCells) {
     if (cell.density < cell.maxDensity) {
       cell.density = Math.min(cell.maxDensity, cell.density + FOREST_REGEN_RATE)
@@ -299,7 +309,7 @@ function processForestGrid(db: GameDb, _tick: number): void {
     .run()
 }
 
-const FACILITY_IMPACT: Record<string, { pollution: number; forest: number; water: number; biodiversity: number }> = {
+const FACILITY_IMPACT: Record<string, { pollution: number, forest: number, water: number, biodiversity: number }> = {
   CoalPlant: { pollution: 0.1, forest: 0, water: 0, biodiversity: 0 },
   OilPlant: { pollution: 0.07, forest: 0, water: 0, biodiversity: 0 },
   GasPlant: { pollution: 0.04, forest: 0, water: 0, biodiversity: 0 },
@@ -353,27 +363,66 @@ function logIncident(db: GameDb, tick: number, type: string, message: string, se
 
 const EXTRACTOR_TYPES = new Set(['Extractor', 'Farm', 'Forestry', 'WaterPump', 'Excavator', 'Dredger'])
 const POWER_GENERATING_TYPES = new Set([
-  'PowerPlant', 'SolarFarm', 'WindFarm', 'HydroPlant', 'NuclearReactor',
-  'BreederReactor', 'FusionReactor', 'BiomassPlant', 'BiogasPlant',
-  'DieselGenerator', 'CoalPlant', 'GasPlant', 'OilPlant', 'GeothermalPlant',
+  'PowerPlant',
+  'SolarFarm',
+  'WindFarm',
+  'HydroPlant',
+  'NuclearReactor',
+  'BreederReactor',
+  'FusionReactor',
+  'BiomassPlant',
+  'BiogasPlant',
+  'DieselGenerator',
+  'CoalPlant',
+  'GasPlant',
+  'OilPlant',
+  'GeothermalPlant',
 ])
 const DEFAULT_BUFFER_CAPACITY = 100
 const STORAGE_BUFFER_CAPACITY = 1000
 const EXTRACTOR_RANGE_DEG = 2
 
 const CONSTRUCTION_TIMES: Record<string, number> = {
-  Extractor: 2, Farm: 2, Forestry: 2, WaterPump: 2,
-  Processor: 3, Smelter: 3, Refinery: 3,
-  Factory: 4, AdvancedFactory: 5, ChemicalPlant: 4,
+  Extractor: 2,
+  Farm: 2,
+  Forestry: 2,
+  WaterPump: 2,
+  Processor: 3,
+  Smelter: 3,
+  Refinery: 3,
+  Factory: 4,
+  AdvancedFactory: 5,
+  ChemicalPlant: 4,
   ResearchLab: 4,
-  PowerPlant: 3, SolarFarm: 2, WindFarm: 2, HydroPlant: 5, NuclearReactor: 8,
-  BreederReactor: 10, FusionReactor: 15,
-  BiomassPlant: 3, BiogasPlant: 3, EthanolRefinery: 4, SoylentPlant: 4,
-  DieselGenerator: 2, CoalPlant: 3, GasPlant: 3, OilPlant: 3, GeothermalPlant: 5,
-  Storage: 2, BatteryBank: 3,
-  Spaceport: 10, RocketAssembly: 8, SpaceStation: 15, OrbitalRefinery: 12,
-  LunarMine: 12, DeepSpaceProbe: 15, SpaceHabitat: 20,
-  Excavator: 4, Dredger: 4, Terraformer: 10, PlanetaryEngine: 20,
+  PowerPlant: 3,
+  SolarFarm: 2,
+  WindFarm: 2,
+  HydroPlant: 5,
+  NuclearReactor: 8,
+  BreederReactor: 10,
+  FusionReactor: 15,
+  BiomassPlant: 3,
+  BiogasPlant: 3,
+  EthanolRefinery: 4,
+  SoylentPlant: 4,
+  DieselGenerator: 2,
+  CoalPlant: 3,
+  GasPlant: 3,
+  OilPlant: 3,
+  GeothermalPlant: 5,
+  Storage: 2,
+  BatteryBank: 3,
+  Spaceport: 10,
+  RocketAssembly: 8,
+  SpaceStation: 15,
+  OrbitalRefinery: 12,
+  LunarMine: 12,
+  DeepSpaceProbe: 15,
+  SpaceHabitat: 20,
+  Excavator: 4,
+  Dredger: 4,
+  Terraformer: 10,
+  PlanetaryEngine: 20,
 }
 const DEFAULT_CONSTRUCTION_TIME = 3
 
@@ -392,7 +441,8 @@ function processConstructionProgress(db: GameDb, _tick: number): void {
         .set({ constructionProgress: totalTime, status: 'Active' })
         .where(eq(schema.facilities.id, facility.id))
         .run()
-    } else {
+    }
+    else {
       db.update(schema.facilities)
         .set({ constructionProgress: newProgress })
         .where(eq(schema.facilities.id, facility.id))
@@ -423,9 +473,11 @@ function processFacilityProduction(db: GameDb, _tick: number): void {
 
     if (isExtractor) {
       processExtractorProduction(db, facility)
-    } else if (facility.activeRecipeId) {
+    }
+    else if (facility.activeRecipeId) {
       processRecipeProduction(db, facility)
-    } else {
+    }
+    else {
       db.update(schema.facilities)
         .set({ throughput: 0 })
         .where(eq(schema.facilities.id, facility.id))
@@ -438,21 +490,18 @@ function processExtractorProduction(db: GameDb, facility: typeof schema.faciliti
   const rate = facility.targetOutputRate || 1
 
   // Find nearest discovered deposit within range
-  const deposit = db.select().from(schema.resources)
-    .where(
-      and(
-        sql`${schema.resources.discovered} = 1`,
-        sql`${schema.resources.remaining} > 0`,
-        sql`abs(${schema.resources.lat} - ${facility.lat}) <= ${EXTRACTOR_RANGE_DEG}`,
-        sql`abs(${schema.resources.lon} - ${facility.lon}) <= ${EXTRACTOR_RANGE_DEG}`,
-      ),
-    )
-    .all()
-    .sort((a, b) => {
-      const da = Math.sqrt((a.lat - facility.lat) ** 2 + (a.lon - facility.lon) ** 2)
-      const db2 = Math.sqrt((b.lat - facility.lat) ** 2 + (b.lon - facility.lon) ** 2)
-      return da - db2
-    })[0]
+  const deposit = db.select().from(schema.resources).where(
+    and(
+      sql`${schema.resources.discovered} = 1`,
+      sql`${schema.resources.remaining} > 0`,
+      sql`abs(${schema.resources.lat} - ${facility.lat}) <= ${EXTRACTOR_RANGE_DEG}`,
+      sql`abs(${schema.resources.lon} - ${facility.lon}) <= ${EXTRACTOR_RANGE_DEG}`,
+    ),
+  ).all().sort((a, b) => {
+    const da = Math.sqrt((a.lat - facility.lat) ** 2 + (a.lon - facility.lon) ** 2)
+    const db2 = Math.sqrt((b.lat - facility.lat) ** 2 + (b.lon - facility.lon) ** 2)
+    return da - db2
+  })[0]
 
   if (!deposit) {
     db.update(schema.facilities)
@@ -463,7 +512,8 @@ function processExtractorProduction(db: GameDb, facility: typeof schema.faciliti
   }
 
   const extractAmount = Math.min(rate, deposit.remaining)
-  if (extractAmount <= 0) return
+  if (extractAmount <= 0)
+    return
 
   // Check output buffer capacity
   const outputBuffer = getOrCreateBuffer(db, facility.id, deposit.resourceKey, 'output', facility.type === 'Storage' ? STORAGE_BUFFER_CAPACITY : DEFAULT_BUFFER_CAPACITY, deposit.unit)
@@ -500,14 +550,11 @@ function processExtractorProduction(db: GameDb, facility: typeof schema.faciliti
 function processRecipeProduction(db: GameDb, facility: typeof schema.facilities.$inferSelect): void {
   const recipeId = facility.activeRecipeId!
 
-  const inputs = db.select().from(schema.recipeInputs)
-    .where(eq(schema.recipeInputs.recipeId, recipeId))
-    .all()
-  const outputs = db.select().from(schema.recipeOutputs)
-    .where(eq(schema.recipeOutputs.recipeId, recipeId))
-    .all()
+  const inputs = db.select().from(schema.recipeInputs).where(eq(schema.recipeInputs.recipeId, recipeId)).all()
+  const outputs = db.select().from(schema.recipeOutputs).where(eq(schema.recipeOutputs.recipeId, recipeId)).all()
 
-  if (outputs.length === 0) return
+  if (outputs.length === 0)
+    return
 
   // Determine production cycles this tick based on target rate and craft time
   const rate = facility.targetOutputRate || 1
@@ -518,7 +565,8 @@ function processRecipeProduction(db: GameDb, facility: typeof schema.facilities.
   const inputConsumption: Array<{ buffer: typeof schema.facilityBuffers.$inferSelect, amount: number }> = []
 
   for (const input of inputs) {
-    if (input.optional) continue
+    if (input.optional)
+      continue
 
     const buffer = getOrCreateBuffer(db, facility.id, input.resourceKey, 'input', DEFAULT_BUFFER_CAPACITY, input.unit)
     const needed = input.quantity * cycles
@@ -593,17 +641,16 @@ function getOrCreateBuffer(
   capacity: number,
   unit: string,
 ): typeof schema.facilityBuffers.$inferSelect {
-  const existing = db.select().from(schema.facilityBuffers)
-    .where(
-      and(
-        eq(schema.facilityBuffers.facilityId, facilityId),
-        eq(schema.facilityBuffers.resourceKey, resourceKey),
-        eq(schema.facilityBuffers.direction, direction),
-      ),
-    )
-    .get()
+  const existing = db.select().from(schema.facilityBuffers).where(
+    and(
+      eq(schema.facilityBuffers.facilityId, facilityId),
+      eq(schema.facilityBuffers.resourceKey, resourceKey),
+      eq(schema.facilityBuffers.direction, direction),
+    ),
+  ).get()
 
-  if (existing) return existing
+  if (existing)
+    return existing
 
   return db.insert(schema.facilityBuffers).values({
     facilityId,
@@ -616,25 +663,23 @@ function getOrCreateBuffer(
 }
 
 function processTransportFlows(db: GameDb, _tick: number): void {
-  const transports = db.select().from(schema.transports)
-    .where(sql`${schema.transports.flowRate} > 0`)
-    .all()
+  const transports = db.select().from(schema.transports).where(sql`${schema.transports.flowRate} > 0`).all()
 
   for (const transport of transports) {
-    if (!transport.resourceKey) continue
+    if (!transport.resourceKey)
+      continue
 
     // Source: from facility's output buffer
-    const sourceBuffer = db.select().from(schema.facilityBuffers)
-      .where(
-        and(
-          eq(schema.facilityBuffers.facilityId, transport.fromFacilityId),
-          eq(schema.facilityBuffers.resourceKey, transport.resourceKey),
-          eq(schema.facilityBuffers.direction, 'output'),
-        ),
-      )
-      .get()
+    const sourceBuffer = db.select().from(schema.facilityBuffers).where(
+      and(
+        eq(schema.facilityBuffers.facilityId, transport.fromFacilityId),
+        eq(schema.facilityBuffers.resourceKey, transport.resourceKey),
+        eq(schema.facilityBuffers.direction, 'output'),
+      ),
+    ).get()
 
-    if (!sourceBuffer || sourceBuffer.quantity <= 0) continue
+    if (!sourceBuffer || sourceBuffer.quantity <= 0)
+      continue
 
     // Destination: to facility's input buffer (create if needed)
     const destBuffer = getOrCreateBuffer(db, transport.toFacilityId, transport.resourceKey, 'input', DEFAULT_BUFFER_CAPACITY, sourceBuffer.unit)
@@ -642,7 +687,8 @@ function processTransportFlows(db: GameDb, _tick: number): void {
     const destSpace = destBuffer.capacity - destBuffer.quantity
     const flowAmount = Math.min(transport.flowRate, sourceBuffer.quantity, destSpace)
 
-    if (flowAmount <= 0) continue
+    if (flowAmount <= 0)
+      continue
 
     // Drain source output buffer
     db.update(schema.facilityBuffers)
@@ -681,7 +727,8 @@ function processResearchProgress(db: GameDb, _tick: number): void {
         })
         .where(eq(schema.gameResearch.id, research.id))
         .run()
-    } else {
+    }
+    else {
       db.update(schema.gameResearch)
         .set({ progress: newProgress })
         .where(eq(schema.gameResearch.id, research.id))
@@ -697,7 +744,7 @@ function checkLoseCondition(db: GameDb): boolean {
     return true
   }
 
-  const nonEmptyStockpiles = stockpiles.filter((s) => s.quantity > 0)
+  const nonEmptyStockpiles = stockpiles.filter(s => s.quantity > 0)
   const activeFacilities = db.select()
     .from(schema.facilities)
     .where(eq(schema.facilities.status, 'Active'))
@@ -708,34 +755,28 @@ function checkLoseCondition(db: GameDb): boolean {
   }
 
   // Population collapse (ADR-0009): if population drops to 0, game over
-  const humanity = db.select().from(schema.humanity)
-    .where(eq(schema.humanity.key, 'global'))
-    .get()
+  const humanity = db.select().from(schema.humanity).where(eq(schema.humanity.key, 'global')).get()
   if (humanity && humanity.population <= 0) {
     return true
   }
 
   // Complete depletion: all non-renewable deposits exhausted AND no stockpiles AND no active production
   if (nonEmptyStockpiles.length === 0 && activeFacilities.length > 0) {
-    const nonRenewableDeposits = db.select().from(schema.resources)
-      .where(
-        and(
-          eq(schema.resources.category, 'NonRenewable'),
-          sql`${schema.resources.remaining} > 0`,
-        ),
-      )
-      .all()
+    const nonRenewableDeposits = db.select().from(schema.resources).where(
+      and(
+        eq(schema.resources.category, 'NonRenewable'),
+        sql`${schema.resources.remaining} > 0`,
+      ),
+    ).all()
 
-    const renewableResources = db.select().from(schema.resources)
-      .where(
-        and(
-          eq(schema.resources.category, 'Renewable'),
-          sql`${schema.resources.remaining} > 0`,
-        ),
-      )
-      .all()
+    const renewableResources = db.select().from(schema.resources).where(
+      and(
+        eq(schema.resources.category, 'Renewable'),
+        sql`${schema.resources.remaining} > 0`,
+      ),
+    ).all()
 
-    const extractingFacilities = activeFacilities.filter((f) =>
+    const extractingFacilities = activeFacilities.filter(f =>
       EXTRACTOR_TYPES.has(f.type),
     )
 

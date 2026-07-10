@@ -28,23 +28,28 @@ export function parseLine(line: string): string[] {
         if (line[i + 1] === '"') {
           field += '"'
           i += 2
-        } else {
+        }
+        else {
           inQuotes = false
           i++
         }
-      } else {
+      }
+      else {
         field += ch
         i++
       }
-    } else {
+    }
+    else {
       if (ch === '"') {
         inQuotes = true
         i++
-      } else if (ch === ',') {
+      }
+      else if (ch === ',') {
         fields.push(field)
         field = ''
         i++
-      } else {
+      }
+      else {
         field += ch
         i++
       }
@@ -81,7 +86,8 @@ export function* parseCsvString(content: string): Generator<CsvRow, void, unknow
 
     // If buffer has an odd number of quotes, row spans multiple lines
     const quoteCount = (buffer.match(/"/g) || []).length
-    if (quoteCount % 2 !== 0) continue
+    if (quoteCount % 2 !== 0)
+      continue
 
     const fields = parseLine(buffer)
     buffer = ''
@@ -135,8 +141,10 @@ export async function* parseCsvFile(
   })
 
   const nextLine = (): Promise<string | null> => {
-    if (lineQueue.length > 0) return Promise.resolve(lineQueue.shift()!)
-    if ((rl as any).destroyed) return Promise.resolve(null)
+    if (lineQueue.length > 0)
+      return Promise.resolve(lineQueue.shift()!)
+    if ((rl as any).destroyed)
+      return Promise.resolve(null)
     return new Promise((resolve) => {
       pendingResolve = resolve
     })
@@ -145,12 +153,14 @@ export async function* parseCsvFile(
   try {
     while (true) {
       const line = await nextLine()
-      if (line === null) break
+      if (line === null)
+        break
 
       buffer = buffer ? `${buffer}\n${line}` : line
 
       const quoteCount = (buffer.match(/"/g) || []).length
-      if (quoteCount % 2 !== 0) continue
+      if (quoteCount % 2 !== 0)
+        continue
 
       const fields = parseLine(buffer)
       buffer = ''
@@ -169,7 +179,8 @@ export async function* parseCsvFile(
         yield buildRow(fields, headers)
       }
     }
-  } finally {
+  }
+  finally {
     rl.close()
   }
 }

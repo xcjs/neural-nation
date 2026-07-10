@@ -12,9 +12,9 @@
  */
 import type Database from 'better-sqlite3'
 import { existsSync } from 'node:fs'
-import { readZipEntryAsString } from './zip'
-import { parseCsvString } from './csv-parser'
 import { ELEMENTS } from '../../lib/constants/elements'
+import { parseCsvString } from './csv-parser'
+import { readZipEntryAsString } from './zip'
 
 /** Path to the downloaded MRDS zip (relative to repo root). */
 export const MRDS_ZIP_PATH = 'data/geological/raw/mrds.csv.zip'
@@ -25,90 +25,90 @@ export const MRDS_ENTRY_NAME = 'mrds.csv'
  * Element symbols are lowercased. Non-element resources use camelCase.
  */
 const COMMODITY_MAP: Record<string, string> = {
-  Aluminum: 'al',
-  Antimony: 'sb',
-  Arsenic: 'as',
-  Barium: 'ba',
-  Beryllium: 'be',
-  Boron: 'b',
-  Cadmium: 'cd',
-  Calcium: 'ca',
-  Cerium: 'ce',
-  Cesium: 'cs',
-  Chromium: 'cr',
-  Cobalt: 'co',
-  Copper: 'cu',
-  Fluorine: 'f',
-  Gallium: 'ga',
-  Germanium: 'ge',
-  Gold: 'au',
-  Hafnium: 'hf',
-  Helium: 'he',
-  Indium: 'in',
-  Iodine: 'i',
-  Iridium: 'ir',
-  Iron: 'fe',
-  Lead: 'pb',
-  Lithium: 'li',
-  Magnesium: 'mg',
-  Manganese: 'mn',
-  Mercury: 'hg',
-  Molybdenum: 'mo',
-  Nickel: 'ni',
-  Osmium: 'os',
-  Palladium: 'pd',
-  Platinum: 'pt',
-  Potassium: 'k',
-  Radium: 'ra',
-  Rhenium: 're',
-  Rhodium: 'rh',
-  Rubidium: 'rb',
-  Ruthenium: 'ru',
-  Scandium: 'sc',
-  Selenium: 'se',
-  Silver: 'ag',
-  Sodium: 'na',
-  Strontium: 'sr',
-  Sulfur: 's',
-  Tantalum: 'ta',
-  Tellurium: 'te',
-  Thallium: 'tl',
-  Thorium: 'th',
-  Tin: 'sn',
-  Titanium: 'ti',
-  Tungsten: 'w',
-  Uranium: 'u',
-  Vanadium: 'v',
-  Zinc: 'zn',
-  Zirconium: 'zr',
-  Phosphorus: 'p',
-  Nitrogen: 'n',
+  'Aluminum': 'al',
+  'Antimony': 'sb',
+  'Arsenic': 'as',
+  'Barium': 'ba',
+  'Beryllium': 'be',
+  'Boron': 'b',
+  'Cadmium': 'cd',
+  'Calcium': 'ca',
+  'Cerium': 'ce',
+  'Cesium': 'cs',
+  'Chromium': 'cr',
+  'Cobalt': 'co',
+  'Copper': 'cu',
+  'Fluorine': 'f',
+  'Gallium': 'ga',
+  'Germanium': 'ge',
+  'Gold': 'au',
+  'Hafnium': 'hf',
+  'Helium': 'he',
+  'Indium': 'in',
+  'Iodine': 'i',
+  'Iridium': 'ir',
+  'Iron': 'fe',
+  'Lead': 'pb',
+  'Lithium': 'li',
+  'Magnesium': 'mg',
+  'Manganese': 'mn',
+  'Mercury': 'hg',
+  'Molybdenum': 'mo',
+  'Nickel': 'ni',
+  'Osmium': 'os',
+  'Palladium': 'pd',
+  'Platinum': 'pt',
+  'Potassium': 'k',
+  'Radium': 'ra',
+  'Rhenium': 're',
+  'Rhodium': 'rh',
+  'Rubidium': 'rb',
+  'Ruthenium': 'ru',
+  'Scandium': 'sc',
+  'Selenium': 'se',
+  'Silver': 'ag',
+  'Sodium': 'na',
+  'Strontium': 'sr',
+  'Sulfur': 's',
+  'Tantalum': 'ta',
+  'Tellurium': 'te',
+  'Thallium': 'tl',
+  'Thorium': 'th',
+  'Tin': 'sn',
+  'Titanium': 'ti',
+  'Tungsten': 'w',
+  'Uranium': 'u',
+  'Vanadium': 'v',
+  'Zinc': 'zn',
+  'Zirconium': 'zr',
+  'Phosphorus': 'p',
+  'Nitrogen': 'n',
   // Non-element mappable resources
-  Coal: 'Coal',
-  Anthracite: 'Coal',
-  Bituminous: 'Coal',
-  Subbituminous: 'Coal',
-  Lignite: 'Coal',
+  'Coal': 'Coal',
+  'Anthracite': 'Coal',
+  'Bituminous': 'Coal',
+  'Subbituminous': 'Coal',
+  'Lignite': 'Coal',
   'Natural Gas': 'NaturalGas',
   'Petroleum (Oil)': 'Oil',
   'Oil Shale': 'Oil',
   'Oil Sands': 'Oil',
-  Peat: 'Peat',
-  Geothermal: 'Geothermal',
-  Stone: 'Stone',
-  Sand: 'Sand',
-  Gravel: 'Gravel',
-  Clay: 'Clay',
-  Limestone: 'Limestone',
-  Gypsum: 'Gypsum',
-  Salt: 'Salt',
-  Quartz: 'Quartz',
-  Mica: 'Mica',
-  Asbestos: 'Asbestos',
-  Talc: 'Talc',
-  Graphite: 'Graphite',
-  Diamond: 'Diamond',
-  Gemstone: 'Gemstone',
+  'Peat': 'Peat',
+  'Geothermal': 'Geothermal',
+  'Stone': 'Stone',
+  'Sand': 'Sand',
+  'Gravel': 'Gravel',
+  'Clay': 'Clay',
+  'Limestone': 'Limestone',
+  'Gypsum': 'Gypsum',
+  'Salt': 'Salt',
+  'Quartz': 'Quartz',
+  'Mica': 'Mica',
+  'Asbestos': 'Asbestos',
+  'Talc': 'Talc',
+  'Graphite': 'Graphite',
+  'Diamond': 'Diamond',
+  'Gemstone': 'Gemstone',
 }
 
 /** Build a lookup from element symbol (lowercase) → crustalAbundance. */
@@ -120,17 +120,22 @@ for (const el of ELEMENTS) {
 /** Resolve a single commodity token to a resourceKey, or null if unmappable. */
 function resolveCommodity(token: string): string | null {
   const clean = token.trim()
-  if (!clean) return null
+  if (!clean)
+    return null
   // Direct match
-  if (COMMODITY_MAP[clean]) return COMMODITY_MAP[clean]
+  if (COMMODITY_MAP[clean])
+    return COMMODITY_MAP[clean]
   // Try prefix match for hyphenated forms (e.g. "Fluorine-Fluorite" → "Fluorine")
   const head = clean.split('-')[0]!.trim()
-  if (COMMODITY_MAP[head]) return COMMODITY_MAP[head]
+  if (COMMODITY_MAP[head])
+    return COMMODITY_MAP[head]
   // Try "X Oxide"/"X Sulfide" → element X
   const oxideMatch = clean.match(/^(\w+)\s+Oxide$/i)
-  if (oxideMatch && oxideMatch[1] && COMMODITY_MAP[oxideMatch[1]]) return COMMODITY_MAP[oxideMatch[1]] ?? null
+  if (oxideMatch && oxideMatch[1] && COMMODITY_MAP[oxideMatch[1]])
+    return COMMODITY_MAP[oxideMatch[1]] ?? null
   const sulfideMatch = clean.match(/^(\w+)\s+Sulfide$/i)
-  if (sulfideMatch && sulfideMatch[1] && COMMODITY_MAP[sulfideMatch[1]]) return COMMODITY_MAP[sulfideMatch[1]] ?? null
+  if (sulfideMatch && sulfideMatch[1] && COMMODITY_MAP[sulfideMatch[1]])
+    return COMMODITY_MAP[sulfideMatch[1]] ?? null
   return null
 }
 
@@ -138,9 +143,10 @@ function resolveCommodity(token: string): string | null {
 function scaleDepositSize(abundance: number): number {
   // High-abundance elements (e.g. Fe, Al, Si) → large deposits (1e6–1e8 t)
   // Low-abundance (e.g. Au, Pt) → small deposits (1e2–1e4 t)
-  if (abundance <= 0) return 1e4
+  if (abundance <= 0)
+    return 1e4
   // log-scale: abundance 1 → ~1e5, abundance 1e5 → ~1e7
-  const base = 1e5 * Math.pow(10, Math.log10(Math.max(abundance, 1)) / 2)
+  const base = 1e5 * 10 ** (Math.log10(Math.max(abundance, 1)) / 2)
   // Add deterministic variation via Math.random is not deterministic; use a fixed spread.
   return Math.round(base)
 }
@@ -148,7 +154,8 @@ function scaleDepositSize(abundance: number): number {
 /** Grade (fraction 0..1) — heuristic from crustal abundance. */
 function heuristicGrade(abundance: number): number {
   // Rarer elements tend to be mined at lower grades
-  if (abundance <= 0) return 0.001
+  if (abundance <= 0)
+    return 0.001
   const g = 0.01 / Math.max(1, Math.log10(abundance))
   return Math.min(0.5, Math.max(0.0001, g))
 }
@@ -221,20 +228,22 @@ export function seedMrdsDeposits(
   for (const row of parseCsvString(content)) {
     result.totalRows++
 
-    if (maxRows <= 0) break
+    if (maxRows <= 0)
+      break
 
     const latStr = row.latitude
     const lonStr = row.longitude
-    const lat = parseFloat(latStr ?? '')
-    const lon = parseFloat(lonStr ?? '')
+    const lat = Number.parseFloat(latStr ?? '')
+    const lon = Number.parseFloat(lonStr ?? '')
 
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-      if (!options.skipInvalidCoords) result.skippedRows++
+      if (!options.skipInvalidCoords)
+        result.skippedRows++
       continue
     }
 
     const commodStr = row.commod1 ?? ''
-    const tokens = commodStr.split(',').map((t) => t.trim()).filter(Boolean)
+    const tokens = commodStr.split(',').map(t => t.trim()).filter(Boolean)
     if (tokens.length === 0) {
       result.skippedRows++
       continue
@@ -248,7 +257,8 @@ export function seedMrdsDeposits(
       if (mapped) {
         resourceKey = mapped
         break
-      } else {
+      }
+      else {
         result.unmappedCommodities.add(token)
       }
     }
@@ -264,7 +274,7 @@ export function seedMrdsDeposits(
     // Determine name
     let name = resourceKey
     if (isElement) {
-      const el = ELEMENTS.find((e) => e.symbol.toLowerCase() === resourceKey)
+      const el = ELEMENTS.find(e => e.symbol.toLowerCase() === resourceKey)
       name = el?.name ?? resourceKey
     }
 

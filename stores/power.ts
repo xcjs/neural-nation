@@ -1,7 +1,7 @@
+import type { PowerGridSummary } from '~/lib/types/power'
+import { $fetch } from 'ofetch'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { $fetch } from 'ofetch'
-import type { PowerGridSummary } from '~/lib/types/power'
 
 export const usePowerStore = defineStore('power', () => {
   const grid = ref<PowerGridSummary | null>(null)
@@ -15,14 +15,16 @@ export const usePowerStore = defineStore('power', () => {
         body: { token, tool: 'get_power_grid_status', args: {} },
       })
       grid.value = res
-    } catch {
+    }
+    catch {
       // SSE will update
-    } finally {
+    }
+    finally {
       loading.value = false
     }
   }
 
-  function applyUpdate(patch: { type: string; power?: PowerGridSummary }) {
+  function applyUpdate(patch: { type: string, power?: PowerGridSummary }) {
     if (patch.type === 'power_updated' && patch.power) {
       grid.value = patch.power
     }

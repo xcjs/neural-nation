@@ -23,7 +23,7 @@ Install Dependencies:
 Lint:
   stage: Lint
   image: node:24
-  needs: ["Install Dependencies"]
+  needs: [Install Dependencies]
   tags:
     - docker
   script:
@@ -32,7 +32,7 @@ Lint:
 Test:
   stage: Test
   image: node:24
-  needs: ["Install Dependencies"]
+  needs: [Install Dependencies]
   tags:
     - docker
   script:
@@ -51,7 +51,7 @@ Test:
 Typecheck:
   stage: Test
   image: node:24
-  needs: ["Install Dependencies"]
+  needs: [Install Dependencies]
   tags:
     - docker
   script:
@@ -60,7 +60,7 @@ Typecheck:
 Build Docker Image:
   stage: Build
   image: docker:dind
-  needs: ["Install Dependencies", "Lint", "Test", "Typecheck"]
+  needs: [Install Dependencies, Lint, Test, Typecheck]
   services:
     - docker:dind
   except:
@@ -73,7 +73,7 @@ Build Docker Image:
 Publish Docker Image:
   stage: Publish
   image: docker:dind
-  needs: ["Install Dependencies", "Lint", "Test", "Typecheck"]
+  needs: [Install Dependencies, Lint, Test, Typecheck]
   services:
     - docker:dind
   only:

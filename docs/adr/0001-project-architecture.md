@@ -1,9 +1,9 @@
 # ADR-0001: Project Architecture
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
+| Field    | Value         |
+| -------- | ------------- |
+| Status   | Proposed      |
+| Date     | 2026-07-08    |
 | Deciders | Project owner |
 
 ## Context
@@ -61,12 +61,14 @@ Use **Nuxt 3** as the unified application framework with the following stack:
 ## Consequences
 
 **Positive:**
+
 - Single deployable artifact; no separate services to coordinate.
 - Shared TypeScript types between client, server, and MCP tools.
 - Nitro handles routing for both web routes and MCP endpoints.
 - Nuxt's plugin/middleware system gives clean extension points.
 
 **Negative:**
+
 - Single-process means MCP tool execution shares the event loop with web
   requests. Long-running simulations must yield or use worker threads.
 - `better-sqlite3` is a native module; adds build complexity vs pure-JS

@@ -1,6 +1,6 @@
 import { defineEventHandler, readBody } from 'h3'
-import { createGame } from '../../domain/game/service'
 import { DifficultyPreset } from '../../../lib/types/game'
+import { createGame } from '../../domain/game/service'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)

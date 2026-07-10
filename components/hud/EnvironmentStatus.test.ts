@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { setActivePinia, createPinia } from 'pinia'
+import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
-import EnvironmentStatus from './EnvironmentStatus.vue'
 import { useEnvironmentStore } from '~/stores/environment'
+import EnvironmentStatus from './EnvironmentStatus.vue'
 
-describe('EnvironmentStatus.vue', () => {
+describe('environmentStatus.vue', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })

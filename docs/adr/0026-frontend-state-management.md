@@ -1,10 +1,10 @@
 # ADR-0026: Frontend State Management
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                                      |
+| ---------- | ---------------------------------------------------------- |
+| Status     | Proposed                                                   |
+| Date       | 2026-07-08                                                 |
+| Deciders   | Project owner                                              |
 | Relates to | ADR-0001, ADR-0002, ADR-0006, ADR-0008, ADR-0012, ADR-0025 |
 
 ## Context
@@ -42,6 +42,7 @@ stores/
 ```
 
 Each store follows a consistent pattern:
+
 - `state`: reactive data for its domain
 - `actions`: methods to fetch data from server API (initial load + pagination)
 - `applyUpdate(patch)`: apply an incremental SSE update to the store
@@ -59,20 +60,20 @@ A composable (`composables/useGameSSE.ts`) manages the SSE connection:
 
 ```typescript
 type SSEEvent =
-  | { type: 'tick'; tick: number; changes: TickChanges }
-  | { type: 'facility_built'; facility: FacilitySnapshot }
-  | { type: 'facility_updated'; facilityId: number; changes: Partial<Facility> }
-  | { type: 'facility_demolished'; facilityId: number }
-  | { type: 'transport_built'; transport: TransportSnapshot }
-  | { type: 'transport_demolished'; transportId: number }
-  | { type: 'resource_updated'; resourceId: string; changes: ResourceDelta }
-  | { type: 'event_logged'; event: GameEvent }
-  | { type: 'action_logged'; action: ActionSnapshot }
-  | { type: 'research_updated'; techNodeId: string; progress: number }
-  | { type: 'environment_updated'; metrics: EnvironmentalMetrics }
-  | { type: 'terrain_modified'; modification: TerrainModification }
-  | { type: 'game_over'; summary: GameOverSummary }
-  | { type: 'full_state'; state: FullGameState }  // sent on reconnect
+  | { type: 'tick', tick: number, changes: TickChanges }
+  | { type: 'facility_built', facility: FacilitySnapshot }
+  | { type: 'facility_updated', facilityId: number, changes: Partial<Facility> }
+  | { type: 'facility_demolished', facilityId: number }
+  | { type: 'transport_built', transport: TransportSnapshot }
+  | { type: 'transport_demolished', transportId: number }
+  | { type: 'resource_updated', resourceId: string, changes: ResourceDelta }
+  | { type: 'event_logged', event: GameEvent }
+  | { type: 'action_logged', action: ActionSnapshot }
+  | { type: 'research_updated', techNodeId: string, progress: number }
+  | { type: 'environment_updated', metrics: EnvironmentalMetrics }
+  | { type: 'terrain_modified', modification: TerrainModification }
+  | { type: 'game_over', summary: GameOverSummary }
+  | { type: 'full_state', state: FullGameState } // sent on reconnect
 ```
 
 - **Dispatch**: the composable dispatches each SSE event to the relevant Pinia
@@ -137,10 +138,11 @@ pages fetches from the server.
 ### UI State Store
 
 The `ui` store handles non-game state:
+
 - `selectedFacilityId`, `selectedTransportId`, `selectedResourceKey` —
   currently inspected entity.
 - `panelVisibility: { resourceTracker, eventFeed, actionConsole, techTree,
-  environmentalStatus, facilityDetail }` — which panels are open.
+environmentalStatus, facilityDetail }` — which panels are open.
 - `spectatorMode: boolean` — true if viewing via public token (ADR-0025).
   Hides owner-only controls.
 - `isMobile: boolean` — detected on load, drives mobile warning overlay
@@ -161,6 +163,7 @@ The `ui` store handles non-game state:
 ## Consequences
 
 **Positive:**
+
 - Clear separation: SSE composable = transport, Pinia stores = state, TresJS
   scene = rendering. Each layer has a single responsibility.
 - Stores are reactive — Vue components and TresJS scene automatically
@@ -171,6 +174,7 @@ The `ui` store handles non-game state:
 - Spectator mode is a simple boolean flag in the UI store.
 
 **Negative:**
+
 - Many stores (11) — but each is small and focused. Could consolidate later
   if boundaries blur.
 - SSE event types must stay in sync between server and client. TypeScript

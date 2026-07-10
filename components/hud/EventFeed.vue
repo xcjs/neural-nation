@@ -1,38 +1,3 @@
-<template>
-  <div class="border border-cyan-900/50 bg-black/70 backdrop-blur-sm p-3">
-    <h3 class="text-cyan-400 text-xs font-bold tracking-wider mb-2">EVENT FEED</h3>
-    <div class="space-y-1 max-h-64 overflow-y-auto">
-      <div
-        v-for="e in events.items"
-        :key="e.id"
-        class="text-xs py-0.5 px-1 border-l-2"
-        :class="severityColor(e.severity)"
-      >
-        <span class="text-cyan-700">[T{{ e.tick }}]</span>
-        <span class="text-cyan-300 ml-1">{{ e.message }}</span>
-      </div>
-      <div v-if="events.items.length === 0" class="text-cyan-700 text-xs">No events yet.</div>
-    </div>
-    <div v-if="events.total > events.pageSize" class="flex items-center justify-between mt-2 text-xs">
-      <button
-        @click="events.fetchPage(token, events.page - 1)"
-        :disabled="events.page === 0"
-        class="text-cyan-500 disabled:opacity-30"
-      >
-        ← PREV
-      </button>
-      <span class="text-cyan-700">{{ events.page + 1 }}/{{ Math.ceil(events.total / events.pageSize) }}</span>
-      <button
-        @click="events.fetchPage(token, events.page + 1)"
-        :disabled="(events.page + 1) * events.pageSize >= events.total"
-        class="text-cyan-500 disabled:opacity-30"
-      >
-        NEXT →
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { useEventsStore } from '~/stores/events'
 import { useGameStore } from '~/stores/game'
@@ -50,3 +15,42 @@ function severityColor(sev: string): string {
   }
 }
 </script>
+
+<template>
+  <div class="border border-cyan-900/50 bg-black/70 backdrop-blur-sm p-3">
+    <h3 class="text-cyan-400 text-xs font-bold tracking-wider mb-2">
+      EVENT FEED
+    </h3>
+    <div class="space-y-1 max-h-64 overflow-y-auto">
+      <div
+        v-for="e in events.items"
+        :key="e.id"
+        class="text-xs py-0.5 px-1 border-l-2"
+        :class="severityColor(e.severity)"
+      >
+        <span class="text-cyan-700">[T{{ e.tick }}]</span>
+        <span class="text-cyan-300 ml-1">{{ e.message }}</span>
+      </div>
+      <div v-if="events.items.length === 0" class="text-cyan-700 text-xs">
+        No events yet.
+      </div>
+    </div>
+    <div v-if="events.total > events.pageSize" class="flex items-center justify-between mt-2 text-xs">
+      <button
+        :disabled="events.page === 0"
+        class="text-cyan-500 disabled:opacity-30"
+        @click="events.fetchPage(token, events.page - 1)"
+      >
+        ← PREV
+      </button>
+      <span class="text-cyan-700">{{ events.page + 1 }}/{{ Math.ceil(events.total / events.pageSize) }}</span>
+      <button
+        :disabled="(events.page + 1) * events.pageSize >= events.total"
+        class="text-cyan-500 disabled:opacity-30"
+        @click="events.fetchPage(token, events.page + 1)"
+      >
+        NEXT →
+      </button>
+    </div>
+  </div>
+</template>

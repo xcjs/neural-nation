@@ -1,5 +1,5 @@
-import { mkdirSync, existsSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { existsSync, mkdirSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -536,12 +536,14 @@ async function main() {
       for (let i = 0; i < rows.length; i++) {
         const c = rows[i]!
         insertForest.run(c.latIndex, c.lonIndex, c.density, c.maxDensity)
-        if (i > 0 && i % 5000 === 0) console.log(`  forest_grid: ${i}/${rows.length}...`)
+        if (i > 0 && i % 5000 === 0)
+          console.log(`  forest_grid: ${i}/${rows.length}...`)
       }
     })
     batchForest(cells)
     console.log(`Forest grid: ${cells.length} cells seeded`)
-  } else {
+  }
+  else {
     console.log('Forest grid already seeded, skipping')
   }
 

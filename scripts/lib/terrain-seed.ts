@@ -7,7 +7,7 @@
  * default 1° grid produces ~65k cells.
  */
 import type Database from 'better-sqlite3'
-import { generateTerrainGrid, DEFAULT_TERRAIN_CONFIG, type TerrainGridConfig, type TerrainCell } from './value-noise'
+import { DEFAULT_TERRAIN_CONFIG, generateTerrainGrid, type TerrainCell, type TerrainGridConfig } from './value-noise'
 
 export interface TerrainSeedResult {
   insertedCells: number

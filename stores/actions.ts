@@ -1,6 +1,6 @@
+import { $fetch } from 'ofetch'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { $fetch } from 'ofetch'
 
 export interface ActionLogEntry {
   id: number
@@ -27,21 +27,24 @@ export const useActionsStore = defineStore('actions', () => {
     try {
       // Actions are fetched via a dedicated API endpoint (not MCP tool)
       const params = new URLSearchParams({ limit: String(pageSize.value), offset: String(p * pageSize.value) })
-      if (searchQuery.value) params.set('search', searchQuery.value)
-      const res = await $fetch<{ items: ActionLogEntry[]; totalCount: number }>(
-        `/api/game/actions?token=${token}&${params}`
+      if (searchQuery.value)
+        params.set('search', searchQuery.value)
+      const res = await $fetch<{ items: ActionLogEntry[], totalCount: number }>(
+        `/api/game/actions?token=${token}&${params}`,
       )
       items.value = res.items || []
       total.value = res.totalCount || 0
       page.value = p
-    } catch {
+    }
+    catch {
       // ignore
-    } finally {
+    }
+    finally {
       loading.value = false
     }
   }
 
-  function applyUpdate(patch: { type: string; action?: ActionLogEntry }) {
+  function applyUpdate(patch: { type: string, action?: ActionLogEntry }) {
     if (patch.type === 'action_logged' && patch.action) {
       items.value.unshift(patch.action)
       total.value++

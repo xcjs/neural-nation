@@ -1,8 +1,8 @@
+import { gte } from 'drizzle-orm'
 import { defineEventHandler, getQuery, setHeader } from 'h3'
-import { findRegistryEntry, findRegistryEntryByPublicToken } from '../../domain/game/registry'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { gte } from 'drizzle-orm'
+import { findRegistryEntry, findRegistryEntryByPublicToken } from '../../domain/game/registry'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -20,14 +20,15 @@ export default defineEventHandler(async (event) => {
   const db = createGameDb(entry.token)
 
   // Return only cells with density > 0, compact format for texture update
-  const minDensity = query.minDensity ? parseFloat(query.minDensity as string) : 0
+  const minDensity = query.minDensity ? Number.parseFloat(query.minDensity as string) : 0
   let cells
   if (minDensity > 0) {
     cells = db.select()
       .from(schema.forestGrid)
       .where(gte(schema.forestGrid.density, minDensity))
       .all()
-  } else {
+  }
+  else {
     cells = db.select().from(schema.forestGrid).all()
   }
 

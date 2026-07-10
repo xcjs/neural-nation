@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import Database from 'better-sqlite3'
-import { resolve } from 'node:path'
 import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
+import Database from 'better-sqlite3'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const templatePath = resolve('data', 'games', '_template.db')
 
@@ -22,14 +22,33 @@ afterAll(() => {
 describe('template DB schema integrity', () => {
   it('creates all expected tables', () => {
     const tables = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`).all() as Array<{ name: string }>
-    const names = tables.map((t) => t.name)
+    const names = tables.map(t => t.name)
     const expected = [
-      'meta', 'resources', 'stockpiles', 'survey_log', 'facilities',
-      'facility_buffers', 'transports', 'terrain', 'terrain_modifications',
-      'power_lines', 'battery_banks', 'humanity', 'environment',
-      'incidents', 'space_facilities', 'space_missions', 'actions',
-      'event_log', 'recipes', 'recipe_inputs', 'recipe_outputs',
-      'tech_nodes', 'tech_costs', 'tech_unlocks', 'tech_prerequisites',
+      'meta',
+      'resources',
+      'stockpiles',
+      'survey_log',
+      'facilities',
+      'facility_buffers',
+      'transports',
+      'terrain',
+      'terrain_modifications',
+      'power_lines',
+      'battery_banks',
+      'humanity',
+      'environment',
+      'incidents',
+      'space_facilities',
+      'space_missions',
+      'actions',
+      'event_log',
+      'recipes',
+      'recipe_inputs',
+      'recipe_outputs',
+      'tech_nodes',
+      'tech_costs',
+      'tech_unlocks',
+      'tech_prerequisites',
       'game_research',
     ]
     for (const t of expected) {
@@ -47,7 +66,7 @@ describe('template DB schema integrity', () => {
 
   it('tech_nodes have unique IDs', () => {
     const rows = db.prepare('SELECT id FROM tech_nodes').all() as Array<{ id: string }>
-    const ids = rows.map((r) => r.id)
+    const ids = rows.map(r => r.id)
     expect(new Set(ids).size).toBe(ids.length)
   })
 
@@ -101,12 +120,13 @@ describe('template DB seed data', () => {
   })
 
   it('seeds tech prerequisites forming a valid DAG (no cycles)', () => {
-    const prereqs = db.prepare('SELECT tech_id, prerequisite_id FROM tech_prerequisites').all() as Array<{ tech_id: string; prerequisite_id: string }>
+    const prereqs = db.prepare('SELECT tech_id, prerequisite_id FROM tech_prerequisites').all() as Array<{ tech_id: string, prerequisite_id: string }>
     expect(prereqs.length).toBeGreaterThanOrEqual(7)
 
     const adj = new Map<string, string[]>()
     for (const p of prereqs) {
-      if (!adj.has(p.tech_id)) adj.set(p.tech_id, [])
+      if (!adj.has(p.tech_id))
+        adj.set(p.tech_id, [])
       adj.get(p.tech_id)!.push(p.prerequisite_id)
     }
 
@@ -118,8 +138,10 @@ describe('template DB seed data', () => {
       const deps = adj.get(node) || []
       for (const dep of deps) {
         if (!visited.has(dep)) {
-          if (hasCycle(dep)) return true
-        } else if (recStack.has(dep)) {
+          if (hasCycle(dep))
+            return true
+        }
+        else if (recStack.has(dep)) {
           return true
         }
       }

@@ -1,6 +1,6 @@
-import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import Database from 'better-sqlite3'
 import { resolve } from 'node:path'
+import Database from 'better-sqlite3'
+import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3'
 import { schema } from './schema'
 
 export type GameDb = BetterSQLite3Database<typeof schema>

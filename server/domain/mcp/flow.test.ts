@@ -1,13 +1,13 @@
-import { describe, it, expect, afterAll } from 'vitest'
 import { rmSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { createGame } from '../game/service'
-import { executeTool, getGameState } from './dispatcher'
-import { MCP_TOOLS } from './tools'
-import { findRegistryEntry } from '../game/registry'
+import { afterAll, describe, expect, it } from 'vitest'
 import { DifficultyPreset } from '../../../lib/types/game'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
+import { findRegistryEntry } from '../game/registry'
+import { createGame } from '../game/service'
+import { executeTool, getGameState } from './dispatcher'
+import { MCP_TOOLS } from './tools'
 
 const result = createGame(DifficultyPreset.Normal)
 const token = result.token
@@ -16,13 +16,14 @@ afterAll(() => {
   for (const ext of ['', '-shm', '-wal']) {
     try {
       rmSync(resolve('data', 'games', `${token}.db${ext}`), { force: true })
-    } catch {
+    }
+    catch {
       // ignore
     }
   }
 })
 
-describe('MCP end-to-end flow', () => {
+describe('mCP end-to-end flow', () => {
   it('creates a game with token, publicToken, and mcpUrl', () => {
     expect(token).toBeTruthy()
     expect(token.length).toBeGreaterThanOrEqual(32)
@@ -45,11 +46,20 @@ describe('MCP end-to-end flow', () => {
   })
 
   it('includes expected core tools', () => {
-    const names = MCP_TOOLS.map((t) => t.name)
+    const names = MCP_TOOLS.map(t => t.name)
     for (const expected of [
-      'survey_region', 'build_facility', 'list_facilities', 'get_facility_details',
-      'set_production_target', 'build_transport', 'assign_route', 'get_tech_tree',
-      'get_recipes', 'get_environmental_status', 'get_game_state', 'get_event_log',
+      'survey_region',
+      'build_facility',
+      'list_facilities',
+      'get_facility_details',
+      'set_production_target',
+      'build_transport',
+      'assign_route',
+      'get_tech_tree',
+      'get_recipes',
+      'get_environmental_status',
+      'get_game_state',
+      'get_event_log',
     ]) {
       expect(names).toContain(expected)
     }
@@ -73,7 +83,7 @@ describe('MCP end-to-end flow', () => {
   it('builds an Extractor facility and advances the tick to 2', () => {
     const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Test Mine', lat: 40, lon: -100, footprint: [{ lat: 40.01, lon: -100.01 }, { lat: 40.01, lon: -99.99 }, { lat: 39.99, lon: -99.99 }, { lat: 39.99, lon: -100.01 }] })
     expect(r.status).toBe('success')
-    const data = r.data as { facilityId: number; status: string }
+    const data = r.data as { facilityId: number, status: string }
     expect(typeof data.facilityId).toBe('number')
     expect(data.status).toBe('UnderConstruction')
     expect(getGameState(token).facilityCount).toBe(1)
@@ -83,7 +93,7 @@ describe('MCP end-to-end flow', () => {
   it('lists the built facility', () => {
     const r = executeTool(token, 'list_facilities', { limit: 10, offset: 0 })
     expect(r.status).toBe('success')
-    const data = r.data as { items: Array<{ id: number }>; totalCount: number }
+    const data = r.data as { items: Array<{ id: number }>, totalCount: number }
     expect(data.items).toHaveLength(1)
     expect(data.totalCount).toBe(1)
   })
@@ -93,7 +103,7 @@ describe('MCP end-to-end flow', () => {
     const facilityId = (build.data as { items: Array<{ id: number }> }).items[0]!.id
     const r = executeTool(token, 'get_facility_details', { facilityId })
     expect(r.status).toBe('success')
-    const details = r.data as { id: number; status: string; constructionProgress: number; inputs: unknown[]; outputs: unknown[] }
+    const details = r.data as { id: number, status: string, constructionProgress: number, inputs: unknown[], outputs: unknown[] }
     expect(details.id).toBe(facilityId)
     expect(details.status).toBe('Active')
     expect(details.constructionProgress).toBe(2)
@@ -120,13 +130,13 @@ describe('MCP end-to-end flow', () => {
   it('returns >=5 recipes and only tech-free recipes unlocked when nothing is researched', () => {
     const all = executeTool(token, 'get_recipes', {})
     expect(all.status).toBe('success')
-    const allData = all.data as { items: Array<{ id: string }>; totalCount: number }
+    const allData = all.data as { items: Array<{ id: string }>, totalCount: number }
     expect(allData.items.length).toBeGreaterThanOrEqual(5)
 
     const unlocked = executeTool(token, 'get_recipes', { unlockedOnly: true })
-    const unlockedData = unlocked.data as { items: Array<{ id: string }>; totalCount: number }
+    const unlockedData = unlocked.data as { items: Array<{ id: string }>, totalCount: number }
     expect(unlockedData.items.length).toBeGreaterThanOrEqual(1)
-    expect(unlockedData.items.every((r) => r.id === 'lumber')).toBe(true)
+    expect(unlockedData.items.every(r => r.id === 'lumber')).toBe(true)
   })
 
   it('returns environmental status with numeric pollutionLevel', () => {
@@ -144,7 +154,7 @@ describe('MCP end-to-end flow', () => {
   it('returns event log with entries from tool calls (event_log table)', () => {
     const r = executeTool(token, 'get_event_log', { limit: 20, offset: 0 })
     expect(r.status).toBe('success')
-    const data = r.data as { items: unknown[]; totalCount: number }
+    const data = r.data as { items: unknown[], totalCount: number }
     expect(Array.isArray(data.items)).toBe(true)
     expect(data.totalCount).toBeGreaterThan(0)
   })

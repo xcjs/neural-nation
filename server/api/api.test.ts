@@ -1,14 +1,14 @@
-import { describe, it, expect, afterAll } from 'vitest'
 import { rmSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { createGame } from '../domain/game/service'
-import { executeTool } from '../domain/mcp/dispatcher'
+import { afterAll, describe, expect, it } from 'vitest'
 import { DifficultyPreset } from '../../lib/types/game'
 import { removeFromRegistry } from '../domain/game/registry'
-import healthHandler from './health.get'
-import createGameHandler from './game/create.post'
+import { createGame } from '../domain/game/service'
+import { executeTool } from '../domain/mcp/dispatcher'
 import gameStateHandler from './game-state.get'
 import actionsHandler from './game/actions.get'
+import createGameHandler from './game/create.post'
+import healthHandler from './health.get'
 
 function mockEvent(method: string, query: Record<string, string> = {}, body?: unknown) {
   const params = new URLSearchParams(query).toString()
@@ -31,13 +31,14 @@ const publicToken = game.publicToken
 
 afterAll(() => {
   for (const ext of ['', '-shm', '-wal']) {
-    try { rmSync(resolve('data', 'games', `${token}.db${ext}`), { force: true }) } catch { /* */ }
+    try { rmSync(resolve('data', 'games', `${token}.db${ext}`), { force: true }) }
+    catch { /* */ }
   }
   removeFromRegistry(token)
 })
 
-describe('API route handlers', () => {
-  describe('GET /api/health', () => {
+describe('aPI route handlers', () => {
+  describe('gET /api/health', () => {
     it('returns ok status', async () => {
       const event = mockEvent('GET')
       const result = await healthHandler(event)
@@ -46,7 +47,7 @@ describe('API route handlers', () => {
     })
   })
 
-  describe('POST /api/game/create', () => {
+  describe('pOST /api/game/create', () => {
     it('creates a game and returns token + mcpUrl', async () => {
       const event = mockEvent('POST', {}, { difficulty: 'Normal' })
       const result: any = await createGameHandler(event)
@@ -55,13 +56,14 @@ describe('API route handlers', () => {
       expect(result.mcpUrl).toContain('/api/mcp/sse')
       // Cleanup
       for (const ext of ['', '-shm', '-wal']) {
-        try { rmSync(resolve('data', 'games', `${result.token}.db${ext}`), { force: true }) } catch { /* */ }
+        try { rmSync(resolve('data', 'games', `${result.token}.db${ext}`), { force: true }) }
+        catch { /* */ }
       }
       removeFromRegistry(result.token)
     })
   })
 
-  describe('GET /api/game-state', () => {
+  describe('gET /api/game-state', () => {
     it('returns 401 for missing token', async () => {
       const event = mockEvent('GET')
       const result: any = await gameStateHandler(event)
@@ -95,7 +97,7 @@ describe('API route handlers', () => {
     })
   })
 
-  describe('GET /api/game/actions', () => {
+  describe('gET /api/game/actions', () => {
     it('returns 401 for missing token', async () => {
       const event = mockEvent('GET')
       const result: any = await actionsHandler(event)

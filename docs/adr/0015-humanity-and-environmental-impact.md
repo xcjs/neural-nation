@@ -1,10 +1,10 @@
 # ADR-0015: Humanity & Environmental Impact System
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                            |
+| ---------- | ------------------------------------------------ |
+| Status     | Proposed                                         |
+| Date       | 2026-07-08                                       |
+| Deciders   | Project owner                                    |
 | Relates to | ADR-0003, ADR-0007, ADR-0009, ADR-0014, ADR-0023 |
 
 ## Context
@@ -33,10 +33,10 @@ Track several global metrics on a per-game basis, updated each tick:
 
 - **Population (humanity welfare)**: An abstract population score representing
   global human welfare. Starts at a baseline. Influenced by:
-  - + Food production (feeding people)
-  - + Energy access (powering civilization)
-  - + Technological progress (advanced facilities built)
-  - + Clean environment (low pollution)
+  - - Food production (feeding people)
+  - - Energy access (powering civilization)
+  - - Technological progress (advanced facilities built)
+  - - Clean environment (low pollution)
   - − Pollution (health impacts)
   - − Resource depletion (scarcity → hardship)
   - − Deforestation / habitat destruction
@@ -60,33 +60,33 @@ Track several global metrics on a per-game basis, updated each tick:
 
 Each facility and action has an environmental profile:
 
-| Facility/Action | Pollution | Forest | Water | Biodiversity |
-|-----------------|-----------|--------|-------|--------------|
-| coal_plant | High | — | — | — |
-| oil_plant | Med-High | — | — | — |
-| gas_plant | Med | — | — | — |
-| biomass_plant | Low | - (if over-harvesting) | — | - (if deforesting) |
-| nuclear_reactor | Very Low | — | - (thermal) | — |
-| solar/wind/hydro | None | — | — | — |
-| mine (surface) | Med | - (habitat) | - (runoff) | - |
-| mine (subsurface) | Low | — | - (acid mine drainage) | — |
-| refinery | High | — | - (spills) | — |
-| smelter | High | — | — | — |
-| farm (monoculture) | Low-Med | - (clearing) | - (fertilizer) | - |
-| farm (sustainable) | Low | — | — | neutral |
-| deforestation (clear-cut) | — | High loss | — | High loss |
-| soylent_plant | Very Low | - (habitat destruction) | - | High loss |
-| pipeline spill (incident) | — | — | High | Med |
-| terraforming: flatten | Low | -low (if forested) | 0 | -low |
-| terraforming: dig canal | Low | 0 | -low (turbidity) | -low (habitat disruption) |
-| terraforming: reservoir | Low | -med (flooded valley) | -low (stagnation) | -med (aquatic disruption) |
-| terraforming: drain | Med | 0 | -med (altered hydrology) | -high (wetland loss) |
-| terraforming: divert river | Low | -low | -high (downstream) | -high |
-| terraforming: level mountain | High (dust, blasting) | -high (if forested slopes) | -med (runoff) | -high (habitat destruction) |
-| terraforming: raise land | Med | 0 | -med (coastal alteration) | -high (marine habitat buried) |
-| terraforming: excavate shaft | Low | 0 | -low (groundwater) | 0 |
-| terraforming: create mountain | Med | 0 | 0 | -low (new habitat) |
-| terraforming: continental shift | Extreme | -extreme | -extreme | -extreme (biome shift) |
+| Facility/Action                 | Pollution             | Forest                     | Water                     | Biodiversity                  |
+| ------------------------------- | --------------------- | -------------------------- | ------------------------- | ----------------------------- |
+| coal_plant                      | High                  | —                          | —                         | —                             |
+| oil_plant                       | Med-High              | —                          | —                         | —                             |
+| gas_plant                       | Med                   | —                          | —                         | —                             |
+| biomass_plant                   | Low                   | - (if over-harvesting)     | —                         | - (if deforesting)            |
+| nuclear_reactor                 | Very Low              | —                          | - (thermal)               | —                             |
+| solar/wind/hydro                | None                  | —                          | —                         | —                             |
+| mine (surface)                  | Med                   | - (habitat)                | - (runoff)                | -                             |
+| mine (subsurface)               | Low                   | —                          | - (acid mine drainage)    | —                             |
+| refinery                        | High                  | —                          | - (spills)                | —                             |
+| smelter                         | High                  | —                          | —                         | —                             |
+| farm (monoculture)              | Low-Med               | - (clearing)               | - (fertilizer)            | -                             |
+| farm (sustainable)              | Low                   | —                          | —                         | neutral                       |
+| deforestation (clear-cut)       | —                     | High loss                  | —                         | High loss                     |
+| soylent_plant                   | Very Low              | - (habitat destruction)    | -                         | High loss                     |
+| pipeline spill (incident)       | —                     | —                          | High                      | Med                           |
+| terraforming: flatten           | Low                   | -low (if forested)         | 0                         | -low                          |
+| terraforming: dig canal         | Low                   | 0                          | -low (turbidity)          | -low (habitat disruption)     |
+| terraforming: reservoir         | Low                   | -med (flooded valley)      | -low (stagnation)         | -med (aquatic disruption)     |
+| terraforming: drain             | Med                   | 0                          | -med (altered hydrology)  | -high (wetland loss)          |
+| terraforming: divert river      | Low                   | -low                       | -high (downstream)        | -high                         |
+| terraforming: level mountain    | High (dust, blasting) | -high (if forested slopes) | -med (runoff)             | -high (habitat destruction)   |
+| terraforming: raise land        | Med                   | 0                          | -med (coastal alteration) | -high (marine habitat buried) |
+| terraforming: excavate shaft    | Low                   | 0                          | -low (groundwater)        | 0                             |
+| terraforming: create mountain   | Med                   | 0                          | 0                         | -low (new habitat)            |
+| terraforming: continental shift | Extreme               | -extreme                   | -extreme                  | -extreme (biome shift)        |
 
 ### Environmental Incidents
 
@@ -198,6 +198,7 @@ serve several purposes:
 ## Consequences
 
 **Positive:**
+
 - The LLM has meaningful moral choices, not just efficiency optimization.
   Different LLM agents will make different choices, making replays
   interesting.
@@ -210,6 +211,7 @@ serve several purposes:
   in the wireframe aesthetic.
 
 **Negative:**
+
 - Tracking multiple environmental metrics per tick adds simulation
   complexity and DB writes.
 - Incident probability calculations need careful balancing to avoid

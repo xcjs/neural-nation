@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { setActivePinia, createPinia } from 'pinia'
+import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
-import ResourceTracker from './ResourceTracker.vue'
+import { ResourceCategory, type ResourceOverviewRow, ResourceUnit, TrendDirection } from '~/lib/types/resource'
 import { useResourcesStore } from '~/stores/resources'
 import { useUiStore } from '~/stores/ui'
-import { ResourceCategory, ResourceUnit, TrendDirection, type ResourceOverviewRow } from '~/lib/types/resource'
+import ResourceTracker from './ResourceTracker.vue'
 
 function makeRow(overrides: Partial<ResourceOverviewRow> = {}): ResourceOverviewRow {
   return {
@@ -22,7 +22,7 @@ function makeRow(overrides: Partial<ResourceOverviewRow> = {}): ResourceOverview
   }
 }
 
-describe('ResourceTracker.vue', () => {
+describe('resourceTracker.vue', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })

@@ -1,9 +1,9 @@
 # ADR-0010: SQLite ORM (Drizzle)
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
+| Field    | Value         |
+| -------- | ------------- |
+| Status   | Proposed      |
+| Date     | 2026-07-08    |
 | Deciders | Project owner |
 
 ## Context
@@ -57,8 +57,11 @@ server/db/
 ### Usage Pattern
 
 ```typescript
+// In game logic:
+import { eq } from 'drizzle-orm'
+
 // server/db/schema/resources.ts
-import { sqliteTable, integer, text, real } from 'drizzle-orm/sqlite-core'
+import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 export const resources = sqliteTable('resources', {
   id: integer('id').primaryKey(),
@@ -70,11 +73,7 @@ export const resources = sqliteTable('resources', {
   grade: real('grade'),
   discovered: integer('discovered').default(0),
 })
-
-// In game logic:
-import { eq } from 'drizzle-orm'
-const ironDeposits = await db.select().from(resources)
-  .where(eq(resources.resourceKey, 'Fe'))
+const ironDeposits = await db.select().from(resources).where(eq(resources.resourceKey, 'Fe'))
 ```
 
 ### Per-Game DB Instantiation
@@ -83,9 +82,9 @@ Each game gets its own Drizzle instance bound to its own `better-sqlite3`
 connection:
 
 ```typescript
+import Database from 'better-sqlite3'
 // server/db/client.ts
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import Database from 'better-sqlite3'
 
 export function createGameDb(token: string) {
   const sqlite = new Database(`data/games/${token}.db`)
@@ -97,6 +96,7 @@ export function createGameDb(token: string) {
 ## Consequences
 
 **Positive:**
+
 - Full TypeScript type safety on all database queries.
 - Schema is code — version-controlled, diffable, refactorable.
 - `drizzle-kit` handles migration generation; no hand-written SQL migrations
@@ -106,6 +106,7 @@ export function createGameDb(token: string) {
   good documentation.
 
 **Negative:**
+
 - Drizzle's relational query API (`with` / `db.query`) has some rough edges
   with SQLite; may need raw SQL for complex joins.
 - `drizzle-kit` migration generation requires running a CLI tool during

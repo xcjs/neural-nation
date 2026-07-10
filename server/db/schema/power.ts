@@ -1,4 +1,4 @@
-import { sqliteTable, integer, real } from 'drizzle-orm/sqlite-core'
+import { integer, real, sqliteTable } from 'drizzle-orm/sqlite-core'
 
 export const powerLines = sqliteTable('power_lines', {
   id: integer('id').primaryKey({ autoIncrement: true }),

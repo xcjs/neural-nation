@@ -144,11 +144,11 @@ export const ELEMENTS: readonly ElementData[] = [
   { atomicNumber: 118, symbol: 'Og', name: 'Oganesson', category: ElementCategory.NobleGas, naturallyOccurring: false, synthetic: true, crustalAbundance: 0, commonOre: null },
 ] as const
 
-export const NATURALLY_OCCURRING_ELEMENTS = ELEMENTS.filter((e) => e.naturallyOccurring)
-export const SYNTHETIC_ELEMENTS = ELEMENTS.filter((e) => e.synthetic)
+export const NATURALLY_OCCURRING_ELEMENTS = ELEMENTS.filter(e => e.naturallyOccurring)
+export const SYNTHETIC_ELEMENTS = ELEMENTS.filter(e => e.synthetic)
 export const ELEMENT_BY_SYMBOL: ReadonlyMap<string, ElementData> = new Map(
-  ELEMENTS.map((e) => [e.symbol, e]),
+  ELEMENTS.map(e => [e.symbol, e]),
 )
 export const ELEMENT_BY_ATOMIC_NUMBER: ReadonlyMap<number, ElementData> = new Map(
-  ELEMENTS.map((e) => [e.atomicNumber, e]),
+  ELEMENTS.map(e => [e.atomicNumber, e]),
 )

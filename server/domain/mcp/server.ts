@@ -1,9 +1,9 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
-import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
-import { MCP_TOOLS } from './tools'
-import { executeTool } from './dispatcher'
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
 import { findRegistryEntry } from '../game/registry'
+import { executeTool } from './dispatcher'
+import { MCP_TOOLS } from './tools'
 
 const transports = new Map<string, SSEServerTransport>()
 const servers = new Map<string, Server>()
@@ -15,7 +15,7 @@ export function createMcpServer(token: string): Server {
   )
 
   server.setRequestHandler(ListToolsRequestSchema, () => ({
-    tools: MCP_TOOLS.map((t) => ({
+    tools: MCP_TOOLS.map(t => ({
       name: t.name,
       description: t.description,
       inputSchema: t.inputSchema,
@@ -46,8 +46,10 @@ export async function connectSseTransport(
   res: import('node:http').ServerResponse,
 ): Promise<SSEServerTransport> {
   const entry = findRegistryEntry(token)
-  if (!entry) throw new Error('Game not found')
-  if (entry.publicToken === token) throw new Error('Public token cannot access MCP endpoints')
+  if (!entry)
+    throw new Error('Game not found')
+  if (entry.publicToken === token)
+    throw new Error('Public token cannot access MCP endpoints')
 
   const transport = new SSEServerTransport(endpoint, res)
   const server = createMcpServer(token)

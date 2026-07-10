@@ -1,35 +1,33 @@
+import type { PaginatedResult, PaginationParams } from '../../../lib/types/mcp'
+import type { ResourceOverviewRow, ResourceStockpileEntry } from '../../../lib/types/resource'
+import { and, eq, like, sql } from 'drizzle-orm'
+import { ELEMENTS } from '../../../lib/constants/elements'
+import { ResourceCategory, ResourceUnit, TrendDirection } from '../../../lib/types/resource'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq, like, and, sql } from 'drizzle-orm'
-import type { ResourceOverviewRow, ResourceStockpileEntry } from '../../../lib/types/resource'
-import { ResourceCategory, ResourceUnit, TrendDirection } from '../../../lib/types/resource'
-import { ELEMENTS } from '../../../lib/constants/elements'
-import type { PaginationParams, PaginatedResult } from '../../../lib/types/mcp'
 
 export function surveyRegion(
   token: string,
   lat: number,
   lon: number,
   radius: number,
-): { depositsFound: number; discovered: Array<{ resourceKey: string; quantity: number; grade: number }> } {
+): { depositsFound: number, discovered: Array<{ resourceKey: string, quantity: number, grade: number }> } {
   const db = createGameDb(token)
 
-  const deposits = db.select().from(schema.resources)
-    .where(
-      and(
-        sql`${schema.resources.discovered} = 0`,
-        sql`abs(${schema.resources.lat} - ${lat}) <= ${radius}`,
-        sql`abs(${schema.resources.lon} - ${lon}) <= ${radius}`,
-      ),
-    )
-    .all()
+  const deposits = db.select().from(schema.resources).where(
+    and(
+      sql`${schema.resources.discovered} = 0`,
+      sql`abs(${schema.resources.lat} - ${lat}) <= ${radius}`,
+      sql`abs(${schema.resources.lon} - ${lon}) <= ${radius}`,
+    ),
+  ).all()
 
-  const discovered: Array<{ resourceKey: string; quantity: number; grade: number }> = []
+  const discovered: Array<{ resourceKey: string, quantity: number, grade: number }> = []
   let depositsFound = 0
 
   for (const deposit of deposits) {
     const distance = Math.sqrt(
-      Math.pow(deposit.lat - lat, 2) + Math.pow(deposit.lon - lon, 2),
+      (deposit.lat - lat) ** 2 + (deposit.lon - lon) ** 2,
     )
 
     if (distance <= radius) {
@@ -65,21 +63,18 @@ export function surveyRegion(
 export function getDiscoveredResources(
   token: string,
   params: PaginationParams = {},
-): PaginatedResult<{ id: number; resourceKey: string; name: string; lat: number; lon: number; quantity: number; remaining: number; grade: number; surface: number; depth: number | null; unit: string; category: string; discovered: number }> {
+): PaginatedResult<{ id: number, resourceKey: string, name: string, lat: number, lon: number, quantity: number, remaining: number, grade: number, surface: number, depth: number | null, unit: string, category: string, discovered: number }> {
   const db = createGameDb(token)
   const limit = params.limit || 50
   const offset = params.offset || 0
 
-  const items = db.select().from(schema.resources)
-    .where(eq(schema.resources.discovered, 1))
-    .limit(limit)
-    .offset(offset)
-    .all()
+  const items = db.select().from(schema.resources).where(eq(schema.resources.discovered, 1)).limit(limit).offset(offset).all()
 
   const totalCount = db.select({ count: sql<number>`count(*)` })
     .from(schema.resources)
     .where(eq(schema.resources.discovered, 1))
-    .get()?.count || 0
+    .get()
+    ?.count || 0
 
   return {
     items,
@@ -96,14 +91,15 @@ export function getResourceOverview(token: string): ResourceOverviewRow[] {
   const deposits = db.select().from(schema.resources).all()
   const stockpiles = db.select().from(schema.stockpiles).all()
 
-  const resourceMap = new Map<string, { collected: number; remaining: number; total: number }>()
+  const resourceMap = new Map<string, { collected: number, remaining: number, total: number }>()
 
   for (const deposit of deposits) {
     const existing = resourceMap.get(deposit.resourceKey)
     if (existing) {
       existing.remaining += deposit.remaining
       existing.total += deposit.quantity
-    } else {
+    }
+    else {
       resourceMap.set(deposit.resourceKey, {
         collected: 0,
         remaining: deposit.remaining,
@@ -116,7 +112,8 @@ export function getResourceOverview(token: string): ResourceOverviewRow[] {
     const existing = resourceMap.get(stockpile.resourceKey)
     if (existing) {
       existing.collected += stockpile.quantity
-    } else {
+    }
+    else {
       resourceMap.set(stockpile.resourceKey, {
         collected: stockpile.quantity,
         remaining: 0,
@@ -128,7 +125,8 @@ export function getResourceOverview(token: string): ResourceOverviewRow[] {
   const rows: ResourceOverviewRow[] = []
 
   for (const [resourceKey, data] of resourceMap) {
-    if (data.collected === 0 && data.remaining === 0 && data.total === 0) continue
+    if (data.collected === 0 && data.remaining === 0 && data.total === 0)
+      continue
     const category = categorizeResource(resourceKey)
     const unit = getUnitForCategory(category)
     const trend = data.remaining > 0 ? TrendDirection.Stable : TrendDirection.Down
@@ -152,13 +150,9 @@ export function getResourceOverview(token: string): ResourceOverviewRow[] {
 export function getResourceDetails(token: string, resourceKey: string) {
   const db = createGameDb(token)
 
-  const deposits = db.select().from(schema.resources)
-    .where(eq(schema.resources.resourceKey, resourceKey))
-    .all()
+  const deposits = db.select().from(schema.resources).where(eq(schema.resources.resourceKey, resourceKey)).all()
 
-  const stockpiles = db.select().from(schema.stockpiles)
-    .where(eq(schema.stockpiles.resourceKey, resourceKey))
-    .all()
+  const stockpiles = db.select().from(schema.stockpiles).where(eq(schema.stockpiles.resourceKey, resourceKey)).all()
 
   return { resourceKey, deposits, stockpiles }
 }
@@ -175,7 +169,7 @@ export function getResourceStockpile(
 
   const rows = query.all()
 
-  return rows.map((r) => ({
+  return rows.map(r => ({
     resourceKey: r.resourceKey,
     facilityId: r.facilityId,
     quantity: r.quantity,
@@ -195,7 +189,7 @@ export function searchResources(
     limit?: number
     offset?: number
   },
-): PaginatedResult<{ resourceKey: string; name: string; category: string }> {
+): PaginatedResult<{ resourceKey: string, name: string, category: string }> {
   const db = createGameDb(token)
   const limit = Math.min(params.limit || 50, 200)
   const offset = Math.max(params.offset || 0, 0)
@@ -223,39 +217,29 @@ export function searchResources(
 
   if (params.usedByRecipe) {
     // Resources used as inputs to a specific recipe
-    const inputs = db.select().from(schema.recipeInputs)
-      .where(eq(schema.recipeInputs.recipeId, params.usedByRecipe))
-      .all()
-    inputs.forEach((i) => relationshipKeys.add(i.resourceKey))
+    const inputs = db.select().from(schema.recipeInputs).where(eq(schema.recipeInputs.recipeId, params.usedByRecipe)).all()
+    inputs.forEach(i => relationshipKeys.add(i.resourceKey))
   }
 
   if (params.producedByRecipe) {
     // Resources produced as outputs of a specific recipe
-    const outputs = db.select().from(schema.recipeOutputs)
-      .where(eq(schema.recipeOutputs.recipeId, params.producedByRecipe))
-      .all()
-    outputs.forEach((o) => relationshipKeys.add(o.resourceKey))
+    const outputs = db.select().from(schema.recipeOutputs).where(eq(schema.recipeOutputs.recipeId, params.producedByRecipe)).all()
+    outputs.forEach(o => relationshipKeys.add(o.resourceKey))
   }
 
   if (params.neededForFacility) {
     // Resources needed as inputs by recipes for a specific facility type
-    const recipesForType = db.select().from(schema.recipes)
-      .where(eq(schema.recipes.facilityType, params.neededForFacility))
-      .all()
-      .map((r) => r.id)
+    const recipesForType = db.select().from(schema.recipes).where(eq(schema.recipes.facilityType, params.neededForFacility)).all().map(r => r.id)
     if (recipesForType.length > 0) {
-      const inputs = db.select().from(schema.recipeInputs).all()
-        .filter((i) => recipesForType.includes(i.recipeId))
-      inputs.forEach((i) => relationshipKeys.add(i.resourceKey))
+      const inputs = db.select().from(schema.recipeInputs).all().filter(i => recipesForType.includes(i.recipeId))
+      inputs.forEach(i => relationshipKeys.add(i.resourceKey))
     }
   }
 
   if (params.neededForTech) {
     // Resources needed as research costs for a specific tech
-    const costs = db.select().from(schema.techCosts)
-      .where(eq(schema.techCosts.techId, params.neededForTech))
-      .all()
-    costs.forEach((c) => relationshipKeys.add(c.resourceKey))
+    const costs = db.select().from(schema.techCosts).where(eq(schema.techCosts.techId, params.neededForTech)).all()
+    costs.forEach(c => relationshipKeys.add(c.resourceKey))
   }
 
   if (relationshipKeys.size > 0) {
@@ -288,7 +272,7 @@ export function searchResources(
 }
 
 function categorizeResource(resourceKey: string): ResourceCategory {
-  const element = ELEMENTS.find((e) => e.symbol.toLowerCase() === resourceKey.toLowerCase() || e.name === resourceKey)
+  const element = ELEMENTS.find(e => e.symbol.toLowerCase() === resourceKey.toLowerCase() || e.name === resourceKey)
   if (element) {
     return ResourceCategory.Element
   }
@@ -318,7 +302,7 @@ function getUnitForCategory(category: ResourceCategory): ResourceUnit {
 }
 
 function getResourceName(resourceKey: string): string {
-  const element = ELEMENTS.find((e) => e.symbol.toLowerCase() === resourceKey.toLowerCase())
+  const element = ELEMENTS.find(e => e.symbol.toLowerCase() === resourceKey.toLowerCase())
   if (element) {
     return element.name
   }

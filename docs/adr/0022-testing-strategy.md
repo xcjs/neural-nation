@@ -1,10 +1,10 @@
 # ADR-0022: Testing Strategy
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                        |
+| ---------- | ---------------------------- |
+| Status     | Proposed                     |
+| Date       | 2026-07-08                   |
+| Deciders   | Project owner                |
 | Relates to | ADR-0001, ADR-0017, ADR-0018 |
 
 ## Context
@@ -192,13 +192,13 @@ This keeps tests fast and deterministic.
 
 ### Coverage Targets
 
-| Layer | Target Coverage |
-|---|---|
-| Domain services (unit) | ≥ 90% |
-| Repositories (integration) | ≥ 80% |
-| API controllers | ≥ 80% |
-| Simulation (tick) | ≥ 85% |
-| Vue components | ≥ 60% |
+| Layer                      | Target Coverage |
+| -------------------------- | --------------- |
+| Domain services (unit)     | ≥ 90%           |
+| Repositories (integration) | ≥ 80%           |
+| API controllers            | ≥ 80%           |
+| Simulation (tick)          | ≥ 85%           |
+| Vue components             | ≥ 60%           |
 
 Coverage is measured via `vitest --coverage` with `@vitest/coverage-v8`.
 
@@ -217,7 +217,7 @@ Add to `package.json`:
     "test:simulation": "vitest run tests/simulation",
     "test:api": "vitest run tests/api",
     "test:components": "vitest run tests/components"
-    }
+  }
 }
 ```
 
@@ -230,7 +230,7 @@ import { defineVitestConfig } from '@nuxt/test-utils/config'
 
 export default defineVitestConfig({
   test: {
-    environment: 'node',           // default; components override to 'jsdom'
+    environment: 'node', // default; components override to 'jsdom'
     include: ['tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
@@ -238,12 +238,13 @@ export default defineVitestConfig({
       include: ['server/domain/**/*.ts', 'server/api/**/*.ts'],
       exclude: ['**/*.test.ts', '**/__tests__/**'],
     },
-    testTimeout: 30000,            // simulation tests may be slow
+    testTimeout: 30000, // simulation tests may be slow
   },
 })
 ```
 
 Component tests override the environment per-file:
+
 ```typescript
 // @vitest-environment jsdom
 ```
@@ -251,6 +252,7 @@ Component tests override the environment per-file:
 ### CI Integration
 
 Tests run on every push via GitHub Actions (or equivalent):
+
 1. `npm ci`
 2. `npm run test:coverage`
 3. Upload coverage report as artifact
@@ -259,6 +261,7 @@ Tests run on every push via GitHub Actions (or equivalent):
 ## Consequences
 
 **Positive:**
+
 - Vitest integrates seamlessly with the Nuxt/Vite toolchain — no separate
   build step for tests.
 - Domain service unit tests catch logic bugs early (recipe scaling, power
@@ -271,6 +274,7 @@ Tests run on every push via GitHub Actions (or equivalent):
   (ADR-0017), making it easy to find tests for a domain.
 
 **Negative:**
+
 - Simulation tests are slower (full DB + multi-tick) — they run less
   frequently in watch mode. Mitigated by separate test scripts.
 - Maintaining fixtures requires discipline — as recipes/tech tree evolve,

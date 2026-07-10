@@ -1,10 +1,10 @@
 # ADR-0005: Per-Game SQLite Databases
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                  |
+| ---------- | -------------------------------------- |
+| Status     | Proposed                               |
+| Date       | 2026-07-08                             |
+| Deciders   | Project owner                          |
 | Relates to | ADR-0010, ADR-0011, ADR-0020, ADR-0025 |
 
 ## Context
@@ -49,9 +49,14 @@ list (used by the "return to game" screen):
 
 ```json
 [
-  { "token": "AbC123...", "publicToken": "XyZ789...",
-    "createdAt": "2026-07-08T...", "lastActive": "...",
-    "status": "Active", "cleanupEligibleAt": null }
+  {
+    "token": "AbC123...",
+    "publicToken": "XyZ789...",
+    "createdAt": "2026-07-08T...",
+    "lastActive": "...",
+    "status": "Active",
+    "cleanupEligibleAt": null
+  }
 ]
 ```
 
@@ -103,6 +108,7 @@ Core tables:
 ## Consequences
 
 **Positive:**
+
 - Perfect isolation between games — no risk of cross-game data leakage.
 - File-per-game maps cleanly to token-per-game; trivially auditable.
 - `better-sqlite3` synchronous API is ergonomic in Nitro server routes.
@@ -112,6 +118,7 @@ Core tables:
   of stale games handled by ADR-0020.
 
 **Negative:**
+
 - Many open file handles if many concurrent games; mitigated by idle
   connection closing.
 - No cross-game queries (e.g., global leaderboards) without a separate meta-DB.

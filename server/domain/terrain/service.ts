@@ -1,41 +1,39 @@
+import type { PaginatedResult, PaginationParams } from '../../../lib/types/mcp'
+import type { TerrainCell, TerrainModification } from '../../../lib/types/terrain'
+import { and, eq, sql } from 'drizzle-orm'
+import { TerraformAction } from '../../../lib/types/terrain'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq, and, sql } from 'drizzle-orm'
-import type { TerrainCell, TerrainModification } from '../../../lib/types/terrain'
-import { TerraformAction } from '../../../lib/types/terrain'
-import type { PaginationParams, PaginatedResult } from '../../../lib/types/mcp'
 
 export function getEffectiveTerrain(token: string, lat: number, lon: number) {
   const db = createGameDb(token)
 
-  const baseCell = db.select().from(schema.terrain)
-    .where(
-      and(
-        sql`abs(${schema.terrain.lat} - ${lat}) <= 0.5`,
-        sql`abs(${schema.terrain.lon} - ${lon}) <= 0.5`,
-      ),
-    )
-    .get()
+  const baseCell = db.select().from(schema.terrain).where(
+    and(
+      sql`abs(${schema.terrain.lat} - ${lat}) <= 0.5`,
+      sql`abs(${schema.terrain.lon} - ${lon}) <= 0.5`,
+    ),
+  ).get()
 
-  if (!baseCell) return null
+  if (!baseCell)
+    return null
 
-  const mods = db.select().from(schema.terrainModifications)
-    .where(
-      and(
-        eq(schema.terrainModifications.latIndex, baseCell.latIndex),
-        eq(schema.terrainModifications.lonIndex, baseCell.lonIndex),
-      ),
-    )
-    .all()
+  const mods = db.select().from(schema.terrainModifications).where(
+    and(
+      eq(schema.terrainModifications.latIndex, baseCell.latIndex),
+      eq(schema.terrainModifications.lonIndex, baseCell.lonIndex),
+    ),
+  ).all()
 
   const elevationDelta = mods.reduce((sum, m) => sum + m.elevationDelta, 0)
   const effectiveElevation = baseCell.elevation + elevationDelta
 
   let effectiveClass = baseCell.terrainClass
-  const lastClassMod = mods.findLast((m) => m.newTerrainClass !== null)
+  const lastClassMod = mods.findLast(m => m.newTerrainClass !== null)
   if (lastClassMod?.newTerrainClass) {
     effectiveClass = lastClassMod.newTerrainClass
-  } else {
+  }
+  else {
     effectiveClass = classifyByElevation(effectiveElevation)
   }
 
@@ -56,7 +54,7 @@ export function getTerrainPath(
   fromLon: number,
   toLat: number,
   toLon: number,
-): { cells: TerrainCell[]; modifiers: string[]; distance: number } {
+): { cells: TerrainCell[], modifiers: string[], distance: number } {
   const db = createGameDb(token)
 
   const latMin = Math.min(fromLat, toLat)
@@ -64,14 +62,12 @@ export function getTerrainPath(
   const lonMin = Math.min(fromLon, toLon)
   const lonMax = Math.max(fromLon, toLon)
 
-  const cells = db.select().from(schema.terrain)
-    .where(
-      and(
-        sql`${schema.terrain.lat} >= ${latMin} AND ${schema.terrain.lat} <= ${latMax}`,
-        sql`${schema.terrain.lon} >= ${lonMin} AND ${schema.terrain.lon} <= ${lonMax}`,
-      ),
-    )
-    .all()
+  const cells = db.select().from(schema.terrain).where(
+    and(
+      sql`${schema.terrain.lat} >= ${latMin} AND ${schema.terrain.lat} <= ${latMax}`,
+      sql`${schema.terrain.lon} >= ${lonMin} AND ${schema.terrain.lon} <= ${lonMax}`,
+    ),
+  ).all()
 
   const modifiers: string[] = []
 
@@ -80,15 +76,17 @@ export function getTerrainPath(
     const terrainClass = effective?.effectiveTerrainClass || cell.terrainClass
 
     if (terrainClass === 'Mountain' || terrainClass === 'HighMountain') {
-      if (!modifiers.includes('tunnel')) modifiers.push('tunnel')
+      if (!modifiers.includes('tunnel'))
+        modifiers.push('tunnel')
     }
     if (terrainClass === 'Ocean') {
-      if (!modifiers.includes('bridge')) modifiers.push('bridge')
+      if (!modifiers.includes('bridge'))
+        modifiers.push('bridge')
     }
   }
 
   const distance = Math.sqrt(
-    Math.pow(toLat - fromLat, 2) + Math.pow(toLon - fromLon, 2),
+    (toLat - fromLat) ** 2 + (toLon - fromLon) ** 2,
   ) * 111
 
   return { cells: cells as unknown as TerrainCell[], modifiers, distance }
@@ -99,9 +97,9 @@ export function terraform(
   action: TerraformAction,
   params: {
     facilityId: number
-    targetCells: Array<{ latIndex: number; lonIndex: number }>
+    targetCells: Array<{ latIndex: number, lonIndex: number }>
   },
-): { modificationsApplied: number; operationId: string } {
+): { modificationsApplied: number, operationId: string } {
   const db = createGameDb(token)
 
   const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
@@ -138,14 +136,12 @@ export function getTerrainModifications(
   const limit = params.limit || 50
   const offset = params.offset || 0
 
-  const items = db.select().from(schema.terrainModifications)
-    .limit(limit)
-    .offset(offset)
-    .all()
+  const items = db.select().from(schema.terrainModifications).limit(limit).offset(offset).all()
 
   const totalCount = db.select({ count: sql<number>`count(*)` })
     .from(schema.terrainModifications)
-    .get()?.count || 0
+    .get()
+    ?.count || 0
 
   return {
     items: items as unknown as TerrainModification[],
@@ -159,13 +155,13 @@ export function getTerrainModifications(
 export function getTerraformCostEstimate(
   _token: string,
   action: TerraformAction,
-  _params: { targetCells: Array<{ latIndex: number; lonIndex: number }> },
-): { costs: Array<{ resourceKey: string; quantity: number; unit: string }>; environmentalImpact: string; estimatedIncidents: string[] } {
+  _params: { targetCells: Array<{ latIndex: number, lonIndex: number }> },
+): { costs: Array<{ resourceKey: string, quantity: number, unit: string }>, environmentalImpact: string, estimatedIncidents: string[] } {
   const { costs, environmentalImpact, estimatedIncidents } = getTerraformDefaults(action)
   return { costs, environmentalImpact, estimatedIncidents }
 }
 
-function getTerraformEffect(action: TerraformAction): { elevationDelta: number; newTerrainClass: string | null } {
+function getTerraformEffect(action: TerraformAction): { elevationDelta: number, newTerrainClass: string | null } {
   switch (action) {
     case TerraformAction.FlattenTerrain:
       return { elevationDelta: -50, newTerrainClass: 'Plain' }
@@ -199,7 +195,7 @@ function getTerraformEffect(action: TerraformAction): { elevationDelta: number; 
 }
 
 function getTerraformDefaults(action: TerraformAction): {
-  costs: Array<{ resourceKey: string; quantity: number; unit: string }>
+  costs: Array<{ resourceKey: string, quantity: number, unit: string }>
   environmentalImpact: string
   estimatedIncidents: string[]
 } {
@@ -232,10 +228,15 @@ function getTerraformDefaults(action: TerraformAction): {
 }
 
 function classifyByElevation(elevation: number): string {
-  if (elevation < 0) return 'Ocean'
-  if (elevation < 200) return 'Coastal'
-  if (elevation < 800) return 'Plain'
-  if (elevation < 1500) return 'Hill'
-  if (elevation < 3000) return 'Mountain'
+  if (elevation < 0)
+    return 'Ocean'
+  if (elevation < 200)
+    return 'Coastal'
+  if (elevation < 800)
+    return 'Plain'
+  if (elevation < 1500)
+    return 'Hill'
+  if (elevation < 3000)
+    return 'Mountain'
   return 'HighMountain'
 }

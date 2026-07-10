@@ -1,6 +1,6 @@
-import { resolve } from 'node:path'
-import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import type { RegistryEntry } from '../../../lib/types/game'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 const REGISTRY_PATH = resolve('data', 'games', 'registry.json')
 
@@ -14,7 +14,8 @@ export function ensureDataDir(): void {
 }
 
 export function loadRegistry(): RegistryEntry[] {
-  if (cache !== null) return cache
+  if (cache !== null)
+    return cache
   if (!existsSync(REGISTRY_PATH)) {
     cache = []
     return cache
@@ -41,7 +42,7 @@ export function updateRegistryEntry(
   update: Partial<RegistryEntry>,
 ): void {
   const entries = loadRegistry()
-  const idx = entries.findIndex((e) => e.token === token)
+  const idx = entries.findIndex(e => e.token === token)
   if (idx >= 0) {
     entries[idx] = { ...entries[idx], ...update } as RegistryEntry
     saveRegistry(entries)
@@ -49,18 +50,18 @@ export function updateRegistryEntry(
 }
 
 export function removeFromRegistry(token: string): void {
-  const entries = loadRegistry().filter((e) => e.token !== token)
+  const entries = loadRegistry().filter(e => e.token !== token)
   saveRegistry(entries)
 }
 
 export function findRegistryEntry(token: string): RegistryEntry | undefined {
-  return loadRegistry().find((e) => e.token === token)
+  return loadRegistry().find(e => e.token === token)
 }
 
 export function findRegistryEntryByPublicToken(
   publicToken: string,
 ): RegistryEntry | undefined {
-  return loadRegistry().find((e) => e.publicToken === publicToken)
+  return loadRegistry().find(e => e.publicToken === publicToken)
 }
 
 export function clearRegistryCache(): void {

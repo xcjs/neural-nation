@@ -5,7 +5,7 @@ services:
     container_name: neural-nation
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - ./data:/app/data
     environment:
@@ -17,7 +17,7 @@ services:
       - GAME_CLEANUP_GRACE_DAYS=${GAME_CLEANUP_GRACE_DAYS:-1}
       - GAME_CLEANUP_INTERVAL_HOURS=${GAME_CLEANUP_INTERVAL_HOURS:-6}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      test: [CMD, wget, -qO-, 'http://localhost:3000/api/health']
       interval: 30s
       timeout: 5s
       retries: 3

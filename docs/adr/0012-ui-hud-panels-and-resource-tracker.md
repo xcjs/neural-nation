@@ -1,10 +1,10 @@
 # ADR-0012: UI/HUD Panels and Resource Tracker
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                                                          |
+| ---------- | ------------------------------------------------------------------------------ |
+| Status     | Proposed                                                                       |
+| Date       | 2026-07-08                                                                     |
+| Deciders   | Project owner                                                                  |
 | Relates to | ADR-0002, ADR-0004, ADR-0006, ADR-0008, ADR-0015, ADR-0018, ADR-0025, ADR-0026 |
 
 ## Context
@@ -66,6 +66,7 @@ manufactured) per ADR-0003/ADR-0018, showing collection progress:
 ```
 
 **Features:**
+
 - **Four categories** (collapsible sections per ADR-0003/ADR-0018):
   1. **Renewable** — resources that regrow over time (wood, water, arable
      land, biomass/crops, solar/wind/hydro capacity). Also includes
@@ -95,7 +96,7 @@ manufactured) per ADR-0003/ADR-0018, showing collection progress:
 - **Synthetic elements**: Elements with zero natural deposits show
   "SYNTHETIC" label instead of a progress bar. If the LLM later synthesizes
   them, the row updates to show synthesis output.
-- **Undiscovered penalty**: Total reserves shown are for *discovered*
+- **Undiscovered penalty**: Total reserves shown are for _discovered_
   deposits only. Undiscovered deposits don't count toward the total until
   the LLM surveys them. This means early game the tracker is sparse — it
   fills in as the LLM explores.
@@ -173,6 +174,7 @@ the LLM's reasoning context if available.
 ```
 
 **Features:**
+
 - **Searchable**: Full-text search across tool name, arguments, results, and
   tick number. Player can search "soylent" to find every time the LLM
   built/used a soylent plant, or search "error" to find failed actions.
@@ -321,6 +323,7 @@ A visual tree showing research progress and unlocked technologies:
 ### Panel: MCP Connection / Token Management
 
 A small panel (or modal) showing:
+
 - MCP connection status (connected/disconnected — is an LLM client
   actively connected via SSE?).
 - MCP URL with copy-to-clipboard (the full URL from ADR-0004).
@@ -374,6 +377,7 @@ A small panel (or modal) showing:
 ## Consequences
 
 **Positive:**
+
 - Resource tracker gives the player a tangible sense of progress against
   the full periodic table — a core satisfaction driver.
 - Scrollable virtualized list handles 126+ entries without performance
@@ -384,6 +388,7 @@ A small panel (or modal) showing:
   feel.
 
 **Negative:**
+
 - More UI surface area to build and maintain than a minimal HUD.
 - Virtualized scrolling adds a dependency (`@tanstack/vue-virtual` or
   similar).

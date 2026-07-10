@@ -1,6 +1,6 @@
 export {
-  getTechTree,
   getRecipes,
-  startResearch,
+  getTechTree,
   searchRecipes,
+  startResearch,
 } from './service'

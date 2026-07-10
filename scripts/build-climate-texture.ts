@@ -5,7 +5,8 @@ try {
   const result = buildForestDensityData()
   console.log(`Forest density data: ${result.width}x${result.height}, ${result.cellsProcessed} climate cells processed`)
   console.log(`Output: ${result.outputPath}`)
-} catch (e) {
+}
+catch (e) {
   console.error('Error:', e instanceof Error ? e.message : 'unknown')
   process.exit(1)
 }

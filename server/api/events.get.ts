@@ -1,8 +1,8 @@
-import { defineEventHandler, getQuery, createEventStream } from 'h3'
-import { findRegistryEntry, findRegistryEntryByPublicToken } from '../domain/game/registry'
-import { buildFullGameState } from '../domain/game/state'
+import { createEventStream, defineEventHandler, getQuery } from 'h3'
 import { subscribe } from '../domain/events/bus'
+import { findRegistryEntry, findRegistryEntryByPublicToken } from '../domain/game/registry'
 import { updateLastActive, updateLastActiveInRegistry } from '../domain/game/service'
+import { buildFullGameState } from '../domain/game/state'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -31,7 +31,8 @@ export default defineEventHandler(async (event) => {
 
   const sendFullState = () => {
     const state = buildFullGameState(gameToken, isSpectator)
-    if (state) sendEvent({ type: 'full_state', state })
+    if (state)
+      sendEvent({ type: 'full_state', state })
   }
 
   // Send initial full state

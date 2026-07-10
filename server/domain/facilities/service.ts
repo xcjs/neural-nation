@@ -1,15 +1,26 @@
+import type { FacilityBufferEntry, FacilityDetail, FacilitySummary } from '../../../lib/types/facility'
+import type { PaginatedResult, PaginationParams } from '../../../lib/types/mcp'
+import { and, eq, sql } from 'drizzle-orm'
+import { FacilityStatus } from '../../../lib/types/facility'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq, and, sql } from 'drizzle-orm'
 import { greatCircleDistance } from '../../shared/geo/distance'
-import type { FacilitySummary, FacilityDetail, FacilityBufferEntry } from '../../../lib/types/facility'
-import { FacilityStatus } from '../../../lib/types/facility'
-import type { PaginationParams, PaginatedResult } from '../../../lib/types/mcp'
 
 const POWER_GENERATING_TYPES = new Set([
-  'PowerPlant', 'SolarFarm', 'WindFarm', 'HydroPlant', 'NuclearReactor',
-  'BreederReactor', 'FusionReactor', 'BiomassPlant', 'BiogasPlant',
-  'DieselGenerator', 'CoalPlant', 'GasPlant', 'OilPlant', 'GeothermalPlant',
+  'PowerPlant',
+  'SolarFarm',
+  'WindFarm',
+  'HydroPlant',
+  'NuclearReactor',
+  'BreederReactor',
+  'FusionReactor',
+  'BiomassPlant',
+  'BiogasPlant',
+  'DieselGenerator',
+  'CoalPlant',
+  'GasPlant',
+  'OilPlant',
+  'GeothermalPlant',
 ])
 
 const FACILITY_TECH_REQUIREMENTS: Record<string, string> = {
@@ -84,12 +95,11 @@ function checkAndConsumeConstructionCosts(
   type: string,
 ): void {
   const costs = CONSTRUCTION_COSTS[type]
-  if (!costs || costs.length === 0) return
+  if (!costs || costs.length === 0)
+    return
 
   for (const cost of costs) {
-    const stockpile = db.select().from(schema.stockpiles)
-      .where(eq(schema.stockpiles.resourceKey, cost.resourceKey))
-      .get()
+    const stockpile = db.select().from(schema.stockpiles).where(eq(schema.stockpiles.resourceKey, cost.resourceKey)).get()
 
     if (!stockpile || stockpile.quantity < cost.quantity) {
       const have = stockpile?.quantity ?? 0
@@ -98,9 +108,7 @@ function checkAndConsumeConstructionCosts(
   }
 
   for (const cost of costs) {
-    const stockpile = db.select().from(schema.stockpiles)
-      .where(eq(schema.stockpiles.resourceKey, cost.resourceKey))
-      .get()
+    const stockpile = db.select().from(schema.stockpiles).where(eq(schema.stockpiles.resourceKey, cost.resourceKey)).get()
     db.update(schema.stockpiles)
       .set({ quantity: stockpile!.quantity - cost.quantity })
       .where(eq(schema.stockpiles.id, stockpile!.id))
@@ -108,13 +116,15 @@ function checkAndConsumeConstructionCosts(
   }
 }
 
-type GeoPoint = { lat: number; lon: number }
+interface GeoPoint { lat: number, lon: number }
 
 function safeParseFootprint(json: string): GeoPoint[] | null {
   try {
     const parsed = JSON.parse(json)
-    if (Array.isArray(parsed) && parsed.length >= 3) return parsed
-  } catch {
+    if (Array.isArray(parsed) && parsed.length >= 3)
+      return parsed
+  }
+  catch {
     // ignore
   }
   return null
@@ -140,8 +150,8 @@ function pointInPolygon(point: GeoPoint, polygon: GeoPoint[]): boolean {
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
     const pi = polygon[i]!
     const pj = polygon[j]!
-    if ((pi.lat > point.lat) !== (pj.lat > point.lat) &&
-      point.lon < ((pj.lon - pi.lon) * (point.lat - pi.lat)) / (pj.lat - pi.lat) + pi.lon) {
+    if ((pi.lat > point.lat) !== (pj.lat > point.lat)
+      && point.lon < ((pj.lon - pi.lon) * (point.lat - pi.lat)) / (pj.lat - pi.lat) + pi.lon) {
       inside = !inside
     }
   }
@@ -155,14 +165,17 @@ function polygonsIntersect(a: GeoPoint[], b: GeoPoint[]): boolean {
     for (let j = 0; j < b.length; j++) {
       const b1 = b[j]!
       const b2 = b[(j + 1) % b.length]!
-      if (segmentsIntersect(a1, a2, b1, b2)) return true
+      if (segmentsIntersect(a1, a2, b1, b2))
+        return true
     }
   }
   for (const p of a) {
-    if (pointInPolygon(p, b)) return true
+    if (pointInPolygon(p, b))
+      return true
   }
   for (const p of b) {
-    if (pointInPolygon(p, a)) return true
+    if (pointInPolygon(p, a))
+      return true
   }
   return false
 }
@@ -174,9 +187,9 @@ export function buildFacility(
     name: string
     lat: number
     lon: number
-    footprint?: Array<{ lat: number; lon: number }>
+    footprint?: Array<{ lat: number, lon: number }>
   },
-): { facilityId: number; status: string } {
+): { facilityId: number, status: string } {
   const db = createGameDb(token)
 
   const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
@@ -185,10 +198,7 @@ export function buildFacility(
   // Tech prerequisite check: certain facility types require researched tech
   const requiredTech = FACILITY_TECH_REQUIREMENTS[params.type]
   if (requiredTech) {
-    const completedTech = db.select().from(schema.gameResearch)
-      .where(eq(schema.gameResearch.status, 'Completed'))
-      .all()
-      .map((r) => r.techId)
+    const completedTech = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.status, 'Completed')).all().map(r => r.techId)
     if (!completedTech.includes(requiredTech)) {
       throw new Error(`Facility type ${params.type} requires tech "${requiredTech}" to be researched`)
     }
@@ -206,14 +216,17 @@ export function buildFacility(
   // Check for overlap with existing facility footprints
   const existingFacilities = db.select().from(schema.facilities).all()
   for (const existing of existingFacilities) {
-    if (!existing.footprint) continue
+    if (!existing.footprint)
+      continue
     let existingFootprint: GeoPoint[]
     try {
       existingFootprint = JSON.parse(existing.footprint)
-    } catch {
+    }
+    catch {
       continue
     }
-    if (existingFootprint.length < 3) continue
+    if (existingFootprint.length < 3)
+      continue
     if (polygonsIntersect(params.footprint, existingFootprint)) {
       throw new Error(`Facility footprint overlaps existing facility "${existing.name}" (id: ${existing.id})`)
     }
@@ -267,7 +280,8 @@ export function listFacilities(
 
   const totalCount = db.select({ count: sql<number>`count(*)` })
     .from(schema.facilities)
-    .get()?.count || 0
+    .get()
+    ?.count || 0
 
   return {
     items: items.map(mapToSummary),
@@ -281,15 +295,12 @@ export function listFacilities(
 export function getFacilityDetails(token: string, facilityId: number): FacilityDetail | null {
   const db = createGameDb(token)
 
-  const facility = db.select().from(schema.facilities)
-    .where(eq(schema.facilities.id, facilityId))
-    .get()
+  const facility = db.select().from(schema.facilities).where(eq(schema.facilities.id, facilityId)).get()
 
-  if (!facility) return null
+  if (!facility)
+    return null
 
-  const buffers = db.select().from(schema.facilityBuffers)
-    .where(eq(schema.facilityBuffers.facilityId, facilityId))
-    .all()
+  const buffers = db.select().from(schema.facilityBuffers).where(eq(schema.facilityBuffers.facilityId, facilityId)).all()
 
   const inputs: FacilityBufferEntry[] = []
   const outputs: FacilityBufferEntry[] = []
@@ -303,7 +314,8 @@ export function getFacilityDetails(token: string, facilityId: number): FacilityD
     }
     if (buffer.direction === 'input') {
       inputs.push(entry)
-    } else {
+    }
+    else {
       outputs.push(entry)
     }
   }
@@ -339,17 +351,13 @@ export function setProductionTarget(
   const db = createGameDb(token)
 
   // Validate facility exists
-  const facility = db.select().from(schema.facilities)
-    .where(eq(schema.facilities.id, facilityId))
-    .get()
+  const facility = db.select().from(schema.facilities).where(eq(schema.facilities.id, facilityId)).get()
   if (!facility) {
     throw new Error(`Facility not found: ${facilityId}`)
   }
 
   // Validate recipe exists and matches facility type
-  const recipe = db.select().from(schema.recipes)
-    .where(eq(schema.recipes.id, recipeId))
-    .get()
+  const recipe = db.select().from(schema.recipes).where(eq(schema.recipes.id, recipeId)).get()
   if (!recipe) {
     throw new Error(`Recipe not found: ${recipeId}`)
   }
@@ -359,10 +367,7 @@ export function setProductionTarget(
 
   // Check recipe tech prerequisite is researched
   if (recipe.techRequired) {
-    const completedTech = db.select().from(schema.gameResearch)
-      .where(eq(schema.gameResearch.status, 'Completed'))
-      .all()
-      .map((r) => r.techId)
+    const completedTech = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.status, 'Completed')).all().map(r => r.techId)
     if (!completedTech.includes(recipe.techRequired)) {
       throw new Error(`Recipe ${recipeId} requires tech "${recipe.techRequired}" to be researched`)
     }
@@ -410,36 +415,32 @@ export function searchFacilities(
 
   if (params.producesResource) {
     // Facilities with an output buffer for this resource
-    const facilityIds = db.select().from(schema.facilityBuffers)
-      .where(
-        and(
-          eq(schema.facilityBuffers.resourceKey, params.producesResource),
-          eq(schema.facilityBuffers.direction, 'output'),
-        ),
-      )
-      .all()
-      .map((b) => b.facilityId)
+    const facilityIds = db.select().from(schema.facilityBuffers).where(
+      and(
+        eq(schema.facilityBuffers.resourceKey, params.producesResource),
+        eq(schema.facilityBuffers.direction, 'output'),
+      ),
+    ).all().map(b => b.facilityId)
     if (facilityIds.length > 0) {
       conditions.push(sql`${schema.facilities.id} IN (${sql.join(facilityIds.map(id => sql`${id}`), sql`,`)})`)
-    } else {
+    }
+    else {
       conditions.push(sql`1=0`)
     }
   }
 
   if (params.consumesResource) {
     // Facilities with an input buffer for this resource
-    const facilityIds = db.select().from(schema.facilityBuffers)
-      .where(
-        and(
-          eq(schema.facilityBuffers.resourceKey, params.consumesResource),
-          eq(schema.facilityBuffers.direction, 'input'),
-        ),
-      )
-      .all()
-      .map((b) => b.facilityId)
+    const facilityIds = db.select().from(schema.facilityBuffers).where(
+      and(
+        eq(schema.facilityBuffers.resourceKey, params.consumesResource),
+        eq(schema.facilityBuffers.direction, 'input'),
+      ),
+    ).all().map(b => b.facilityId)
     if (facilityIds.length > 0) {
       conditions.push(sql`${schema.facilities.id} IN (${sql.join(facilityIds.map(id => sql`${id}`), sql`,`)})`)
-    } else {
+    }
+    else {
       conditions.push(sql`1=0`)
     }
   }

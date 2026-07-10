@@ -1,7 +1,7 @@
+import type { ResourceCategory, ResourceOverviewRow } from '~/lib/types/resource'
+import { $fetch } from 'ofetch'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { $fetch } from 'ofetch'
-import { ResourceCategory, type ResourceOverviewRow } from '~/lib/types/resource'
 
 export const useResourcesStore = defineStore('resources', () => {
   const rows = ref<ResourceOverviewRow[]>([])
@@ -15,15 +15,18 @@ export const useResourcesStore = defineStore('resources', () => {
         body: { token, tool: 'get_resource_overview', args: {} },
       })
       rows.value = res.items || []
-    } catch {
+    }
+    catch {
       // Will be populated via SSE
-    } finally {
+    }
+    finally {
       loading.value = false
     }
   }
 
   function applyUpdate(patch: Partial<{ rows: ResourceOverviewRow[] }>) {
-    if (patch.rows) rows.value = patch.rows
+    if (patch.rows)
+      rows.value = patch.rows
   }
 
   function reset() {

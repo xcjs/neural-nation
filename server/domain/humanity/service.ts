@@ -1,11 +1,10 @@
+import type { EnvironmentalIncident, EnvironmentState, PopulationState } from '../../../lib/types/humanity'
+import type { PaginatedResult, PaginationParams } from '../../../lib/types/mcp'
+import { eq, sql } from 'drizzle-orm'
 import { createGameDb } from '../../db/client'
 import { schema } from '../../db/schema'
-import { eq } from 'drizzle-orm'
-import type { PopulationState, EnvironmentState, EnvironmentalIncident } from '../../../lib/types/humanity'
-import type { PaginationParams, PaginatedResult } from '../../../lib/types/mcp'
-import { sql } from 'drizzle-orm'
 
-export function getEnvironmentalStatus(token: string): { population: PopulationState; environment: EnvironmentState } {
+export function getEnvironmentalStatus(token: string): { population: PopulationState, environment: EnvironmentState } {
   const db = createGameDb(token)
 
   const human = db.select().from(schema.humanity).where(eq(schema.humanity.key, 'global')).get()
@@ -48,7 +47,7 @@ export function getEnvironmentalStatus(token: string): { population: PopulationS
   }
 }
 
-export function getImpactForecast(token: string): { trajectory: string[]; warnings: string[] } {
+export function getImpactForecast(token: string): { trajectory: string[], warnings: string[] } {
   const db = createGameDb(token)
 
   const env = db.select().from(schema.environment).where(eq(schema.environment.key, 'global')).get()
@@ -96,7 +95,8 @@ export function getIncidents(
   const items = db.select().from(schema.incidents).limit(limit).offset(offset).all()
   const totalCount = db.select({ count: sql<number>`count(*)` })
     .from(schema.incidents)
-    .get()?.count || 0
+    .get()
+    ?.count || 0
 
   return {
     items: items as unknown as EnvironmentalIncident[],

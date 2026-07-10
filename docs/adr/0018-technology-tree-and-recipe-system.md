@@ -1,23 +1,24 @@
 # ADR-0018: Technology Tree & Recipe System
 
-| Field | Value |
-|---|---|
-| Status | Proposed |
-| Date | 2026-07-08 |
-| Deciders | Project owner |
+| Field      | Value                                                                                    |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| Status     | Proposed                                                                                 |
+| Date       | 2026-07-08                                                                               |
+| Deciders   | Project owner                                                                            |
 | Relates to | ADR-0003, ADR-0004, ADR-0006, ADR-0007, ADR-0011, ADR-0012, ADR-0016, ADR-0021, ADR-0023 |
 
 ## Context
 
 ADR-0007 defines facility tiers and a supply chain, but the inputs/outputs of
 each facility are left implicit. The LLM needs a concrete system that defines
-*what* each facility can produce, *what* it needs to do so, and *how* the
+_what_ each facility can produce, _what_ it needs to do so, and _how_ the
 agent unlocks more advanced production over time. Without recipes and a tech
 tree, "build a factory" has no mechanical meaning — the agent can't know what
 components are required, what intermediate goods to stockpile, or what it needs
 to research before building advanced facilities.
 
 The user wants:
+
 - Recipes: X amount of resource Y needed to produce Z. Some recipes need
   multiple input components.
 - A technology/"crafting" tree that gates progression — advanced recipes and
@@ -36,27 +37,27 @@ ADR-0021 (tonnes for mass, m³ for volume, MW·tick for energy).
 
 ```typescript
 interface Recipe {
-  Id: string                    // e.g. 'IronSmelting', 'ElectronicsAssembly'
-  Name: string                  // 'Iron Smelting', 'Electronics Assembly'
-  FacilityType: FacilityType    // which facility executes this recipe
-  Inputs: RecipeInput[]         // required inputs (resource + quantity)
-  Outputs: RecipeOutput[]        // produced outputs (resource + quantity)
-  CraftTime: number             // ticks per production cycle
-  TechRequired?: string         // tech node ID that unlocks this recipe (if any)
-  MinFacilityCount?: number     // for multi-facility recipes (see below)
+  Id: string // e.g. 'IronSmelting', 'ElectronicsAssembly'
+  Name: string // 'Iron Smelting', 'Electronics Assembly'
+  FacilityType: FacilityType // which facility executes this recipe
+  Inputs: RecipeInput[] // required inputs (resource + quantity)
+  Outputs: RecipeOutput[] // produced outputs (resource + quantity)
+  CraftTime: number // ticks per production cycle
+  TechRequired?: string // tech node ID that unlocks this recipe (if any)
+  MinFacilityCount?: number // for multi-facility recipes (see below)
 }
 
 interface RecipeInput {
-  ResourceKey: string           // 'Fe_ore', 'Coal', 'Water'
-  Quantity: number              // units consumed per cycle (t or m³, per ADR-0021)
-  Unit: Unit                    // 't' | 'm³' | 'MW' | 'count' (ADR-0021)
-  Optional?: boolean            // if true, production scales with availability
+  ResourceKey: string // 'Fe_ore', 'Coal', 'Water'
+  Quantity: number // units consumed per cycle (t or m³, per ADR-0021)
+  Unit: Unit // 't' | 'm³' | 'MW' | 'count' (ADR-0021)
+  Optional?: boolean // if true, production scales with availability
 }
 
 interface RecipeOutput {
-  ResourceKey: string           // 'Iron', 'Slag', 'Electronics'
-  Quantity: number              // units produced per cycle (t or m³, per ADR-0021)
-  Unit: Unit                    // 't' | 'm³' | 'count' (ADR-0021)
+  ResourceKey: string // 'Iron', 'Slag', 'Electronics'
+  Quantity: number // units produced per cycle (t or m³, per ADR-0021)
+  Unit: Unit // 't' | 'm³' | 'count' (ADR-0021)
 }
 ```
 
@@ -67,16 +68,16 @@ Recipes frequently require multiple distinct inputs. This is the core
 
 Examples:
 
-| Recipe | Facility | Inputs | Outputs |
-|--------|----------|--------|---------|
-| Iron Smelting | Smelter | 2 Iron Ore + 1 Coal + power | 2 Iron + 1 Slag |
-| Steel Making | Smelter | 2 Iron + 1 Coal + 0.5 Limestone + power | 2 Steel + 0.5 Slag |
-| Concrete | Kiln | 2 Limestone + 1 Water | 3 Concrete |
-| Electronics Assembly | Electronics Plant | 1 Silicon + 0.5 Copper + 0.1 Gold + 0.2 Plastics + power | 1 Electronics |
-| Machinery | Factory | 3 Steel + 1 Electronics + 0.5 Lubricant + power | 1 Machinery |
-| Fuel Refining | Refinery | 3 Crude Oil + 0.5 Water + power | 2 Fuel + 1 Plastics Precursor |
-| Nuclear Fuel Rod | Factory | 2 Uranium + 1 Steel + 0.1 Electronics + power | 1 Nuclear Fuel Rod |
-| Fusion Reactor Core | Factory | 10 Steel + 5 Electronics + 2 Helium-3 + 5 Machinery + power | 1 Fusion Core |
+| Recipe               | Facility          | Inputs                                                      | Outputs                       |
+| -------------------- | ----------------- | ----------------------------------------------------------- | ----------------------------- |
+| Iron Smelting        | Smelter           | 2 Iron Ore + 1 Coal + power                                 | 2 Iron + 1 Slag               |
+| Steel Making         | Smelter           | 2 Iron + 1 Coal + 0.5 Limestone + power                     | 2 Steel + 0.5 Slag            |
+| Concrete             | Kiln              | 2 Limestone + 1 Water                                       | 3 Concrete                    |
+| Electronics Assembly | Electronics Plant | 1 Silicon + 0.5 Copper + 0.1 Gold + 0.2 Plastics + power    | 1 Electronics                 |
+| Machinery            | Factory           | 3 Steel + 1 Electronics + 0.5 Lubricant + power             | 1 Machinery                   |
+| Fuel Refining        | Refinery          | 3 Crude Oil + 0.5 Water + power                             | 2 Fuel + 1 Plastics Precursor |
+| Nuclear Fuel Rod     | Factory           | 2 Uranium + 1 Steel + 0.1 Electronics + power               | 1 Nuclear Fuel Rod            |
+| Fusion Reactor Core  | Factory           | 10 Steel + 5 Electronics + 2 Helium-3 + 5 Machinery + power | 1 Fusion Core                 |
 
 Optional inputs (e.g., lubricant for machinery) boost production rate but
 aren't strictly required — production scales down proportionally if absent.
@@ -89,27 +90,27 @@ in nature and are only produced by recipes.
 
 Manufactured resources include:
 
-| Resource | First Produced By | Used By |
-|----------|-------------------|---------|
-| Iron | Smelter (from ore) | Steel, machinery, construction |
-| Steel | Smelter (from iron) | Advanced construction, machinery |
-| Aluminum | Smelter (from bauxite) | Aerospace, electronics |
-| Copper | Smelter (from copper ore) | Electronics, power lines |
-| Lumber | Sawmill (from wood) | Construction, paper |
-| Cement/Concrete | Kiln (from limestone) | Construction, roads |
-| Bricks | Kiln (from clay) | Construction |
-| Fuel | Refinery (from crude oil) | Power plants, rockets, vehicles |
-| Plastics | Refinery (from oil) | Electronics, components |
-| Silicon | Smelter (from quartz/silica) | Electronics |
-| Electronics | Electronics Plant | Machinery, advanced facilities |
-| Machinery | Factory | Advanced facilities, space infrastructure |
-| Lubricant | Chemical Plant (from oil) | Machinery production, maintenance |
-| Chemicals | Chemical Plant (from elements) | Advanced recipes |
-| Alloys | Chemical Plant (from metals) | Advanced construction |
-| Nuclear Fuel Rod | Factory (from uranium) | Nuclear reactors |
-| Fusion Core | Factory (from helium-3 + materials) | Fusion reactors |
-| Rocket Parts | Factory (from steel + electronics + fuel) | Spaceport launches |
-| Satellite Kit | Factory (from electronics + machinery + solar panels) | Deep space probes |
+| Resource         | First Produced By                                     | Used By                                   |
+| ---------------- | ----------------------------------------------------- | ----------------------------------------- |
+| Iron             | Smelter (from ore)                                    | Steel, machinery, construction            |
+| Steel            | Smelter (from iron)                                   | Advanced construction, machinery          |
+| Aluminum         | Smelter (from bauxite)                                | Aerospace, electronics                    |
+| Copper           | Smelter (from copper ore)                             | Electronics, power lines                  |
+| Lumber           | Sawmill (from wood)                                   | Construction, paper                       |
+| Cement/Concrete  | Kiln (from limestone)                                 | Construction, roads                       |
+| Bricks           | Kiln (from clay)                                      | Construction                              |
+| Fuel             | Refinery (from crude oil)                             | Power plants, rockets, vehicles           |
+| Plastics         | Refinery (from oil)                                   | Electronics, components                   |
+| Silicon          | Smelter (from quartz/silica)                          | Electronics                               |
+| Electronics      | Electronics Plant                                     | Machinery, advanced facilities            |
+| Machinery        | Factory                                               | Advanced facilities, space infrastructure |
+| Lubricant        | Chemical Plant (from oil)                             | Machinery production, maintenance         |
+| Chemicals        | Chemical Plant (from elements)                        | Advanced recipes                          |
+| Alloys           | Chemical Plant (from metals)                          | Advanced construction                     |
+| Nuclear Fuel Rod | Factory (from uranium)                                | Nuclear reactors                          |
+| Fusion Core      | Factory (from helium-3 + materials)                   | Fusion reactors                           |
+| Rocket Parts     | Factory (from steel + electronics + fuel)             | Spaceport launches                        |
+| Satellite Kit    | Factory (from electronics + machinery + solar panels) | Deep space probes                         |
 
 Manufactured resources flow through the same transport/buffer system as
 extracted resources (ADR-0007). They are stored in facility output buffers and
@@ -125,15 +126,15 @@ can't build fusion reactors on tick 1.
 
 ```typescript
 interface TechNode {
-  Id: string                    // 'BasicMetallurgy', 'NuclearEngineering'
+  Id: string // 'BasicMetallurgy', 'NuclearEngineering'
   Name: string
   Description: string
-  Tier: number                  // 0-4 for display grouping
-  Prerequisites: string[]       // tech node IDs that must be completed first
-  ResearchCost: ResearchCost[]  // resources consumed to research
-  ResearchTime: number          // ticks of continuous research_lab operation
-  Unlocks: TechUnlock[]         // what this tech enables
-  Category: TechCategory        // branch (Metallurgy, Chemistry, Power, etc.)
+  Tier: number // 0-4 for display grouping
+  Prerequisites: string[] // tech node IDs that must be completed first
+  ResearchCost: ResearchCost[] // resources consumed to research
+  ResearchTime: number // ticks of continuous research_lab operation
+  Unlocks: TechUnlock[] // what this tech enables
+  Category: TechCategory // branch (Metallurgy, Chemistry, Power, etc.)
 }
 
 interface ResearchCost {
@@ -143,7 +144,7 @@ interface ResearchCost {
 
 interface TechUnlock {
   Type: 'Recipe' | 'FacilityType' | 'TransportType' | 'TerrainModifier' | 'SpaceFacility' | 'TerraformAction'
-  Id: string                    // recipe ID, facility type, terraform action, etc.
+  Id: string // recipe ID, facility type, terraform action, etc.
 }
 ```
 
@@ -181,7 +182,7 @@ interface TechUnlock {
                    │
     ┌──────────────┼──────────────┐
     ▼              ▼              ▼
-[Terraforming]  [Space Branch]   
+[Terraforming]  [Space Branch]
 Earthworks      Aerospace Engineering
 → Excavator     → Spaceport
 → Flatten        → Rocket Assembly
@@ -230,6 +231,7 @@ Planetary Engineering
 
 Building a facility is itself a recipe — the `construction_cost` in ADR-0007
 is formalized as a recipe with:
+
 - Inputs: the construction resource requirements (Steel, Concrete, Machinery,
   etc. — varies by facility type and terrain modifier)
 - Outputs: the facility itself (placed on the globe)
@@ -237,6 +239,7 @@ is formalized as a recipe with:
   with the chaotic particle swirl per ADR-0008)
 
 This means advanced facilities need advanced manufactured goods:
+
 - A `factory` requires Steel + Concrete + Machinery + Electronics
 - A `nuclear_reactor` requires Steel + Concrete + Electronics + Uranium +
   Machinery + (Nuclear Power tech)
@@ -310,19 +313,19 @@ required inputs and the recipe's tech is completed.
 
 Example facility-recipe mappings:
 
-| Facility Type | Available Recipes |
-|---------------|-------------------|
-| Smelter | Iron Smelting, Steel Making, Aluminum Smelting, Copper Smelting, Silicon Extraction |
-| Refinery | Fuel Refining, Plastics Production, Lubricant Production |
-| Kiln | Concrete Production, Brick Production, Cement Production |
-| Chemical Plant | Chemical Synthesis, Alloy Production, Fertilizer Production, Composite Materials |
-| Electronics Plant | Electronics Assembly, Solar Panel Production, Circuit Production |
-| Factory | Machinery, Nuclear Fuel Rods, Rocket Parts, Satellite Kits, Fusion Cores |
-| Research Lab | (research, not production — consumes research costs, produces tech progress) |
-| Excavator | Flatten Terrain, Dig Canal, Road Embankment (ADR-0023) |
-| Dredger | Create Reservoir, Drain Area, Divert River (ADR-0023) |
-| Terraformer | Level Mountain, Raise Land, Excavate Shaft, Create Mountain (ADR-0023) |
-| Planetary Engine | Continental Shift, Ocean→Land, Land→Ocean (ADR-0023) |
+| Facility Type     | Available Recipes                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| Smelter           | Iron Smelting, Steel Making, Aluminum Smelting, Copper Smelting, Silicon Extraction |
+| Refinery          | Fuel Refining, Plastics Production, Lubricant Production                            |
+| Kiln              | Concrete Production, Brick Production, Cement Production                            |
+| Chemical Plant    | Chemical Synthesis, Alloy Production, Fertilizer Production, Composite Materials    |
+| Electronics Plant | Electronics Assembly, Solar Panel Production, Circuit Production                    |
+| Factory           | Machinery, Nuclear Fuel Rods, Rocket Parts, Satellite Kits, Fusion Cores            |
+| Research Lab      | (research, not production — consumes research costs, produces tech progress)        |
+| Excavator         | Flatten Terrain, Dig Canal, Road Embankment (ADR-0023)                              |
+| Dredger           | Create Reservoir, Drain Area, Divert River (ADR-0023)                               |
+| Terraformer       | Level Mountain, Raise Land, Excavate Shaft, Create Mountain (ADR-0023)              |
+| Planetary Engine  | Continental Shift, Ocean→Land, Land→Ocean (ADR-0023)                                |
 
 The LLM chooses which recipe a facility runs based on what outputs it needs
 and what inputs are available. This replaces the generic "inputs/outputs" model
@@ -331,6 +334,7 @@ in ADR-0007 with concrete, enumerable recipes.
 ## Consequences
 
 **Positive:**
+
 - Recipes give the LLM concrete, queryable production paths — it can plan
   "I need Electronics, which needs Silicon + Copper + Gold + Plastics, so I
   need a Smelter for Silicon, a Refinery for Plastics, mines for Copper and
@@ -345,6 +349,7 @@ in ADR-0007 with concrete, enumerable recipes.
   nodes can be added to the template DB without code changes.
 
 **Negative:**
+
 - Significantly more per-tick complexity — the tick processor must resolve
   recipes, check inputs, scale production, and handle recipe switching.
 - The template DB grows (recipes, recipe_inputs, recipe_outputs, tech_nodes,
