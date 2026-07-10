@@ -2,6 +2,7 @@ import { rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { DifficultyPreset } from '../../../lib/types/game'
+import { getDataDir } from '../../db/client'
 import { createGame } from '../game/service'
 import { executeTool } from './dispatcher'
 
@@ -11,7 +12,7 @@ const token = result.token
 afterAll(() => {
   for (const ext of ['', '-shm', '-wal']) {
     try {
-      rmSync(resolve('data', 'games', `${token}.db${ext}`), { force: true })
+      rmSync(resolve(getDataDir(), `${token}.db${ext}`), { force: true })
     }
     catch {
       // ignore

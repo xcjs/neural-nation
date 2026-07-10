@@ -1,13 +1,21 @@
 import type { RegistryEntry } from '../../../lib/types/game'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { getDataDir } from '../../db/client'
 
-const REGISTRY_PATH = resolve('data', 'games', 'registry.json')
+let REGISTRY_PATH: string | null = null
+
+function getRegistryPath(): string {
+  if (REGISTRY_PATH)
+    return REGISTRY_PATH
+  REGISTRY_PATH = resolve(getDataDir(), 'registry.json')
+  return REGISTRY_PATH
+}
 
 let cache: RegistryEntry[] | null = null
 
 export function ensureDataDir(): void {
-  const dir = resolve('data', 'games')
+  const dir = getDataDir()
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true })
   }
@@ -16,11 +24,12 @@ export function ensureDataDir(): void {
 export function loadRegistry(): RegistryEntry[] {
   if (cache !== null)
     return cache
-  if (!existsSync(REGISTRY_PATH)) {
+  const path = getRegistryPath()
+  if (!existsSync(path)) {
     cache = []
     return cache
   }
-  const raw = readFileSync(REGISTRY_PATH, 'utf-8').replace(/^\uFEFF/, '')
+  const raw = readFileSync(path, 'utf-8').replace(/^\uFEFF/, '')
   cache = JSON.parse(raw) as RegistryEntry[]
   return cache
 }
@@ -28,7 +37,7 @@ export function loadRegistry(): RegistryEntry[] {
 export function saveRegistry(entries: RegistryEntry[]): void {
   ensureDataDir()
   cache = entries
-  writeFileSync(REGISTRY_PATH, JSON.stringify(entries, null, 2), 'utf-8')
+  writeFileSync(getRegistryPath(), JSON.stringify(entries, null, 2), 'utf-8')
 }
 
 export function addToRegistry(entry: RegistryEntry): void {

@@ -1,11 +1,6 @@
 {
   "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
-    "paths": {
-      "~/*": ["./*"],
-      "~~/*": ["./*"],
-      "@/*": ["./*"]
-    },
     "strict": true,
     "exactOptionalPropertyTypes": true,
     "noFallthroughCasesInSwitch": true,
@@ -18,16 +13,5 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "noErrorTruncation": true
-  },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.vue"
-  ],
-  "exclude": [
-    "node_modules",
-    ".nuxt",
-    ".output",
-    "dist"
-  ]
+  }
 }

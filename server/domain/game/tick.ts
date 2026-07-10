@@ -244,8 +244,11 @@ const FOREST_DEPLETION_RADIUS_DEG = 2
 const FOREST_REGEN_RATE = 0.001
 
 function processForestGrid(db: GameDb, _tick: number): void {
-  const gridCells = db.select().from(schema.forestGrid).all()
-  if (gridCells.length === 0)
+  const rawDb = (db as unknown as { session: { client: Database.Database } }).session.client
+
+  // Check if forest_grid has any rows
+  const countRow = rawDb.prepare('SELECT COUNT(*) as n FROM forest_grid').get() as { n: number }
+  if (countRow.n === 0)
     return
 
   const activeFacilities = db.select()
@@ -253,88 +256,56 @@ function processForestGrid(db: GameDb, _tick: number): void {
     .where(eq(schema.facilities.status, 'Active'))
     .all()
 
-  // Build a spatial index: Map<latIndex, Map<lonIndex, cellIdx>>
-  const cellIndex = new Map<number, Map<number, number>>()
-  for (let i = 0; i < gridCells.length; i++) {
-    const cell = gridCells[i]!
-    let lonMap = cellIndex.get(cell.latIndex)
-    if (!lonMap) {
-      lonMap = new Map()
-      cellIndex.set(cell.latIndex, lonMap)
-    }
-    lonMap.set(cell.lonIndex, i)
-  }
-
-  // Track which cells were depleted (near facilities with forest impact)
-  const depletedCellIds = new Set<number>()
-
-  // Deplete forest cells near facilities with forest impact
   const facilitiesWithForestImpact = activeFacilities.filter((f) => {
     const impact = FACILITY_IMPACT[f.type]
     return impact && impact.forest < 0
   })
 
-  if (facilitiesWithForestImpact.length > 0) {
-    const radiusDeg = FOREST_DEPLETION_RADIUS_DEG
-    const radiusCells = Math.ceil(radiusDeg / 0.5)
+  const radiusDeg = FOREST_DEPLETION_RADIUS_DEG
+  const radiusCells = Math.ceil(radiusDeg / 0.5)
 
-    for (const facility of facilitiesWithForestImpact) {
-      const impact = FACILITY_IMPACT[facility.type]!
-      const facLatIdx = Math.floor(((90 - facility.lat) / 180) * 360)
-      const facLonIdx = Math.floor(((facility.lon + 180) / 360) * 720)
+  // Deplete forest cells near facilities with forest impact — only touch affected cells
+  for (const facility of facilitiesWithForestImpact) {
+    const impact = FACILITY_IMPACT[facility.type]!
+    const facLatIdx = Math.floor(((90 - facility.lat) / 180) * 360)
+    const facLonIdx = Math.floor(((facility.lon + 180) / 360) * 720)
 
-      for (let dy = -radiusCells; dy <= radiusCells; dy++) {
-        const latIdx = facLatIdx + dy
-        const lonMap = cellIndex.get(latIdx)
-        if (!lonMap)
-          continue
-        for (let dx = -radiusCells; dx <= radiusCells; dx++) {
-          const lonIdx = facLonIdx + dx
-          const cellIdx = lonMap.get(lonIdx)
-          if (cellIdx === undefined)
-            continue
+    // Query only cells within bounding box
+    const cells = rawDb.prepare(
+      `SELECT id, lat_index, lon_index, density FROM forest_grid
+       WHERE lat_index BETWEEN ? AND ? AND lon_index BETWEEN ? AND ?`,
+    ).all(
+      facLatIdx - radiusCells,
+      facLatIdx + radiusCells,
+      facLonIdx - radiusCells,
+      facLonIdx + radiusCells,
+    ) as Array<{ id: number, lat_index: number, lon_index: number, density: number }>
 
-          const cell = gridCells[cellIdx]!
-          const cellLat = 90 - (cell.latIndex / 360) * 180
-          const cellLon = (cell.lonIndex / 720) * 360 - 180
-          const dLat = Math.abs(cellLat - facility.lat)
-          const dLon = Math.abs(cellLon - facility.lon)
-          const dist = Math.sqrt(dLat * dLat + dLon * dLon)
-          if (dist <= radiusDeg) {
-            const falloff = 1 - (dist / radiusDeg)
-            const depletion = Math.abs(impact.forest) * falloff * 0.01
-            cell.density = Math.max(0, cell.density - depletion)
-            depletedCellIds.add(cell.id)
-          }
-        }
-      }
-    }
-  }
-
-  // Regenerate depleted cells (only those below max need updating)
-  const toUpdate: Array<{ id: number, density: number }> = []
-  for (const cell of gridCells) {
-    if (cell.density < cell.maxDensity) {
-      cell.density = Math.min(cell.maxDensity, cell.density + FOREST_REGEN_RATE)
-      toUpdate.push({ id: cell.id, density: cell.density })
-    }
-  }
-
-  // Batch update only changed cells via raw better-sqlite3
-  if (toUpdate.length > 0) {
-    const rawDb = (db as unknown as { session: { client: Database.Database } }).session.client
     const updateStmt = rawDb.prepare('UPDATE forest_grid SET density = ? WHERE id = ?')
-    const batchUpdate = rawDb.transaction(() => {
-      for (const cell of toUpdate) {
-        updateStmt.run(cell.density, cell.id)
+    for (const cell of cells) {
+      const cellLat = 90 - (cell.lat_index / 360) * 180
+      const cellLon = (cell.lon_index / 720) * 360 - 180
+      const dLat = Math.abs(cellLat - facility.lat)
+      const dLon = Math.abs(cellLon - facility.lon)
+      const dist = Math.sqrt(dLat * dLat + dLon * dLon)
+      if (dist <= radiusDeg) {
+        const falloff = 1 - (dist / radiusDeg)
+        const depletion = Math.abs(impact.forest) * falloff * 0.01
+        const newDensity = Math.max(0, cell.density - depletion)
+        updateStmt.run(newDensity, cell.id)
       }
-    })
-    batchUpdate()
+    }
   }
 
-  // Update global forestCoverage as average of grid
-  const avgDensity = gridCells.reduce((sum, c) => sum + c.density, 0) / gridCells.length
-  const forestPct = Math.max(0, Math.min(100, avgDensity * 100))
+  // Regenerate all cells below max density — single SQL UPDATE
+  rawDb.prepare(
+    `UPDATE forest_grid SET density = MIN(max_density, density + ?)
+     WHERE density < max_density`,
+  ).run(FOREST_REGEN_RATE)
+
+  // Update global forestCoverage as SQL AVG
+  const avgRow = rawDb.prepare('SELECT AVG(density) as avg FROM forest_grid').get() as { avg: number | null }
+  const forestPct = Math.max(0, Math.min(100, (avgRow.avg ?? 0) * 100))
   db.update(schema.environment)
     .set({ forestCoverage: forestPct })
     .where(eq(schema.environment.key, 'global'))

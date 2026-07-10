@@ -1,10 +1,9 @@
 import type { DifficultyPreset, RegistryEntry } from '../../../lib/types/game'
-import { GameStatus } from '../../../lib/types/game'
 import { copyFileSync, existsSync, renameSync, unlinkSync } from 'node:fs'
-import { resolve } from 'node:path'
 import process from 'node:process'
 import { eq } from 'drizzle-orm'
 import { DifficultyConfigs } from '../../../lib/constants/difficulty'
+import { GameStatus } from '../../../lib/types/game'
 import { closeGameDb, createGameDb, getGameDbPath, getTemplateDbPath } from '../../db/client'
 import { schema } from '../../db/schema'
 import { addToRegistry, ensureDataDir, findRegistryEntry, removeFromRegistry, updateRegistryEntry } from './registry'
@@ -26,7 +25,7 @@ export function createGame(difficulty: DifficultyPreset): CreateGameResult {
     throw new Error('Template database not found. Run build-template script first.')
   }
 
-  const gameDbPath = resolve('data', 'games', `${token}.db`)
+  const gameDbPath = getGameDbPath(token)
   copyFileSync(templatePath, gameDbPath)
 
   const db = createGameDb(token)

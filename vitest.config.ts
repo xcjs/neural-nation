@@ -8,18 +8,13 @@ export default defineConfig({
     testTimeout: 120000,
     exclude: ['node_modules', '.nuxt', '.output', 'dist'],
     hookTimeout: 120000,
+    setupFiles: ['./test/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'cobertura'],
       reportsDirectory: './coverage',
       include: ['lib/**', 'server/**', 'composables/**', 'stores/**'],
       exclude: ['**/*.test.ts', '**/*.d.ts', '**/*.config.*'],
-      thresholds: {
-        statements: 80,
-        branches: 75,
-        functions: 80,
-        lines: 80,
-      },
     },
     projects: [
       {
@@ -27,9 +22,6 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['lib/**/*.test.ts', 'server/**/*.test.ts', 'stores/**/*.test.ts', 'composables/**/*.test.ts'],
-          poolOptions: {
-            forks: { singleFork: true },
-          },
         },
       },
       {

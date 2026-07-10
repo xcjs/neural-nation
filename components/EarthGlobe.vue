@@ -85,7 +85,7 @@ function buildCoastlines(): THREE.Group {
       }
     }
     else if (geom.type === 'MultiPolygon') {
-      for (const polygon of geom.coordinates as number[][][][]) {
+      for (const polygon of geom.coordinates as unknown as number[][][][]) {
         for (const ring of polygon) {
           addRing(group, ring, lineMat)
         }
@@ -99,7 +99,7 @@ function buildCoastlines(): THREE.Group {
 function addRing(group: THREE.Group, ring: number[][], mat: THREE.LineBasicMaterial): void {
   const points: THREE.Vector3[] = []
   for (const [lon, lat] of ring) {
-    points.push(latLonToVec3(lat, lon, EARTH_RADIUS * 1.002))
+    points.push(latLonToVec3(lat!, lon!, EARTH_RADIUS * 1.002))
   }
   if (points.length < 2)
     return
@@ -583,7 +583,6 @@ function updateMarkers() {
     Storage: 9,
     BatteryBank: 9,
     ResearchLab: 10,
-    AdvancedFactory: 10,
     Spaceport: 1,
     RocketAssembly: 1,
     SpaceStation: 10,
@@ -679,7 +678,8 @@ function updateMarkers() {
     const curve = new THREE.QuadraticBezierCurve3(fromPos, midPoint, toPos)
     const points = curve.getPoints(30)
     const arcGeo = new THREE.BufferGeometry().setFromPoints(points)
-    const isActive = (t as { flowRate?: number }).flowRate && (t as { flowRate?: number }).flowRate > 0
+    const flowRate = (t as { flowRate?: number }).flowRate
+    const isActive = flowRate != null && flowRate > 0
     const arcColor = (t as { resourceKey?: string }).resourceKey ? 0x00FFFF : 0x446688
     const arcMat = new THREE.LineBasicMaterial({
       color: arcColor,
@@ -1135,7 +1135,8 @@ function animate() {
     const lod = child as THREE.LOD
     if (lod.isLOD) {
       lod.update(camera)
-      const level = lod._currentLevel >= 0 ? lod.children[lod._currentLevel] : null
+      const currentLevel = lod.getCurrentLevel()
+      const level = currentLevel >= 0 ? lod.children[currentLevel] : null
       if (level && level.type === 'Mesh') {
         const mat = (level as THREE.Mesh).material as THREE.MeshBasicMaterial
         if (mat.transparent) {
@@ -1189,7 +1190,10 @@ watch(() => [props.pollutionLevel, props.forestCoverage, props.biodiversity, pro
   // Update pollution haze shader uniform
   if (pollutionMesh) {
     const mat = pollutionMesh.material as THREE.ShaderMaterial
-    mat.uniforms.uPollution.value = (props.pollutionLevel ?? 0) / 100
+    const uPollution = mat.uniforms.uPollution
+    if (uPollution) {
+      uPollution.value = (props.pollutionLevel ?? 0) / 100
+    }
   }
   // Earth tint reflects water quality + overall health
   updateEarthTint()

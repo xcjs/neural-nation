@@ -40,6 +40,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Coverage
+coverage/
+
 # Temp
 tmp/
 temp/

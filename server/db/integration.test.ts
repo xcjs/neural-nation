@@ -1,13 +1,12 @@
 import { existsSync } from 'node:fs'
-import { resolve } from 'node:path'
 import Database from 'better-sqlite3'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-
-const templatePath = resolve('data', 'games', '_template.db')
+import { getTemplateDbPath } from './client'
 
 let db: Database.Database
 
 beforeAll(() => {
+  const templatePath = getTemplateDbPath()
   if (!existsSync(templatePath)) {
     throw new Error('Template DB not found. Run `npm run build:template` first.')
   }

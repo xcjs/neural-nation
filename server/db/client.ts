@@ -1,14 +1,19 @@
 import { resolve } from 'node:path'
+import process from 'node:process'
 import Database from 'better-sqlite3'
 import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3'
 import { schema } from './schema'
 
 export type GameDb = BetterSQLite3Database<typeof schema>
 
+export function getDataDir(): string {
+  return process.env.NN_DATA_DIR ?? resolve('data', 'games')
+}
+
 const dbCache = new Map<string, GameDb>()
 
 export function getGameDbPath(token: string): string {
-  return resolve('data', 'games', `${token}.db`)
+  return resolve(getDataDir(), `${token}.db`)
 }
 
 export function createGameDb(token: string): GameDb {
@@ -43,5 +48,5 @@ export function closeAllGameDbs(): void {
 }
 
 export function getTemplateDbPath(): string {
-  return resolve('data', 'games', '_template.db')
+  return resolve(getDataDir(), '_template.db')
 }

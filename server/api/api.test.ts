@@ -2,6 +2,7 @@ import { rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { DifficultyPreset } from '../../lib/types/game'
+import { getDataDir } from '../db/client'
 import { removeFromRegistry } from '../domain/game/registry'
 import { createGame } from '../domain/game/service'
 import { executeTool } from '../domain/mcp/dispatcher'
@@ -32,7 +33,7 @@ const publicToken = game.publicToken
 afterAll(() => {
   for (const ext of ['', '-shm', '-wal']) {
     try {
-      rmSync(resolve('data', 'games', `${token}.db${ext}`), { force: true })
+      rmSync(resolve(getDataDir(), `${token}.db${ext}`), { force: true })
     }
     catch { /* */ }
   }
@@ -59,7 +60,7 @@ describe('aPI route handlers', () => {
       // Cleanup
       for (const ext of ['', '-shm', '-wal']) {
         try {
-          rmSync(resolve('data', 'games', `${result.token}.db${ext}`), { force: true })
+          rmSync(resolve(getDataDir(), `${result.token}.db${ext}`), { force: true })
         }
         catch { /* */ }
       }
