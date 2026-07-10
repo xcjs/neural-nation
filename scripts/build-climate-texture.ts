@@ -1,3 +1,4 @@
+import process from 'node:process'
 import { buildForestDensityData } from './lib/climate-texture'
 
 console.log('Building forest density data from Köppen-Geiger climate classification...')

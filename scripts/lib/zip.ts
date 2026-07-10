@@ -1,3 +1,4 @@
+import type { Buffer } from 'node:buffer'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 /**

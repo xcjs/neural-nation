@@ -1,6 +1,8 @@
-import type { DifficultyPreset, GameStatus, type RegistryEntry } from '../../../lib/types/game'
+import type { DifficultyPreset, RegistryEntry } from '../../../lib/types/game'
+import { GameStatus } from '../../../lib/types/game'
 import { copyFileSync, existsSync, renameSync, unlinkSync } from 'node:fs'
 import { resolve } from 'node:path'
+import process from 'node:process'
 import { eq } from 'drizzle-orm'
 import { DifficultyConfigs } from '../../../lib/constants/difficulty'
 import { closeGameDb, createGameDb, getGameDbPath, getTemplateDbPath } from '../../db/client'
@@ -152,7 +154,9 @@ export function revokeToken(token: string): { success: boolean } {
   for (const ext of ['', '-wal', '-shm']) {
     const filePath = `${basePath}${ext}`
     if (existsSync(filePath)) {
-      try { unlinkSync(filePath) }
+      try {
+        unlinkSync(filePath)
+      }
       catch { /* ignore */ }
     }
   }
@@ -173,7 +177,9 @@ export function mintNewToken(oldToken: string): { token: string, publicToken: st
   renameSync(oldDbPath, newDbPath)
   for (const ext of ['-wal', '-shm']) {
     if (existsSync(`${oldDbPath}${ext}`)) {
-      try { renameSync(`${oldDbPath}${ext}`, `${newDbPath}${ext}`) }
+      try {
+        renameSync(`${oldDbPath}${ext}`, `${newDbPath}${ext}`)
+      }
       catch { /* ignore */ }
     }
   }

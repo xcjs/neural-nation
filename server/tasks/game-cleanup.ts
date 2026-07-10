@@ -1,3 +1,4 @@
+import process from 'node:process'
 import { runCleanup } from '../domain/game/cleanup'
 
 export default async function gameCleanupTask() {

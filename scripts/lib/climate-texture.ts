@@ -96,7 +96,7 @@ export function getForestGridCells(): ForestGridCell[] {
     const lat = Number.parseFloat(parts[0]!)
     const lon = Number.parseFloat(parts[1]!)
     const cls = parts[2]!.trim()
-    if (isNaN(lat) || isNaN(lon))
+    if (Number.isNaN(lat) || Number.isNaN(lon))
       continue
 
     const density = climateToForestDensity(cls)
@@ -147,7 +147,7 @@ export function buildForestDensityData(outputPath?: string): ClimateTextureResul
     const lat = Number.parseFloat(parts[0]!)
     const lon = Number.parseFloat(parts[1]!)
     const cls = parts[2]!.trim()
-    if (isNaN(lat) || isNaN(lon))
+    if (Number.isNaN(lat) || Number.isNaN(lon))
       continue
 
     const density = climateToForestDensity(cls)

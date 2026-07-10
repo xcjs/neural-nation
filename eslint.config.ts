@@ -13,7 +13,7 @@ export default antfu({
     'vue/multi-word-component-names': 'off',
     'ts/strict': 'off',
     'no-unused-vars': 'off',
-    'ts/no-unused-vars': 'error',
+    'ts/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
     'prefer-const': 'error',
     'no-console': 'warn',
     'style/eol-last': 'error',
@@ -27,5 +27,6 @@ export default antfu({
     'data/**',
     'coverage/**',
     '*.db',
+    'docs/**',
   ],
 })

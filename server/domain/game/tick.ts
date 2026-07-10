@@ -124,6 +124,38 @@ function processPopulationUpdate(db: GameDb, _tick: number): void {
     .run()
 }
 
+const FACILITY_IMPACT: Record<string, { pollution: number, forest: number, water: number, biodiversity: number }> = {
+  CoalPlant: { pollution: 0.1, forest: 0, water: 0, biodiversity: 0 },
+  OilPlant: { pollution: 0.07, forest: 0, water: 0, biodiversity: 0 },
+  GasPlant: { pollution: 0.04, forest: 0, water: 0, biodiversity: 0 },
+  DieselGenerator: { pollution: 0.05, forest: 0, water: 0, biodiversity: 0 },
+  BiomassPlant: { pollution: 0.02, forest: -0.01, water: 0, biodiversity: -0.005 },
+  BiogasPlant: { pollution: 0.01, forest: 0, water: 0, biodiversity: 0 },
+  NuclearReactor: { pollution: 0.002, forest: 0, water: -0.003, biodiversity: 0 },
+  BreederReactor: { pollution: 0.002, forest: 0, water: -0.003, biodiversity: 0 },
+  FusionReactor: { pollution: 0, forest: 0, water: 0, biodiversity: 0 },
+  SolarFarm: { pollution: 0, forest: 0, water: 0, biodiversity: 0 },
+  WindFarm: { pollution: 0, forest: 0, water: 0, biodiversity: 0 },
+  HydroPlant: { pollution: 0, forest: -0.002, water: -0.002, biodiversity: -0.002 },
+  GeothermalPlant: { pollution: 0.005, forest: 0, water: -0.001, biodiversity: 0 },
+  EthanolRefinery: { pollution: 0.02, forest: 0, water: -0.002, biodiversity: 0 },
+  SoylentPlant: { pollution: 0.005, forest: -0.005, water: -0.003, biodiversity: -0.01 },
+  Extractor: { pollution: 0.03, forest: -0.005, water: -0.005, biodiversity: -0.005 },
+  Farm: { pollution: 0.015, forest: -0.003, water: -0.003, biodiversity: -0.005 },
+  Forestry: { pollution: 0.01, forest: -0.02, water: 0, biodiversity: -0.01 },
+  WaterPump: { pollution: 0.005, forest: 0, water: -0.002, biodiversity: 0 },
+  Smelter: { pollution: 0.06, forest: 0, water: 0, biodiversity: 0 },
+  Refinery: { pollution: 0.07, forest: 0, water: -0.005, biodiversity: 0 },
+  Processor: { pollution: 0.04, forest: 0, water: -0.002, biodiversity: 0 },
+  ChemicalPlant: { pollution: 0.05, forest: 0, water: -0.005, biodiversity: -0.002 },
+  Factory: { pollution: 0.04, forest: 0, water: -0.002, biodiversity: -0.002 },
+  AdvancedFactory: { pollution: 0.03, forest: 0, water: -0.001, biodiversity: -0.001 },
+  Excavator: { pollution: 0.03, forest: -0.01, water: -0.005, biodiversity: -0.01 },
+  Dredger: { pollution: 0.02, forest: 0, water: -0.01, biodiversity: -0.01 },
+  Terraformer: { pollution: 0.05, forest: -0.02, water: -0.01, biodiversity: -0.02 },
+  PlanetaryEngine: { pollution: 0.1, forest: -0.05, water: -0.05, biodiversity: -0.05 },
+}
+
 function processEnvironmentUpdate(db: GameDb, _tick: number): void {
   const env = db.select().from(schema.environment).where(eq(schema.environment.key, 'global')).get()
   if (!env)
@@ -307,38 +339,6 @@ function processForestGrid(db: GameDb, _tick: number): void {
     .set({ forestCoverage: forestPct })
     .where(eq(schema.environment.key, 'global'))
     .run()
-}
-
-const FACILITY_IMPACT: Record<string, { pollution: number, forest: number, water: number, biodiversity: number }> = {
-  CoalPlant: { pollution: 0.1, forest: 0, water: 0, biodiversity: 0 },
-  OilPlant: { pollution: 0.07, forest: 0, water: 0, biodiversity: 0 },
-  GasPlant: { pollution: 0.04, forest: 0, water: 0, biodiversity: 0 },
-  DieselGenerator: { pollution: 0.05, forest: 0, water: 0, biodiversity: 0 },
-  BiomassPlant: { pollution: 0.02, forest: -0.01, water: 0, biodiversity: -0.005 },
-  BiogasPlant: { pollution: 0.01, forest: 0, water: 0, biodiversity: 0 },
-  NuclearReactor: { pollution: 0.002, forest: 0, water: -0.003, biodiversity: 0 },
-  BreederReactor: { pollution: 0.002, forest: 0, water: -0.003, biodiversity: 0 },
-  FusionReactor: { pollution: 0, forest: 0, water: 0, biodiversity: 0 },
-  SolarFarm: { pollution: 0, forest: 0, water: 0, biodiversity: 0 },
-  WindFarm: { pollution: 0, forest: 0, water: 0, biodiversity: 0 },
-  HydroPlant: { pollution: 0, forest: -0.002, water: -0.002, biodiversity: -0.002 },
-  GeothermalPlant: { pollution: 0.005, forest: 0, water: -0.001, biodiversity: 0 },
-  EthanolRefinery: { pollution: 0.02, forest: 0, water: -0.002, biodiversity: 0 },
-  SoylentPlant: { pollution: 0.005, forest: -0.005, water: -0.003, biodiversity: -0.01 },
-  Extractor: { pollution: 0.03, forest: -0.005, water: -0.005, biodiversity: -0.005 },
-  Farm: { pollution: 0.015, forest: -0.003, water: -0.003, biodiversity: -0.005 },
-  Forestry: { pollution: 0.01, forest: -0.02, water: 0, biodiversity: -0.01 },
-  WaterPump: { pollution: 0.005, forest: 0, water: -0.002, biodiversity: 0 },
-  Smelter: { pollution: 0.06, forest: 0, water: 0, biodiversity: 0 },
-  Refinery: { pollution: 0.07, forest: 0, water: -0.005, biodiversity: 0 },
-  Processor: { pollution: 0.04, forest: 0, water: -0.002, biodiversity: 0 },
-  ChemicalPlant: { pollution: 0.05, forest: 0, water: -0.005, biodiversity: -0.002 },
-  Factory: { pollution: 0.04, forest: 0, water: -0.002, biodiversity: -0.002 },
-  AdvancedFactory: { pollution: 0.03, forest: 0, water: -0.001, biodiversity: -0.001 },
-  Excavator: { pollution: 0.03, forest: -0.01, water: -0.005, biodiversity: -0.01 },
-  Dredger: { pollution: 0.02, forest: 0, water: -0.01, biodiversity: -0.01 },
-  Terraformer: { pollution: 0.05, forest: -0.02, water: -0.01, biodiversity: -0.02 },
-  PlanetaryEngine: { pollution: 0.1, forest: -0.05, water: -0.05, biodiversity: -0.05 },
 }
 
 function logIncident(db: GameDb, tick: number, type: string, message: string, severity: string, facilityId: number | null = null): void {

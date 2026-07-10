@@ -31,7 +31,9 @@ const publicToken = game.publicToken
 
 afterAll(() => {
   for (const ext of ['', '-shm', '-wal']) {
-    try { rmSync(resolve('data', 'games', `${token}.db${ext}`), { force: true }) }
+    try {
+      rmSync(resolve('data', 'games', `${token}.db${ext}`), { force: true })
+    }
     catch { /* */ }
   }
   removeFromRegistry(token)
@@ -56,7 +58,9 @@ describe('aPI route handlers', () => {
       expect(result.mcpUrl).toContain('/api/mcp/sse')
       // Cleanup
       for (const ext of ['', '-shm', '-wal']) {
-        try { rmSync(resolve('data', 'games', `${result.token}.db${ext}`), { force: true }) }
+        try {
+          rmSync(resolve('data', 'games', `${result.token}.db${ext}`), { force: true })
+        }
         catch { /* */ }
       }
       removeFromRegistry(result.token)

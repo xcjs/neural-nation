@@ -20,7 +20,9 @@ const watchUrl = computed(() => {
 function copy(text: string, which: string) {
   navigator.clipboard.writeText(text)
   copiedWhich.value = which
-  setTimeout(() => { copiedWhich.value = '' }, 2000)
+  setTimeout(() => {
+    copiedWhich.value = ''
+  }, 2000)
 }
 
 function copyBtn(which: string) {

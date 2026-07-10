@@ -24,7 +24,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'facility-click', facilityId: number): void
+  (e: 'facilityClick', facilityId: number): void
 }>()
 
 const container = ref<HTMLDivElement | null>(null)
@@ -236,7 +236,10 @@ function buildEnvironmentOverlay(): void {
           const dstIdx = (th - 1 - y) * tw + x
           const d = data[srcIdx]!
           if (d <= 0) {
-            rgba[dstIdx * 4] = 0; rgba[dstIdx * 4 + 1] = 0; rgba[dstIdx * 4 + 2] = 0; rgba[dstIdx * 4 + 3] = 0
+            rgba[dstIdx * 4] = 0
+            rgba[dstIdx * 4 + 1] = 0
+            rgba[dstIdx * 4 + 2] = 0
+            rgba[dstIdx * 4 + 3] = 0
           }
           else {
             rgba[dstIdx * 4] = Math.round(20 + (1 - d) * 40) // R
@@ -454,7 +457,7 @@ function onPointerDown(event: PointerEvent) {
     const hit = intersects[0]!.object
     const facilityId = hit.userData.facilityId as number | undefined
     if (facilityId !== undefined) {
-      emit('facility-click', facilityId)
+      emit('facilityClick', facilityId)
     }
   }
 }
@@ -641,7 +644,9 @@ function updateMarkers() {
     // Footprint polygon (if facility has one)
     if (f.footprint && f.footprint.length >= 3) {
       const fpGroup = buildFootprintPolygon(f.footprint, color)
-      fpGroup.children.forEach((child) => { child.userData.facilityId = f.id })
+      fpGroup.children.forEach((child) => {
+        child.userData.facilityId = f.id
+      })
       markerGroup.add(fpGroup)
     }
 
@@ -795,7 +800,6 @@ function patchCoastline(lat: number, lon: number, toLand: boolean): void {
 }
 
 function positionOnSphere(mesh: THREE.Mesh, anchor: THREE.Vector3): void {
-  const normal = anchor.clone().normalize()
   mesh.position.copy(anchor)
   mesh.lookAt(0, 0, 0)
   // ShapeGeometry is in XY plane; lookAt orients Z toward center, so XY faces outward

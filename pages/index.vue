@@ -58,7 +58,9 @@ function copyUrl() {
     return
   navigator.clipboard.writeText(created.value.mcpUrl)
   copied.value = true
-  setTimeout(() => { copied.value = false }, 2000)
+  setTimeout(() => {
+    copied.value = false
+  }, 2000)
 }
 
 function loadExistingTokens() {

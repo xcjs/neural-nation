@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { existsSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
