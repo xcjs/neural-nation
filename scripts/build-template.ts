@@ -179,6 +179,15 @@ async function main() {
       biodiversity REAL DEFAULT 100
     );
 
+    CREATE TABLE IF NOT EXISTS forest_grid (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lat_index INTEGER NOT NULL,
+      lon_index INTEGER NOT NULL,
+      density REAL DEFAULT 0,
+      max_density REAL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_forest_grid_lat_lon ON forest_grid(lat_index, lon_index);
+
     CREATE TABLE IF NOT EXISTS incidents (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       type TEXT,
@@ -513,6 +522,27 @@ async function main() {
   console.log(`MRDS: ${mrdsResult.insertedRows} deposits inserted (${mrdsResult.skippedRows} skipped, ${mrdsResult.totalRows} total rows)`)
   if (mrdsResult.unmappedCommodities.size > 0) {
     console.log(`MRDS unmapped commodities: ${[...mrdsResult.unmappedCommodities].sort().join(', ')}`)
+  }
+
+  // Seed forest grid from Köppen-Geiger climate data.
+  // Idempotent — no-ops if forest_grid already populated.
+  const forestCount = db.prepare('SELECT COUNT(*) as c FROM forest_grid').get() as { c: number }
+  if (forestCount.c === 0) {
+    console.log('Seeding forest grid from Köppen-Geiger climate data...')
+    const { getForestGridCells } = await import('./lib/climate-texture')
+    const cells = getForestGridCells()
+    const insertForest = db.prepare('INSERT INTO forest_grid (lat_index, lon_index, density, max_density) VALUES (?, ?, ?, ?)')
+    const batchForest = db.transaction((rows: typeof cells) => {
+      for (let i = 0; i < rows.length; i++) {
+        const c = rows[i]!
+        insertForest.run(c.latIndex, c.lonIndex, c.density, c.maxDensity)
+        if (i > 0 && i % 5000 === 0) console.log(`  forest_grid: ${i}/${rows.length}...`)
+      }
+    })
+    batchForest(cells)
+    console.log(`Forest grid: ${cells.length} cells seeded`)
+  } else {
+    console.log('Forest grid already seeded, skipping')
   }
 
   // VACUUM

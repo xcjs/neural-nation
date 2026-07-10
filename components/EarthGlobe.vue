@@ -28,6 +28,7 @@ const props = defineProps<{
   forestCoverage?: number
   biodiversity?: number
   waterQuality?: number
+  token?: string
 }>()
 
 const container = ref<HTMLDivElement | null>(null)
@@ -263,6 +264,11 @@ function buildEnvironmentOverlay(): void {
       // Forest density data not available — skip forest overlay
     })
 
+  // Fetch per-game forest grid (location-specific depletion)
+  if (props.token) {
+    updateForestGrid()
+  }
+
   // --- Water: earth base sphere IS the ocean ---
   updateEarthTint()
 
@@ -301,6 +307,34 @@ function buildEnvironmentOverlay(): void {
   })
   pollutionMesh = new THREE.Mesh(hazeGeo, hazeMat)
   scene.add(pollutionMesh)
+}
+
+const FOREST_TEX_W = 720
+const FOREST_TEX_H = 360
+
+async function updateForestGrid(): Promise<void> {
+  if (!props.token || !forestTexture) return
+  try {
+    const res = await fetch(`/api/game/forest-grid?token=${props.token}&minDensity=0.01`)
+    const data = await res.json() as { cells: [number, number, number][] }
+    // Rebuild texture from grid cells
+    const rgba = forestTexture.image.data as Uint8Array
+    rgba.fill(0)
+    for (const [latIdx, lonIdx, density] of data.cells) {
+      const x = lonIdx
+      const y = latIdx
+      if (x < 0 || x >= FOREST_TEX_W || y < 0 || y >= FOREST_TEX_H) continue
+      const i = y * FOREST_TEX_W + x
+      const d = Math.max(0, Math.min(1, density))
+      rgba[i * 4] = Math.round(20 + (1 - d) * 40)
+      rgba[i * 4 + 1] = Math.round(80 + d * 120)
+      rgba[i * 4 + 2] = Math.round(20 + d * 30)
+      rgba[i * 4 + 3] = Math.round(d * 180)
+    }
+    forestTexture.needsUpdate = true
+  } catch {
+    // API not available — keep static texture
+  }
 }
 
 function updateEarthTint(): void {
@@ -1078,6 +1112,8 @@ watch(() => [props.pollutionLevel, props.forestCoverage, props.biodiversity, pro
   }
   // Earth tint reflects water quality + overall health
   updateEarthTint()
+  // Fetch updated forest grid (location-specific depletion)
+  updateForestGrid()
 })
 
 onMounted(() => {

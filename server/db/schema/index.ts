@@ -4,7 +4,7 @@ import { facilities, facilityBuffers } from './facility'
 import { transports } from './transport'
 import { terrain, terrainModifications } from './terrain'
 import { powerLines, batteryBanks } from './power'
-import { humanity, environment, incidents } from './humanity'
+import { humanity, environment, incidents, forestGrid } from './humanity'
 import { spaceFacilities, spaceMissions } from './space'
 import { actions } from './action'
 import { events } from './event'
@@ -33,6 +33,7 @@ export const schema = {
   batteryBanks,
   humanity,
   environment,
+  forestGrid,
   incidents,
   spaceFacilities,
   spaceMissions,
@@ -62,6 +63,7 @@ export {
   batteryBanks,
   humanity,
   environment,
+  forestGrid,
   incidents,
   spaceFacilities,
   spaceMissions,

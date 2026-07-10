@@ -43,6 +43,55 @@ function climateToForestDensity(code: string): number {
   return 0.3
 }
 
+export interface ForestGridCell {
+  latIndex: number
+  lonIndex: number
+  density: number
+  maxDensity: number
+}
+
+export function getForestGridCells(): ForestGridCell[] {
+  if (!existsSync(KG_PATH)) {
+    throw new Error(`Köppen-Geiger data not found at ${KG_PATH}. Run 'npm run fetch:data' first.`)
+  }
+
+  const text = readFileSync(KG_PATH, 'utf-8')
+  const lines = text.trim().split('\n')
+  const dataLines = lines.filter((l) => !l.startsWith('Lat') && l.trim().length > 0)
+
+  const grid = new Float32Array(CANVAS_W * CANVAS_H).fill(0)
+
+  for (const line of dataLines) {
+    const parts = line.trim().split(/\s+/)
+    if (parts.length < 3) continue
+    const lat = parseFloat(parts[0]!)
+    const lon = parseFloat(parts[1]!)
+    const cls = parts[2]!.trim()
+    if (isNaN(lat) || isNaN(lon)) continue
+
+    const density = climateToForestDensity(cls)
+    if (density <= 0) continue
+
+    const x = Math.floor(((lon + 180) / 360) * CANVAS_W)
+    const y = Math.floor(((90 - lat) / 180) * CANVAS_H)
+    if (x < 0 || x >= CANVAS_W || y < 0 || y >= CANVAS_H) continue
+
+    const idx = y * CANVAS_W + x
+    if (density > grid[idx]!) grid[idx] = density
+  }
+
+  const cells: ForestGridCell[] = []
+  for (let y = 0; y < CANVAS_H; y++) {
+    for (let x = 0; x < CANVAS_W; x++) {
+      const d = grid[y * CANVAS_W + x]!
+      if (d > 0) {
+        cells.push({ latIndex: y, lonIndex: x, density: d, maxDensity: d })
+      }
+    }
+  }
+  return cells
+}
+
 export function buildForestDensityData(outputPath?: string): ClimateTextureResult {
   if (!existsSync(KG_PATH)) {
     throw new Error(`Köppen-Geiger data not found at ${KG_PATH}. Run 'npm run fetch:data' first.`)
