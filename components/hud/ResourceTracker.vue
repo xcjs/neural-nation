@@ -41,6 +41,7 @@ import { ref } from 'vue'
 import { useResourcesStore } from '~/stores/resources'
 import { useUiStore } from '~/stores/ui'
 import { ResourceCategory } from '~/lib/types/resource'
+import { ELEMENT_BY_SYMBOL } from '~/lib/constants/elements'
 
 const resources = useResourcesStore()
 const ui = useUiStore()
@@ -54,11 +55,20 @@ const categories = [
   { key: ResourceCategory.Manufactured, label: 'MANUFACTURED', color: 'text-purple-400' },
 ]
 
+function atomicNumber(resourceKey: string): number {
+  const el = ELEMENT_BY_SYMBOL.get(resourceKey.charAt(0).toUpperCase() + resourceKey.slice(1).toLowerCase())
+  return el?.atomicNumber ?? 999
+}
+
 function filtered(cat: ResourceCategory) {
   const q = search.value.toLowerCase()
-  return resources.byCategory(cat).filter(r =>
+  const rows = resources.byCategory(cat).filter(r =>
     !q || r.name.toLowerCase().includes(q) || r.resourceKey.toLowerCase().includes(q)
   )
+  if (cat === ResourceCategory.Element) {
+    rows.sort((a, b) => atomicNumber(a.resourceKey) - atomicNumber(b.resourceKey))
+  }
+  return rows
 }
 
 function toggle(key: string) {
