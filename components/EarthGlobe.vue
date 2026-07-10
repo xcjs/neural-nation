@@ -53,8 +53,9 @@ let terrainModGroup: THREE.Group
 let composer: EffectComposer | null = null
 let bloomPass: UnrealBloomPass | null = null
 let pollutionMesh: THREE.Mesh | null = null
-let forestPoints: THREE.Points | null = null
-let forestUniforms: { uForest: { value: number } } | null = null
+let forestMesh: THREE.Mesh | null = null
+let forestMaterial: THREE.MeshBasicMaterial | null = null
+let forestTexture: THREE.DataTexture | null = null
 
 const EARTH_RADIUS = 1
 
@@ -203,9 +204,9 @@ function init() {
     composer.addPass(new RenderPass(scene, camera))
     bloomPass = new UnrealBloomPass(
       new THREE.Vector2(w, h),
-      props.quality === 'high' ? 0.8 : 0.5, // strength
-      0.4, // radius
-      0.2, // threshold
+      props.quality === 'high' ? 0.6 : 0.4, // strength
+      0.3, // radius
+      0.6, // threshold — only bloom bright elements (markers, arcs), not forests
     )
     composer.addPass(bloomPass)
   }
@@ -214,69 +215,52 @@ function init() {
 }
 
 function buildEnvironmentOverlay(): void {
-  // --- Forest: vector points distributed by terrain data (land polygons) ---
-  if (forestPoints) {
-    scene.remove(forestPoints)
-    forestPoints.geometry.dispose()
-    ;(forestPoints.material as THREE.Material).dispose()
+  // --- Forest: climate-data-driven DataTexture (Köppen-Geiger forest density) ---
+  if (forestMesh) {
+    scene.remove(forestMesh)
+    forestMesh.geometry.dispose()
+    forestMaterial?.dispose()
+    forestTexture?.dispose()
   }
 
-  const forestPositions: number[] = []
-  const forestSizes: number[] = []
-
-  const geojson = feature(landTopo as never, (landTopo as never as { objects: { land: unknown } }).objects.land as never) as unknown as { type: string; features: Array<{ geometry: { type: string; coordinates: number[][] | number[][][] | number[][][][] } }> }
-
-  for (const feat of geojson.features) {
-    const geom = feat.geometry
-    if (geom.type === 'Polygon') {
-      for (const ring of geom.coordinates as number[][][]) {
-        sampleForestPoints(ring, forestPositions, forestSizes)
+  // Fetch forest density data (pre-built from Köppen-Geiger climate classification)
+  fetch('/data/geological/forest-density.json')
+    .then((res) => res.json() as Promise<{ width: number; height: number; data: number[] }>)
+    .then((result) => {
+      const { width: tw, height: th, data } = result
+      // Convert density values (0-1) to RGBA pixel data
+      const rgba = new Uint8Array(tw * th * 4)
+      for (let i = 0; i < data.length; i++) {
+        const d = data[i]!
+        if (d <= 0) {
+          rgba[i * 4] = 0; rgba[i * 4 + 1] = 0; rgba[i * 4 + 2] = 0; rgba[i * 4 + 3] = 0
+        } else {
+          rgba[i * 4] = Math.round(20 + (1 - d) * 40)      // R
+          rgba[i * 4 + 1] = Math.round(80 + d * 120)       // G
+          rgba[i * 4 + 2] = Math.round(20 + d * 30)        // B
+          rgba[i * 4 + 3] = Math.round(d * 180)            // A
+        }
       }
-    } else if (geom.type === 'MultiPolygon') {
-      for (const polygon of geom.coordinates as number[][][][]) {
-        // Use outer ring only for sampling
-        sampleForestPoints(polygon[0]!, forestPositions, forestSizes)
-      }
-    }
-  }
 
-  const forestGeo = new THREE.BufferGeometry()
-  forestGeo.setAttribute('position', new THREE.Float32BufferAttribute(forestPositions, 3))
-  forestGeo.setAttribute('aSize', new THREE.Float32BufferAttribute(forestSizes, 1))
+      forestTexture = new THREE.DataTexture(rgba, tw, th, THREE.RGBAFormat)
+      forestTexture.needsUpdate = true
+      forestTexture.wrapS = THREE.RepeatWrapping
+      forestTexture.wrapT = THREE.ClampToEdgeWrapping
 
-  forestUniforms = {
-    uForest: { value: (props.forestCoverage ?? 100) / 100 },
-  }
-
-  const forestMat = new THREE.ShaderMaterial({
-    uniforms: forestUniforms,
-    vertexShader: `
-      attribute float aSize;
-      uniform float uForest;
-      varying float vForest;
-      void main() {
-        vForest = uForest;
-        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = aSize * (0.3 + uForest * 0.7) * (300.0 / -mvPosition.z);
-        gl_Position = projectionMatrix * mvPosition;
-      }
-    `,
-    fragmentShader: `
-      varying float vForest;
-      void main() {
-        float d = length(gl_PointCoord - vec2(0.5));
-        if (d > 0.5) discard;
-        float alpha = (1.0 - d * 2.0) * (0.4 + vForest * 0.4);
-        vec3 color = mix(vec3(0.2, 0.15, 0.05), vec3(0.1, 0.5, 0.15), vForest);
-        gl_FragColor = vec4(color, alpha);
-      }
-    `,
-    transparent: true,
-    depthWrite: false,
-  })
-
-  forestPoints = new THREE.Points(forestGeo, forestMat)
-  scene.add(forestPoints)
+      // Sphere at r=1.001 (below coastlines at 1.002)
+      const forestGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.001, 64, 32)
+      forestMaterial = new THREE.MeshBasicMaterial({
+        map: forestTexture,
+        transparent: true,
+        opacity: 0.15 + ((props.forestCoverage ?? 100) / 100) * 0.25,
+        depthWrite: false,
+      })
+      forestMesh = new THREE.Mesh(forestGeo, forestMaterial)
+      scene.add(forestMesh)
+    })
+    .catch(() => {
+      // Forest density data not available — skip forest overlay
+    })
 
   // --- Water: earth base sphere IS the ocean ---
   updateEarthTint()
@@ -316,46 +300,6 @@ function buildEnvironmentOverlay(): void {
   })
   pollutionMesh = new THREE.Mesh(hazeGeo, hazeMat)
   scene.add(pollutionMesh)
-}
-
-function sampleForestPoints(ring: number[][], positions: number[], sizes: number[]): void {
-  if (ring.length < 3) return
-
-  // Bounding box
-  let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity
-  for (const [lon, lat] of ring) {
-    if (lon < minLon) minLon = lon
-    if (lon > maxLon) maxLon = lon
-    if (lat < minLat) minLat = lat
-    if (lat > maxLat) maxLat = lat
-  }
-
-  // Sample on a 0.5° grid — dense enough for visual, ~720x360 max
-  const step = 0.5
-  for (let lat = minLat; lat <= maxLat; lat += step) {
-    // Forests grow between -60° and +70° latitude, denser near equator
-    if (lat < -60 || lat > 70) continue
-    const latFactor = 1 - Math.abs(lat) / 70 // 1.0 at equator, 0 at ±70°
-    for (let lon = minLon; lon <= maxLon; lon += step) {
-      if (!pointInRing(lon, lat, ring)) continue
-      const pos = latLonToVec3(lat, lon, EARTH_RADIUS * 1.002)
-      positions.push(pos.x, pos.y, pos.z)
-      // Size varies by latitude (tropics = bigger forests) — terrain proxy
-      sizes.push(2 + latFactor * 4)
-    }
-  }
-}
-
-function pointInRing(lon: number, lat: number, ring: number[][]): boolean {
-  let inside = false
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [xi, yi] = ring[i]!
-    const [xj, yj] = ring[j]!
-    if (((yi > lat) !== (yj > lat)) && (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
-      inside = !inside
-    }
-  }
-  return inside
 }
 
 function updateEarthTint(): void {
@@ -1069,7 +1013,7 @@ function animate() {
   particleGroup.rotation.y += 0.0005
   terrainModGroup.rotation.y += 0.0005
   if (pollutionMesh) pollutionMesh.rotation.y += 0.0005
-  if (forestPoints) forestPoints.rotation.y += 0.0005
+  if (forestMesh) forestMesh.rotation.y += 0.0005
 
   // Moon orbit
   // Pulse markers (handle LOD children)
@@ -1122,9 +1066,9 @@ watch(() => props.transports, updateMarkers, { deep: true })
 watch(() => props.terrainModifications, updateMarkers, { deep: true })
 watch(() => [props.pollutionLevel, props.forestCoverage, props.biodiversity, props.waterQuality], () => {
   const forest = (props.forestCoverage ?? 100) / 100
-  // Update forest point sizes via shader uniform (shrinks as wood collected, grows as planted)
-  if (forestUniforms) {
-    forestUniforms.uForest.value = forest
+  // Forest texture opacity scales with coverage (shrinks as wood collected, grows as planted)
+  if (forestMaterial) {
+    forestMaterial.opacity = 0.1 + forest * 0.3
   }
   // Update pollution haze shader uniform
   if (pollutionMesh) {

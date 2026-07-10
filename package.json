@@ -21,9 +21,10 @@
     "db:studio": "drizzle-kit studio",
     "build:template": "tsx scripts/build-template.ts",
     "fetch:data": "tsx scripts/fetch-geological-data.ts",
+    "build:climate": "tsx scripts/build-climate-texture.ts",
     "db:seed-terrain": "tsx scripts/seed-terrain.ts",
     "db:seed-deposits": "tsx scripts/seed-deposits.ts",
-    "db:rebuild": "node -e \"require('fs').rmSync('data/games/_template.db',{force:true})\" && tsx scripts/build-template.ts"
+    "db:rebuild": "node -e \"require('fs').rmSync('data/games/_template.db',{force:true})\" && tsx scripts/build-climate-texture.ts && tsx scripts/build-template.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

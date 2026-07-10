@@ -49,6 +49,28 @@ async function main() {
   // Crustal abundance — bundled in lib/constants/elements.ts (already present)
   console.log('  Crustal abundance: bundled in lib/constants/elements.ts')
 
+  // Köppen-Geiger climate classification — forest density mapping
+  const kgUrl = 'https://koeppen-geiger.vu-wien.ac.at/data/Koeppen-Geiger-ASCII.txt'
+  const kgPath = join(geoDir, 'Koeppen-Geiger-ASCII.txt')
+  if (!existsSync(kgPath)) {
+    console.log('  Downloading Köppen-Geiger climate classification...')
+    try {
+      const res = await fetch(kgUrl)
+      if (res.ok) {
+        const text = await res.text()
+        const { writeFile } = await import('node:fs/promises')
+        await writeFile(kgPath, text, 'utf-8')
+        console.log('  Köppen-Geiger downloaded:', kgPath)
+      } else {
+        console.log('  Köppen-Geiger download failed (HTTP', res.status, ')')
+      }
+    } catch (e) {
+      console.log('  Köppen-Geiger download error:', e instanceof Error ? e.message : 'unknown')
+    }
+  } else {
+    console.log('  Köppen-Geiger already downloaded')
+  }
+
   console.log('\nDone. Some datasets may require manual download.')
 }
 
