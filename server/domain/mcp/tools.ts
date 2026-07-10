@@ -72,7 +72,7 @@ export const MCP_TOOLS: McpToolDef[] = [
   // Facility tools
   {
     name: 'build_facility',
-    description: 'Build a new facility. Facility starts in UnderConstruction status. Construction is a recipe (consumes materials).',
+    description: 'Build a new facility. Facility starts in UnderConstruction status. Construction is a recipe (consumes materials). The footprint polygon must not overlap any existing facility footprint.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -80,8 +80,20 @@ export const MCP_TOOLS: McpToolDef[] = [
         name: { type: 'string', description: 'Human-readable facility name' },
         lat: { type: 'number' },
         lon: { type: 'number' },
+        footprint: {
+          type: 'array',
+          description: 'Polygon defining the facility shape on the map. Array of {lat, lon} points forming a closed polygon (minimum 3 points). Must not overlap any existing facility.',
+          items: {
+            type: 'object',
+            properties: {
+              lat: { type: 'number' },
+              lon: { type: 'number' },
+            },
+            required: ['lat', 'lon'],
+          },
+        },
       },
-      required: ['type', 'name', 'lat', 'lon'],
+      required: ['type', 'name', 'lat', 'lon', 'footprint'],
     },
   },
   {

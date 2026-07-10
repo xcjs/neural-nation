@@ -109,6 +109,65 @@ function checkAndConsumeConstructionCosts(
   }
 }
 
+type GeoPoint = { lat: number; lon: number }
+
+function safeParseFootprint(json: string): GeoPoint[] | null {
+  try {
+    const parsed = JSON.parse(json)
+    if (Array.isArray(parsed) && parsed.length >= 3) return parsed
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+function segmentsIntersect(p1: GeoPoint, p2: GeoPoint, p3: GeoPoint, p4: GeoPoint): boolean {
+  const d1 = cross(p3, p4, p1)
+  const d2 = cross(p3, p4, p2)
+  const d3 = cross(p1, p2, p3)
+  const d4 = cross(p1, p2, p4)
+  if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
+    return true
+  }
+  return false
+}
+
+function cross(a: GeoPoint, b: GeoPoint, c: GeoPoint): number {
+  return (b.lon - a.lon) * (c.lat - a.lat) - (b.lat - a.lat) * (c.lon - a.lon)
+}
+
+function pointInPolygon(point: GeoPoint, polygon: GeoPoint[]): boolean {
+  let inside = false
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const pi = polygon[i]!
+    const pj = polygon[j]!
+    if ((pi.lat > point.lat) !== (pj.lat > point.lat) &&
+      point.lon < ((pj.lon - pi.lon) * (point.lat - pi.lat)) / (pj.lat - pi.lat) + pi.lon) {
+      inside = !inside
+    }
+  }
+  return inside
+}
+
+function polygonsIntersect(a: GeoPoint[], b: GeoPoint[]): boolean {
+  for (let i = 0; i < a.length; i++) {
+    const a1 = a[i]!
+    const a2 = a[(i + 1) % a.length]!
+    for (let j = 0; j < b.length; j++) {
+      const b1 = b[j]!
+      const b2 = b[(j + 1) % b.length]!
+      if (segmentsIntersect(a1, a2, b1, b2)) return true
+    }
+  }
+  for (const p of a) {
+    if (pointInPolygon(p, b)) return true
+  }
+  for (const p of b) {
+    if (pointInPolygon(p, a)) return true
+  }
+  return false
+}
+
 export function buildFacility(
   token: string,
   params: {
@@ -116,6 +175,7 @@ export function buildFacility(
     name: string
     lat: number
     lon: number
+    footprint?: Array<{ lat: number; lon: number }>
   },
 ): { facilityId: number; status: string } {
   const db = createGameDb(token)
@@ -139,8 +199,31 @@ export function buildFacility(
   // (the agent must build power lines to connect them — see ADR-0014)
   const isPowerGenerating = POWER_GENERATING_TYPES.has(params.type)
 
+  // Footprint validation: required, minimum 3 points
+  if (!params.footprint || params.footprint.length < 3) {
+    throw new Error('Footprint is required: provide at least 3 {lat, lon} points forming a polygon')
+  }
+
+  // Check for overlap with existing facility footprints
+  const existingFacilities = db.select().from(schema.facilities).all()
+  for (const existing of existingFacilities) {
+    if (!existing.footprint) continue
+    let existingFootprint: GeoPoint[]
+    try {
+      existingFootprint = JSON.parse(existing.footprint)
+    } catch {
+      continue
+    }
+    if (existingFootprint.length < 3) continue
+    if (polygonsIntersect(params.footprint, existingFootprint)) {
+      throw new Error(`Facility footprint overlaps existing facility "${existing.name}" (id: ${existing.id})`)
+    }
+  }
+
   // Construction resource consumption (ADR-0007/0018)
   checkAndConsumeConstructionCosts(db, params.type)
+
+  const footprint = JSON.stringify(params.footprint)
 
   const facility = db.insert(schema.facilities).values({
     type: params.type,
@@ -157,6 +240,7 @@ export function buildFacility(
     constructionProgress: 0,
     elevation: 0,
     terrainClass: 'Plain',
+    footprint,
     createdAtTick: tick,
   }).returning().get()
 
@@ -243,6 +327,7 @@ export function getFacilityDetails(token: string, facilityId: number): FacilityD
     terrainClass: facility.terrainClass,
     constructionProgress: facility.constructionProgress,
     throughput: facility.targetOutputRate,
+    footprint: facility.footprint ? safeParseFootprint(facility.footprint) : null,
   }
 }
 
@@ -404,5 +489,6 @@ function mapToSummary(facility: typeof schema.facilities.$inferSelect): Facility
     activeRecipeId: facility.activeRecipeId,
     powerConnected: Boolean(facility.powerConnected),
     throughput: facility.throughput,
+    footprint: facility.footprint ? safeParseFootprint(facility.footprint) : null,
   }
 }

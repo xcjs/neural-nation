@@ -78,8 +78,18 @@ function dispatchTool(token: string, toolName: string, args: Record<string, unkn
     case 'search_resources':
       return searchResources(token, args as Parameters<typeof searchResources>[1])
     // Facility tools
-    case 'build_facility':
-      return buildFacility(token, { type: args.type as string, name: args.name as string, lat: args.lat as number, lon: args.lon as number })
+    case 'build_facility': {
+      const buildArgs: { type: string; name: string; lat: number; lon: number; footprint?: Array<{ lat: number; lon: number }> } = {
+        type: args.type as string,
+        name: args.name as string,
+        lat: args.lat as number,
+        lon: args.lon as number,
+      }
+      if (args.footprint) {
+        buildArgs.footprint = args.footprint as Array<{ lat: number; lon: number }>
+      }
+      return buildFacility(token, buildArgs)
+    }
     case 'demolish_facility':
       return demolishFacility(token, args.facilityId as number)
     case 'list_facilities':

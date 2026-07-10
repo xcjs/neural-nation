@@ -92,6 +92,7 @@ async function main() {
       construction_progress REAL DEFAULT 0,
       elevation REAL,
       terrain_class TEXT,
+      footprint TEXT,
       created_at_tick INTEGER
     );
 

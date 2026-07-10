@@ -64,7 +64,7 @@ describe('simulation: facility construction', () => {
   const feLon = -90.58401
 
   it('builds an Extractor and it transitions to Active after construction', () => {
-    const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Iron Mine', lat: feLat, lon: feLon })
+    const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Iron Mine', lat: feLat, lon: feLon, footprint: [{ lat: feLat, lon: feLon }, { lat: feLat + 0.01, lon: feLon }, { lat: feLat + 0.01, lon: feLon + 0.01 }, { lat: feLat, lon: feLon + 0.01 }] })
     expect(r.status).toBe('success')
     const facilityId = (r.data as { facilityId: number }).facilityId
 
@@ -87,7 +87,7 @@ describe('simulation: extractor production', () => {
   let extractorId: number
 
   beforeAll(() => {
-    const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Prod Mine', lat: feLat, lon: feLon })
+    const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Prod Mine', lat: feLat, lon: feLon, footprint: [{ lat: feLat + 0.03, lon: feLon + 0.03 }, { lat: feLat + 0.04, lon: feLon + 0.03 }, { lat: feLat + 0.04, lon: feLon + 0.04 }, { lat: feLat + 0.03, lon: feLon + 0.04 }] })
     extractorId = (r.data as { facilityId: number }).facilityId
     // Survey the area so deposits are discovered
     executeTool(token, 'survey_region', { lat: feLat, lon: feLon, radius: 3 })
@@ -135,7 +135,7 @@ describe('simulation: recipe production chain', () => {
   })
 
   it('builds a Smelter, sets iron_smelting recipe, and verifies input/output buffers', () => {
-    const r = executeTool(token, 'build_facility', { type: 'Smelter', name: 'Smelter 1', lat: 37.07, lon: -90.58 })
+    const r = executeTool(token, 'build_facility', { type: 'Smelter', name: 'Smelter 1', lat: 37.15, lon: -90.50, footprint: [{ lat: 37.15, lon: -90.50 }, { lat: 37.16, lon: -90.50 }, { lat: 37.16, lon: -90.49 }, { lat: 37.15, lon: -90.49 }] })
     expect(r.status).toBe('success')
     const smelterId = (r.data as { facilityId: number }).facilityId
 
@@ -157,7 +157,7 @@ describe('simulation: recipe production chain', () => {
   })
 
   it('produces iron when iron ore and coal are available in input buffer', () => {
-    const r = executeTool(token, 'build_facility', { type: 'Smelter', name: 'Smelter 2', lat: 37.08, lon: -90.59 })
+    const r = executeTool(token, 'build_facility', { type: 'Smelter', name: 'Smelter 2', lat: 37.17, lon: -90.50, footprint: [{ lat: 37.17, lon: -90.50 }, { lat: 37.18, lon: -90.50 }, { lat: 37.18, lon: -90.49 }, { lat: 37.17, lon: -90.49 }] })
     const smelterId = (r.data as { facilityId: number }).facilityId
     advanceTicks(3)
     expect(getFacilityById(smelterId)?.status).toBe('Active')
@@ -222,8 +222,8 @@ describe('simulation: recipe production chain', () => {
 describe('simulation: transport flows', () => {
   it('moves resources from source output buffer to destination input buffer', () => {
     // Build two facilities near each other
-    const mine = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Src Mine', lat: 37.10, lon: -90.60 })
-    const smelter = executeTool(token, 'build_facility', { type: 'Smelter', name: 'Dst Smelter', lat: 37.11, lon: -90.61 })
+    const mine = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Src Mine', lat: 37.10, lon: -90.60, footprint: [{ lat: 37.10, lon: -90.60 }, { lat: 37.11, lon: -90.60 }, { lat: 37.11, lon: -90.59 }, { lat: 37.10, lon: -90.59 }] })
+    const smelter = executeTool(token, 'build_facility', { type: 'Smelter', name: 'Dst Smelter', lat: 37.12, lon: -90.61, footprint: [{ lat: 37.12, lon: -90.61 }, { lat: 37.13, lon: -90.61 }, { lat: 37.13, lon: -90.60 }, { lat: 37.12, lon: -90.60 }] })
     const mineId = (mine.data as { facilityId: number }).facilityId
     const smelterId = (smelter.data as { facilityId: number }).facilityId
 

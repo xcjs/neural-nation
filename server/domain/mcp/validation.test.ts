@@ -20,20 +20,20 @@ afterAll(() => {
 
 describe('validation hardening', () => {
   it('rejects building a tech-gated facility type without the required tech', () => {
-    const r = executeTool(token, 'build_facility', { type: 'NuclearReactor', name: 'Reactor', lat: 40, lon: -100 })
+    const r = executeTool(token, 'build_facility', { type: 'NuclearReactor', name: 'Reactor', lat: 40, lon: -100, footprint: [{ lat: 40.01, lon: -100.01 }, { lat: 40.01, lon: -99.99 }, { lat: 39.99, lon: -99.99 }, { lat: 39.99, lon: -100.01 }] })
     expect(r.status).toBe('error')
     expect(r.errorMessage).toContain('requires tech')
     expect(r.errorMessage).toContain('nuclear_power')
   })
 
   it('rejects building a ResearchLab without precision_manufacturing tech', () => {
-    const r = executeTool(token, 'build_facility', { type: 'ResearchLab', name: 'Lab', lat: 40, lon: -100 })
+    const r = executeTool(token, 'build_facility', { type: 'ResearchLab', name: 'Lab', lat: 40, lon: -100, footprint: [{ lat: 40.01, lon: -100.01 }, { lat: 40.01, lon: -99.99 }, { lat: 39.99, lon: -99.99 }, { lat: 39.99, lon: -100.01 }] })
     expect(r.status).toBe('error')
     expect(r.errorMessage).toContain('precision_manufacturing')
   })
 
   it('allows building a tech-free facility type (Extractor)', () => {
-    const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Mine', lat: 40, lon: -100 })
+    const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Mine', lat: 40, lon: -100, footprint: [{ lat: 40.01, lon: -100.01 }, { lat: 40.01, lon: -99.99 }, { lat: 39.99, lon: -99.99 }, { lat: 39.99, lon: -100.01 }] })
     expect(r.status).toBe('success')
   })
 

@@ -71,7 +71,7 @@ describe('MCP end-to-end flow', () => {
   })
 
   it('builds an Extractor facility and advances the tick to 2', () => {
-    const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Test Mine', lat: 40, lon: -100 })
+    const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Test Mine', lat: 40, lon: -100, footprint: [{ lat: 40.01, lon: -100.01 }, { lat: 40.01, lon: -99.99 }, { lat: 39.99, lon: -99.99 }, { lat: 39.99, lon: -100.01 }] })
     expect(r.status).toBe('success')
     const data = r.data as { facilityId: number; status: string }
     expect(typeof data.facilityId).toBe('number')

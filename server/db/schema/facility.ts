@@ -16,6 +16,7 @@ export const facilities = sqliteTable('facilities', {
   constructionProgress: real('construction_progress').default(0).notNull(),
   elevation: real('elevation').notNull(),
   terrainClass: text('terrain_class').notNull(),
+  footprint: text('footprint'),
   createdAtTick: integer('created_at_tick').notNull(),
 })
 
