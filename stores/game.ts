@@ -8,6 +8,7 @@ export const useGameStore = defineStore('game', () => {
   const tick = ref<TickState>({ tickCount: 0, status: GameStatus.Active, lastTickAt: null })
   const loading = ref(false)
   const error = ref('')
+  const privateToken = ref('')
 
   async function fetchState(token: string) {
     loading.value = true
@@ -33,7 +34,8 @@ export const useGameStore = defineStore('game', () => {
     tick.value = { tickCount: 0, status: GameStatus.Active, lastTickAt: null }
     loading.value = false
     error.value = ''
+    privateToken.value = ''
   }
 
-  return { meta, tick, loading, error, fetchState, applyUpdate, reset }
+  return { meta, tick, loading, error, privateToken, fetchState, applyUpdate, reset }
 })

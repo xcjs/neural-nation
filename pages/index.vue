@@ -53,7 +53,7 @@
           Paste this URL into your LLM client (Claude Desktop, Cursor, etc.) as an MCP server.
         </p>
         <NuxtLink
-          :to="`/play?token=${created.token}`"
+          :to="`/play?token=${created.publicToken}`"
           class="inline-block mt-4 px-4 py-2 border border-cyan-400 text-cyan-300 hover:bg-cyan-900 text-sm"
         >
           ENTER GAME →
@@ -118,6 +118,7 @@ async function createGame() {
     })
     created.value = res
 
+    sessionStorage.setItem(`nn-private-${res.publicToken}`, res.token)
     const saved = JSON.parse(localStorage.getItem('neural-nation-games') || '[]')
     saved.push({ publicToken: res.publicToken, difficulty: difficulty.value })
     localStorage.setItem('neural-nation-games', JSON.stringify(saved))

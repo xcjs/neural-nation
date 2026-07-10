@@ -24,11 +24,7 @@ export const useEventsStore = defineStore('events', () => {
     loading.value = true
     try {
       const res = await $fetch<{ items: EventLogEntry[]; totalCount: number }>(
-        '/api/mcp/tools/call',
-        {
-          method: 'POST',
-          body: { token, tool: 'get_event_log', args: { limit: pageSize.value, offset: p * pageSize.value } },
-        }
+        `/api/game/events?token=${token}&limit=${pageSize.value}&offset=${p * pageSize.value}`
       )
       items.value = res.items || []
       total.value = res.totalCount || 0

@@ -27,9 +27,9 @@ import { useGameStore } from '~/stores/game'
 const game = useGameStore()
 const copiedWhich = ref('')
 const mcpUrl = computed(() => {
-  if (!game.meta) return ''
+  if (!game.meta || !game.privateToken) return ''
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  return `${origin}/mcp/sse?token=${game.meta.token}`
+  return `${origin}/api/mcp/sse?token=${game.privateToken}`
 })
 const watchUrl = computed(() => {
   if (!game.meta) return ''

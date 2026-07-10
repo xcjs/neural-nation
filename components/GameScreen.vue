@@ -201,6 +201,13 @@ onMounted(async () => {
     ui.spectatorMode = true
   }
 
+  if (!props.spectator && import.meta.client) {
+    const privateToken = sessionStorage.getItem(`nn-private-${token}`)
+    if (privateToken) {
+      game.privateToken = privateToken
+    }
+  }
+
   await game.fetchState(token)
   sse.connect()
 })
