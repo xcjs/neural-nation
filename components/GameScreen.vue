@@ -61,7 +61,7 @@
       </div>
 
       <!-- Left panel stack -->
-      <div class="absolute top-12 left-0 bottom-0 w-80 pointer-events-auto overflow-y-auto p-2 space-y-2">
+      <div class="absolute top-12 left-0 bottom-9 w-80 pointer-events-auto overflow-y-auto p-2 space-y-2">
         <ResourceTracker v-if="ui.panelVisibility.resourceTracker" />
         <EnvironmentStatus v-if="ui.panelVisibility.environmentStatus" />
         <PowerGridPanel v-if="ui.panelVisibility.powerGrid" />
@@ -69,7 +69,7 @@
       </div>
 
       <!-- Right panel stack -->
-      <div class="absolute top-12 right-0 bottom-0 w-80 pointer-events-auto overflow-y-auto p-2 space-y-2">
+      <div class="absolute top-12 right-0 bottom-9 w-80 pointer-events-auto overflow-y-auto p-2 space-y-2">
         <EventFeed v-if="ui.panelVisibility.eventFeed" />
         <ActionConsole v-if="ui.panelVisibility.actionConsole" />
         <TechTreePanel v-if="ui.panelVisibility.techTree" />
@@ -79,7 +79,7 @@
       </div>
 
       <!-- Bottom: panel toggle bar -->
-      <div class="absolute bottom-0 left-0 right-0 pointer-events-auto bg-black/80 border-t border-cyan-900/50 backdrop-blur-sm">
+      <div class="absolute bottom-0 left-0 right-0 z-20 pointer-events-auto bg-black/80 border-t border-cyan-900/50 backdrop-blur-sm">
         <div class="flex items-center justify-center gap-1 px-4 py-1 flex-wrap">
           <button
             v-for="panel in panelButtons"
