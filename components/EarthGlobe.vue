@@ -243,6 +243,7 @@ function buildEnvironmentOverlay(): void {
       }
 
       forestTexture = new THREE.DataTexture(rgba, tw, th, THREE.RGBAFormat)
+      forestTexture.flipY = true
       forestTexture.needsUpdate = true
       forestTexture.wrapS = THREE.RepeatWrapping
       forestTexture.wrapT = THREE.ClampToEdgeWrapping
