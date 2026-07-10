@@ -14,7 +14,6 @@ const POWER_GENERATING_TYPES = new Set([
 
 const FACILITY_TECH_REQUIREMENTS: Record<string, string> = {
   AdvancedFactory: 'precision_manufacturing',
-  ResearchLab: 'precision_manufacturing',
   NuclearReactor: 'nuclear_power',
   BreederReactor: 'nuclear_power',
   FusionReactor: 'fusion_power',
@@ -48,7 +47,7 @@ const CONSTRUCTION_COSTS: Record<string, ConstructionCost[]> = {
   Factory: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Concrete', quantity: 8, unit: 't' }, { resourceKey: 'Machinery', quantity: 1, unit: 't' }],
   AdvancedFactory: [{ resourceKey: 'Steel', quantity: 8, unit: 't' }, { resourceKey: 'Concrete', quantity: 10, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }, { resourceKey: 'Electronics', quantity: 1, unit: 't' }],
   ChemicalPlant: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 6, unit: 't' }, { resourceKey: 'Machinery', quantity: 1, unit: 't' }],
-  ResearchLab: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Concrete', quantity: 8, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }, { resourceKey: 'Electronics', quantity: 2, unit: 't' }],
+  ResearchLab: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Concrete', quantity: 8, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
   PowerPlant: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Concrete', quantity: 10, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
   SolarFarm: [{ resourceKey: 'Steel', quantity: 2, unit: 't' }, { resourceKey: 'Concrete', quantity: 3, unit: 't' }],
   WindFarm: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Concrete', quantity: 4, unit: 't' }],

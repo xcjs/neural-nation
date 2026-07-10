@@ -229,22 +229,27 @@ function buildEnvironmentOverlay(): void {
     .then((res) => res.json() as Promise<{ width: number; height: number; data: number[] }>)
     .then((result) => {
       const { width: tw, height: th, data } = result
-      // Convert density values (0-1) to RGBA pixel data
+      // Convert density values (0-1) to RGBA pixel data, flipping Y (row 0=lat 90 → bottom of texture)
       const rgba = new Uint8Array(tw * th * 4)
-      for (let i = 0; i < data.length; i++) {
-        const d = data[i]!
-        if (d <= 0) {
-          rgba[i * 4] = 0; rgba[i * 4 + 1] = 0; rgba[i * 4 + 2] = 0; rgba[i * 4 + 3] = 0
-        } else {
-          rgba[i * 4] = Math.round(20 + (1 - d) * 40)      // R
-          rgba[i * 4 + 1] = Math.round(80 + d * 120)       // G
-          rgba[i * 4 + 2] = Math.round(20 + d * 30)        // B
-          rgba[i * 4 + 3] = Math.round(d * 180)            // A
+      for (let y = 0; y < th; y++) {
+        for (let x = 0; x < tw; x++) {
+          const srcIdx = y * tw + x
+          const dstIdx = (th - 1 - y) * tw + x
+          const d = data[srcIdx]!
+          if (d <= 0) {
+            rgba[dstIdx * 4] = 0; rgba[dstIdx * 4 + 1] = 0; rgba[dstIdx * 4 + 2] = 0; rgba[dstIdx * 4 + 3] = 0
+          } else {
+            rgba[dstIdx * 4] = Math.round(20 + (1 - d) * 40)      // R
+            rgba[dstIdx * 4 + 1] = Math.round(80 + d * 120)       // G
+            rgba[dstIdx * 4 + 2] = Math.round(20 + d * 30)        // B
+            rgba[dstIdx * 4 + 3] = Math.round(d * 180)            // A
+          }
         }
       }
 
       forestTexture = new THREE.DataTexture(rgba, tw, th, THREE.RGBAFormat)
-      forestTexture.flipY = true
+      forestTexture.flipY = false
+      forestTexture.unpackAlignment = 1
       forestTexture.needsUpdate = true
       forestTexture.wrapS = THREE.RepeatWrapping
       forestTexture.wrapT = THREE.ClampToEdgeWrapping
@@ -322,9 +327,9 @@ async function updateForestGrid(): Promise<void> {
     rgba.fill(0)
     for (const [latIdx, lonIdx, density] of data.cells) {
       const x = lonIdx
-      const y = latIdx
-      if (x < 0 || x >= FOREST_TEX_W || y < 0 || y >= FOREST_TEX_H) continue
-      const i = y * FOREST_TEX_W + x
+      const dstY = FOREST_TEX_H - 1 - latIdx
+      if (x < 0 || x >= FOREST_TEX_W || dstY < 0 || dstY >= FOREST_TEX_H) continue
+      const i = dstY * FOREST_TEX_W + x
       const d = Math.max(0, Math.min(1, density))
       rgba[i * 4] = Math.round(20 + (1 - d) * 40)
       rgba[i * 4 + 1] = Math.round(80 + d * 120)
