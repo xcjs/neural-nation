@@ -249,7 +249,7 @@ function buildEnvironmentOverlay(): void {
       forestTexture.wrapT = THREE.ClampToEdgeWrapping
 
       // Sphere at r=1.001 (below coastlines at 1.002)
-      const forestGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.001, 360, 180)
+      const forestGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.001, 720, 360)
       forestMaterial = new THREE.MeshBasicMaterial({
         map: forestTexture,
         transparent: true,
