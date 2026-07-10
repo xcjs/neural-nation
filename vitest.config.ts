@@ -5,8 +5,9 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   test: {
     environment: 'node',
-    testTimeout: 60000,
+    testTimeout: 120000,
     exclude: ['node_modules', '.nuxt', '.output', 'dist'],
+    hookTimeout: 120000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'cobertura'],

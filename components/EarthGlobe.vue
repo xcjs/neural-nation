@@ -467,6 +467,40 @@ function onPointerDown(event: PointerEvent) {
   }
 }
 
+function buildFootprintPolygon(footprint: Array<{lat: number; lon: number}>, color: number): THREE.Group {
+  const group = new THREE.Group()
+  if (footprint.length < 3) return group
+  const r = EARTH_RADIUS * 1.002
+  const points3d = footprint.map(p => latLonToVec3(p.lat, p.lon, r))
+  const centroid = new THREE.Vector3()
+  points3d.forEach(p => centroid.add(p))
+  centroid.divideScalar(points3d.length)
+  const positions: number[] = []
+  for (let i = 0; i < points3d.length; i++) {
+    const a = points3d[i]!
+    const b = points3d[(i + 1) % points3d.length]!
+    positions.push(centroid.x, centroid.y, centroid.z)
+    positions.push(a.x, a.y, a.z)
+    positions.push(b.x, b.y, b.z)
+  }
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3))
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false })
+  const mesh = new THREE.Mesh(geo, mat)
+  group.add(mesh)
+  const outlineGeo = new THREE.BufferGeometry()
+  const outlinePoints: number[] = []
+  for (let i = 0; i <= points3d.length; i++) {
+    const p = points3d[i % points3d.length]!
+    outlinePoints.push(p.x, p.y, p.z)
+  }
+  outlineGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(outlinePoints), 3))
+  const outlineMat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9 })
+  const outline = new THREE.Line(outlineGeo, outlineMat)
+  group.add(outline)
+  return group
+}
+
 function updateMarkers() {
   while (markerGroup.children.length > 0) markerGroup.remove(markerGroup.children[0]!)
   while (transportGroup.children.length > 0) transportGroup.remove(transportGroup.children[0]!)
@@ -554,6 +588,13 @@ function updateMarkers() {
     lod.addLevel(farPoint, 5)
 
     markerGroup.add(lod)
+
+    // Footprint polygon (if facility has one)
+    if (f.footprint && f.footprint.length >= 3) {
+      const fpGroup = buildFootprintPolygon(f.footprint, color)
+      fpGroup.children.forEach(child => { child.userData.facilityId = f.id })
+      markerGroup.add(fpGroup)
+    }
 
     // Particle cloud data (only for Active facilities)
     if (f.status === 'Active') {
