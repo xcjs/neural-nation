@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { useEventsStore } from '~/stores/events'
-import { useGameStore } from '~/stores/game'
+import { useEventsStore } from '~/stores/events';
+import { useGameStore } from '~/stores/game';
 
-const events = useEventsStore()
-const game = useGameStore()
-const token = game.meta?.token || ''
+const events = useEventsStore();
+const game = useGameStore();
+const token = game.meta?.token || '';
 
 function severityColor(sev: string): string {
   switch (sev) {
-    case 'critical': return 'border-red-500 text-red-300'
-    case 'warning': return 'border-amber-500 text-amber-300'
-    case 'info': return 'border-cyan-500 text-cyan-300'
-    default: return 'border-cyan-900 text-cyan-500'
+    case 'critical': return 'border-red-500 text-red-300';
+    case 'warning': return 'border-amber-500 text-amber-300';
+    case 'info': return 'border-cyan-500 text-cyan-300';
+    default: return 'border-cyan-900 text-cyan-500';
   }
 }
 </script>

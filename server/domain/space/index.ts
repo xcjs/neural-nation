@@ -1,1 +1,1 @@
-export { assignSpaceCrew, getSpaceStatus, launchMission } from './service'
+export { assignSpaceCrew, getSpaceStatus, launchMission } from './service';

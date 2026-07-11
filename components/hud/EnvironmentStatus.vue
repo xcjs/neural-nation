@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useEnvironmentStore } from '~/stores/environment'
+import { computed } from 'vue';
+import { useEnvironmentStore } from '~/stores/environment';
 
-const env = useEnvironmentStore()
+const env = useEnvironmentStore();
 
 const metrics = computed(() => [
   {
@@ -29,7 +29,7 @@ const metrics = computed(() => [
     trend: env.state.biodiversity < 50 ? 'down' : 'stable',
     color: env.state.biodiversity < 30 ? 'text-red-400' : env.state.biodiversity < 60 ? 'text-amber-400' : 'text-green-400',
   },
-])
+]);
 </script>
 
 <template>

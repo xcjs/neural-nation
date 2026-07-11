@@ -1,4 +1,4 @@
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const facilities = sqliteTable('facilities', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -18,7 +18,7 @@ export const facilities = sqliteTable('facilities', {
   terrainClass: text('terrain_class').notNull(),
   footprint: text('footprint'),
   createdAtTick: integer('created_at_tick').notNull(),
-})
+});
 
 export const facilityBuffers = sqliteTable('facility_buffers', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -28,4 +28,4 @@ export const facilityBuffers = sqliteTable('facility_buffers', {
   capacity: real('capacity').notNull(),
   unit: text('unit').notNull(),
   direction: text('direction').notNull(),
-})
+});

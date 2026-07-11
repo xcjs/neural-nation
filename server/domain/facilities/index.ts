@@ -5,4 +5,4 @@ export {
   listFacilities,
   searchFacilities,
   setProductionTarget,
-} from './service'
+} from './service';

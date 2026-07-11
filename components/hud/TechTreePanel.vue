@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { TechBranch, TechStatus } from '~/lib/types/tech'
-import { useTechTreeStore } from '~/stores/techtree'
+import { TechBranch, TechStatus } from '~/lib/types/tech';
+import { useTechTreeStore } from '~/stores/techtree';
 
-const techtree = useTechTreeStore()
+const techtree = useTechTreeStore();
 
 function statusIcon(status: TechStatus): string {
   switch (status) {
-    case TechStatus.Completed: return '✓'
-    case TechStatus.InProgress: return '◐'
-    case TechStatus.Available: return '○'
-    case TechStatus.Locked: return '⊘'
-    default: return '?'
+    case TechStatus.Completed: return '✓';
+    case TechStatus.InProgress: return '◐';
+    case TechStatus.Available: return '○';
+    case TechStatus.Locked: return '⊘';
+    default: return '?';
   }
 }
 
 function branchColor(branch: TechBranch): string {
   switch (branch) {
-    case TechBranch.Metallurgy: return 'text-amber-400'
-    case TechBranch.Chemistry: return 'text-purple-400'
-    case TechBranch.Power: return 'text-yellow-400'
-    case TechBranch.Space: return 'text-cyan-300'
-    case TechBranch.Terraforming: return 'text-orange-400'
-    default: return 'text-cyan-500'
+    case TechBranch.Metallurgy: return 'text-amber-400';
+    case TechBranch.Chemistry: return 'text-purple-400';
+    case TechBranch.Power: return 'text-yellow-400';
+    case TechBranch.Space: return 'text-cyan-300';
+    case TechBranch.Terraforming: return 'text-orange-400';
+    default: return 'text-cyan-500';
   }
 }
 </script>

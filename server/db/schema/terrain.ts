@@ -1,4 +1,4 @@
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const terrain = sqliteTable('terrain', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -8,7 +8,7 @@ export const terrain = sqliteTable('terrain', {
   lon: real('lon').notNull(),
   elevation: real('elevation').notNull(),
   terrainClass: text('terrain_class').notNull(),
-})
+});
 
 export const terrainModifications = sqliteTable('terrain_modifications', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -20,4 +20,4 @@ export const terrainModifications = sqliteTable('terrain_modifications', {
   modifiedAtTick: integer('modified_at_tick').notNull(),
   operationId: text('operation_id').notNull(),
   reason: text('reason').notNull(),
-})
+});

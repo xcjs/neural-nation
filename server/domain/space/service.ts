@@ -1,13 +1,13 @@
-import type { SpaceFacilitySummary, SpaceMission, SpaceSummary } from '../../../lib/types/space'
-import { eq } from 'drizzle-orm'
-import { createGameDb } from '../../db/client'
-import { schema } from '../../db/schema'
+import type { SpaceFacilitySummary, SpaceMission, SpaceSummary } from '../../../lib/types/space';
+import { eq } from 'drizzle-orm';
+import { createGameDb } from '../../db/client';
+import { schema } from '../../db/schema';
 
 export function getSpaceStatus(token: string): SpaceSummary {
-  const db = createGameDb(token)
+  const db = createGameDb(token);
 
-  const facilities = db.select().from(schema.spaceFacilities).all()
-  const missions = db.select().from(schema.spaceMissions).all()
+  const facilities = db.select().from(schema.spaceFacilities).all();
+  const missions = db.select().from(schema.spaceMissions).all();
 
   const facilitySummaries: SpaceFacilitySummary[] = facilities.map(f => ({
     id: f.id,
@@ -17,7 +17,7 @@ export function getSpaceStatus(token: string): SpaceSummary {
     crewAssigned: f.crewAssigned,
     crewCapacity: f.crewCapacity,
     orbital: Boolean(f.orbital),
-  }))
+  }));
 
   const missionSummaries: SpaceMission[] = missions.map(m => ({
     id: m.id,
@@ -28,27 +28,27 @@ export function getSpaceStatus(token: string): SpaceSummary {
     returnTick: m.returnTick,
     payload: m.payload,
     facilityId: m.facilityId,
-  }))
+  }));
 
   return {
     facilities: facilitySummaries,
     missions: missionSummaries,
-  }
+  };
 }
 
 export function launchMission(
   token: string,
   params: {
-    facilityId: number
-    missionType: string
-    target: string
-    payload: string
+    facilityId: number;
+    missionType: string;
+    target: string;
+    payload: string;
   },
 ): { missionId: number } {
-  const db = createGameDb(token)
+  const db = createGameDb(token);
 
-  const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
-  const tick = meta?.tickCount || 0
+  const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get();
+  const tick = meta?.tickCount || 0;
 
   const mission = db.insert(schema.spaceMissions).values({
     type: params.missionType,
@@ -58,9 +58,9 @@ export function launchMission(
     returnTick: null,
     payload: params.payload,
     facilityId: params.facilityId,
-  }).returning().get()
+  }).returning().get();
 
-  return { missionId: mission.id }
+  return { missionId: mission.id };
 }
 
 export function assignSpaceCrew(
@@ -68,20 +68,20 @@ export function assignSpaceCrew(
   facilityId: number,
   crewCount: number,
 ): { success: boolean } {
-  const db = createGameDb(token)
+  const db = createGameDb(token);
 
   db.update(schema.spaceFacilities)
     .set({ crewAssigned: crewCount })
     .where(eq(schema.spaceFacilities.id, facilityId))
-    .run()
+    .run();
 
-  const human = db.select().from(schema.humanity).where(eq(schema.humanity.key, 'global')).get()
+  const human = db.select().from(schema.humanity).where(eq(schema.humanity.key, 'global')).get();
   if (human) {
     db.update(schema.humanity)
       .set({ assignedToSpace: human.assignedToSpace + crewCount })
       .where(eq(schema.humanity.key, 'global'))
-      .run()
+      .run();
   }
 
-  return { success: true }
+  return { success: true };
 }

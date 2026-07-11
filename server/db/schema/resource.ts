@@ -1,4 +1,4 @@
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const resources = sqliteTable('resources', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -14,7 +14,7 @@ export const resources = sqliteTable('resources', {
   surface: integer('surface').default(0).notNull(),
   depth: real('depth'),
   unit: text('unit').notNull(),
-})
+});
 
 export const stockpiles = sqliteTable('stockpiles', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -23,7 +23,7 @@ export const stockpiles = sqliteTable('stockpiles', {
   quantity: real('quantity').notNull(),
   capacity: real('capacity').notNull(),
   unit: text('unit').notNull(),
-})
+});
 
 export const surveyLog = sqliteTable('survey_log', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -33,4 +33,4 @@ export const surveyLog = sqliteTable('survey_log', {
   lon: real('lon').notNull(),
   radius: real('radius').notNull(),
   depositsFound: integer('deposits_found').notNull(),
-})
+});

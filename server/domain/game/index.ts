@@ -1,4 +1,4 @@
-export { runCleanup } from './cleanup'
+export { runCleanup } from './cleanup';
 export {
   addToRegistry,
   findRegistryEntry,
@@ -7,7 +7,7 @@ export {
   removeFromRegistry,
   saveRegistry,
   updateRegistryEntry,
-} from './registry'
-export { createGame, type CreateGameResult, getGameMeta } from './service'
-export { processTick } from './tick'
-export { generateToken, generateTokenPair } from './token'
+} from './registry';
+export { createGame, type CreateGameResult, getGameMeta } from './service';
+export { processTick } from './tick';
+export { generateToken, generateTokenPair } from './token';

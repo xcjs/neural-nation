@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { GridStatus } from '~/lib/types/power'
-import { usePowerStore } from '~/stores/power'
+import { computed } from 'vue';
+import { GridStatus } from '~/lib/types/power';
+import { usePowerStore } from '~/stores/power';
 
-const power = usePowerStore()
+const power = usePowerStore();
 
 const gridStatusColor = computed(() => {
   switch (power.grid?.status) {
-    case GridStatus.Normal: return 'text-green-400'
-    case GridStatus.Brownout: return 'text-amber-400'
-    case GridStatus.Blackout: return 'text-red-400'
-    default: return 'text-cyan-500'
+    case GridStatus.Normal: return 'text-green-400';
+    case GridStatus.Brownout: return 'text-amber-400';
+    case GridStatus.Blackout: return 'text-red-400';
+    default: return 'text-cyan-500';
   }
-})
+});
 </script>
 
 <template>

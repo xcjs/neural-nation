@@ -1,18 +1,18 @@
-import { DifficultyPreset } from '../types/game'
-import { ResourceUnit } from '../types/resource'
+import { DifficultyPreset } from '../types/game';
+import { ResourceUnit } from '../types/resource';
 
 export interface StartingResource {
-  resourceKey: string
-  min: number
-  max: number
-  unit: ResourceUnit
+  resourceKey: string;
+  min: number;
+  max: number;
+  unit: ResourceUnit;
 }
 
 export interface DifficultyConfig {
-  label: string
-  description: string
-  startingResources: StartingResource[]
-  populationRange: { min: number, max: number }
+  label: string;
+  description: string;
+  startingResources: StartingResource[];
+  populationRange: { min: number; max: number };
 }
 
 export const DifficultyConfigs: Record<DifficultyPreset, DifficultyConfig> = {
@@ -55,4 +55,4 @@ export const DifficultyConfigs: Record<DifficultyPreset, DifficultyConfig> = {
     ],
     populationRange: { min: 200, max: 500 },
   },
-}
+};

@@ -1,56 +1,56 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import EarthGlobe from '~/components/EarthGlobe.vue'
-import ActionConsole from '~/components/hud/ActionConsole.vue'
-import EnvironmentStatus from '~/components/hud/EnvironmentStatus.vue'
-import EventFeed from '~/components/hud/EventFeed.vue'
-import FacilityDetailPanel from '~/components/hud/FacilityDetailPanel.vue'
-import PowerGridPanel from '~/components/hud/PowerGridPanel.vue'
-import ResourceTracker from '~/components/hud/ResourceTracker.vue'
-import SpaceStatusPanel from '~/components/hud/SpaceStatusPanel.vue'
-import TechTreePanel from '~/components/hud/TechTreePanel.vue'
-import TerrainModsPanel from '~/components/hud/TerrainModsPanel.vue'
-import TokenManagement from '~/components/hud/TokenManagement.vue'
-import { useGameSSE } from '~/composables/useGameSSE'
-import { useActionsStore } from '~/stores/actions'
-import { useEnvironmentStore } from '~/stores/environment'
-import { useEventsStore } from '~/stores/events'
-import { useFacilitiesStore } from '~/stores/facilities'
-import { useGameStore } from '~/stores/game'
-import { usePowerStore } from '~/stores/power'
-import { useResourcesStore } from '~/stores/resources'
-import { useSpaceStore } from '~/stores/space'
-import { useTechTreeStore } from '~/stores/techtree'
-import { useTerrainStore } from '~/stores/terrain'
-import { useTransportsStore } from '~/stores/transports'
-import { type PanelId, useUiStore } from '~/stores/ui'
+import { computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+import EarthGlobe from '~/components/EarthGlobe.vue';
+import ActionConsole from '~/components/hud/ActionConsole.vue';
+import EnvironmentStatus from '~/components/hud/EnvironmentStatus.vue';
+import EventFeed from '~/components/hud/EventFeed.vue';
+import FacilityDetailPanel from '~/components/hud/FacilityDetailPanel.vue';
+import PowerGridPanel from '~/components/hud/PowerGridPanel.vue';
+import ResourceTracker from '~/components/hud/ResourceTracker.vue';
+import SpaceStatusPanel from '~/components/hud/SpaceStatusPanel.vue';
+import TechTreePanel from '~/components/hud/TechTreePanel.vue';
+import TerrainModsPanel from '~/components/hud/TerrainModsPanel.vue';
+import TokenManagement from '~/components/hud/TokenManagement.vue';
+import { useGameSSE } from '~/composables/useGameSSE';
+import { useActionsStore } from '~/stores/actions';
+import { useEnvironmentStore } from '~/stores/environment';
+import { useEventsStore } from '~/stores/events';
+import { useFacilitiesStore } from '~/stores/facilities';
+import { useGameStore } from '~/stores/game';
+import { usePowerStore } from '~/stores/power';
+import { useResourcesStore } from '~/stores/resources';
+import { useSpaceStore } from '~/stores/space';
+import { useTechTreeStore } from '~/stores/techtree';
+import { useTerrainStore } from '~/stores/terrain';
+import { useTransportsStore } from '~/stores/transports';
+import { type PanelId, useUiStore } from '~/stores/ui';
 
-const props = defineProps<{ spectator?: boolean, token?: string }>()
+const props = defineProps<{ spectator?: boolean; token?: string }>();
 
-const router = useRouter()
-const token = props.token || ''
+const router = useRouter();
+const token = props.token || '';
 
 if (!token && import.meta.client) {
-  router.push('/')
+  router.push('/');
 }
 
-const game = useGameStore()
-const resources = useResourcesStore()
-const facilities = useFacilitiesStore()
-const transports = useTransportsStore()
-const events = useEventsStore()
-const actions = useActionsStore()
-const techtree = useTechTreeStore()
-const environment = useEnvironmentStore()
-const terrain = useTerrainStore()
-const power = usePowerStore()
-const space = useSpaceStore()
-const ui = useUiStore()
+const game = useGameStore();
+const resources = useResourcesStore();
+const facilities = useFacilitiesStore();
+const transports = useTransportsStore();
+const events = useEventsStore();
+const actions = useActionsStore();
+const techtree = useTechTreeStore();
+const environment = useEnvironmentStore();
+const terrain = useTerrainStore();
+const power = usePowerStore();
+const space = useSpaceStore();
+const ui = useUiStore();
 
-const sse = useGameSSE(token)
+const sse = useGameSSE(token);
 
-const panelButtons: Array<{ id: PanelId, label: string }> = [
+const panelButtons: Array<{ id: PanelId; label: string }> = [
   { id: 'resourceTracker', label: 'RESOURCES' },
   { id: 'environmentStatus', label: 'ENVIRONMENT' },
   { id: 'eventFeed', label: 'EVENTS' },
@@ -61,58 +61,58 @@ const panelButtons: Array<{ id: PanelId, label: string }> = [
   { id: 'spaceStatus', label: 'SPACE' },
   { id: 'terrainMods', label: 'TERRAIN' },
   { id: 'tokenManagement', label: 'MCP' },
-]
+];
 
 const statusColor = computed(() => {
   switch (game.tick.status) {
-    case 'Active': return 'text-green-400'
-    case 'Paused': return 'text-yellow-400'
-    case 'GameOver': return 'text-red-400'
-    default: return 'text-cyan-500'
+    case 'Active': return 'text-green-400';
+    case 'Paused': return 'text-yellow-400';
+    case 'GameOver': return 'text-red-400';
+    default: return 'text-cyan-500';
   }
-})
+});
 
 const connectionDot = computed(() => {
   switch (ui.connectionStatus) {
-    case 'connected': return 'bg-green-400'
-    case 'reconnecting': return 'bg-yellow-400 animate-pulse'
-    default: return 'bg-red-400'
+    case 'connected': return 'bg-green-400';
+    case 'reconnecting': return 'bg-yellow-400 animate-pulse';
+    default: return 'bg-red-400';
   }
-})
+});
 
 onMounted(async () => {
-  ui.detectMobile()
-  ui.reset()
-  game.reset()
-  resources.reset()
-  facilities.reset()
-  transports.reset()
-  events.reset()
-  actions.reset()
-  techtree.reset()
-  environment.reset()
-  terrain.reset()
-  power.reset()
-  space.reset()
+  ui.detectMobile();
+  ui.reset();
+  game.reset();
+  resources.reset();
+  facilities.reset();
+  transports.reset();
+  events.reset();
+  actions.reset();
+  techtree.reset();
+  environment.reset();
+  terrain.reset();
+  power.reset();
+  space.reset();
 
   if (props.spectator) {
-    ui.spectatorMode = true
+    ui.spectatorMode = true;
   }
 
   if (!props.spectator && import.meta.client) {
-    const privateToken = sessionStorage.getItem(`nn-private-${token}`)
+    const privateToken = sessionStorage.getItem(`nn-private-${token}`);
     if (privateToken) {
-      game.privateToken = privateToken
+      game.privateToken = privateToken;
     }
   }
 
-  await game.fetchState(token)
-  sse.connect()
-})
+  await game.fetchState(token);
+  sse.connect();
+});
 
 onUnmounted(() => {
-  sse.disconnect()
-})
+  sse.disconnect();
+});
 </script>
 
 <template>

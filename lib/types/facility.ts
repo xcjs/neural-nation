@@ -51,43 +51,43 @@ export enum FacilityStatus {
 }
 
 export interface FacilitySummary {
-  id: number
-  type: FacilityType
-  name: string
-  lat: number
-  lon: number
-  status: FacilityStatus
-  techRequired: string | null
-  activeRecipeId: string | null
-  powerConnected: boolean
-  throughput: number
-  footprint: Array<{ lat: number, lon: number }> | null
+  id: number;
+  type: FacilityType;
+  name: string;
+  lat: number;
+  lon: number;
+  status: FacilityStatus;
+  techRequired: string | null;
+  activeRecipeId: string | null;
+  powerConnected: boolean;
+  throughput: number;
+  footprint: Array<{ lat: number; lon: number }> | null;
 }
 
 export interface FacilityDetail {
-  id: number
-  type: FacilityType
-  name: string
-  lat: number
-  lon: number
-  status: FacilityStatus
-  techRequired: string | null
-  activeRecipeId: string | null
-  targetOutputRate: number
-  inputs: FacilityBufferEntry[]
-  outputs: FacilityBufferEntry[]
-  powerConsumption: number
-  powerConnected: boolean
-  elevation: number
-  terrainClass: string
-  constructionProgress: number
-  throughput: number
-  footprint: Array<{ lat: number, lon: number }> | null
+  id: number;
+  type: FacilityType;
+  name: string;
+  lat: number;
+  lon: number;
+  status: FacilityStatus;
+  techRequired: string | null;
+  activeRecipeId: string | null;
+  targetOutputRate: number;
+  inputs: FacilityBufferEntry[];
+  outputs: FacilityBufferEntry[];
+  powerConsumption: number;
+  powerConnected: boolean;
+  elevation: number;
+  terrainClass: string;
+  constructionProgress: number;
+  throughput: number;
+  footprint: Array<{ lat: number; lon: number }> | null;
 }
 
 export interface FacilityBufferEntry {
-  resourceKey: string
-  quantity: number
-  capacity: number
-  unit: string
+  resourceKey: string;
+  quantity: number;
+  capacity: number;
+  unit: string;
 }

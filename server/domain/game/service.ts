@@ -1,36 +1,36 @@
-import type { DifficultyPreset, RegistryEntry } from '../../../lib/types/game'
-import { copyFileSync, existsSync, renameSync, unlinkSync } from 'node:fs'
-import process from 'node:process'
-import { eq } from 'drizzle-orm'
-import { DifficultyConfigs } from '../../../lib/constants/difficulty'
-import { GameStatus } from '../../../lib/types/game'
-import { closeGameDb, createGameDb, getGameDbPath, getTemplateDbPath } from '../../db/client'
-import { schema } from '../../db/schema'
-import { addToRegistry, ensureDataDir, findRegistryEntry, removeFromRegistry, updateRegistryEntry } from './registry'
-import { generateTokenPair } from './token'
+import type { DifficultyPreset, RegistryEntry } from '../../../lib/types/game';
+import { copyFileSync, existsSync, renameSync, unlinkSync } from 'node:fs';
+import process from 'node:process';
+import { eq } from 'drizzle-orm';
+import { DifficultyConfigs } from '../../../lib/constants/difficulty';
+import { GameStatus } from '../../../lib/types/game';
+import { closeGameDb, createGameDb, getGameDbPath, getTemplateDbPath } from '../../db/client';
+import { schema } from '../../db/schema';
+import { addToRegistry, ensureDataDir, findRegistryEntry, removeFromRegistry, updateRegistryEntry } from './registry';
+import { generateTokenPair } from './token';
 
 export interface CreateGameResult {
-  token: string
-  publicToken: string
-  mcpUrl: string
+  token: string;
+  publicToken: string;
+  mcpUrl: string;
 }
 
 export function createGame(difficulty: DifficultyPreset): CreateGameResult {
-  const { token, publicToken } = generateTokenPair()
+  const { token, publicToken } = generateTokenPair();
 
-  ensureDataDir()
+  ensureDataDir();
 
-  const templatePath = getTemplateDbPath()
+  const templatePath = getTemplateDbPath();
   if (!existsSync(templatePath)) {
-    throw new Error('Template database not found. Run build-template script first.')
+    throw new Error('Template database not found. Run build-template script first.');
   }
 
-  const gameDbPath = getGameDbPath(token)
-  copyFileSync(templatePath, gameDbPath)
+  const gameDbPath = getGameDbPath(token);
+  copyFileSync(templatePath, gameDbPath);
 
-  const db = createGameDb(token)
+  const db = createGameDb(token);
 
-  const now = new Date().toISOString()
+  const now = new Date().toISOString();
 
   db.insert(schema.meta).values({
     key: 'game',
@@ -43,10 +43,10 @@ export function createGame(difficulty: DifficultyPreset): CreateGameResult {
     status: 'Active',
     difficulty,
     cleanupEligibleAt: null,
-  }).run()
+  }).run();
 
-  seedStartingResources(db, difficulty)
-  seedStartingPopulation(db, difficulty)
+  seedStartingResources(db, difficulty);
+  seedStartingPopulation(db, difficulty);
 
   const entry: RegistryEntry = {
     token,
@@ -55,42 +55,42 @@ export function createGame(difficulty: DifficultyPreset): CreateGameResult {
     lastActive: now,
     status: GameStatus.Active,
     cleanupEligibleAt: null,
-  }
-  addToRegistry(entry)
+  };
+  addToRegistry(entry);
 
-  const mcpUrl = buildMcpUrl(token)
+  const mcpUrl = buildMcpUrl(token);
 
-  return { token, publicToken, mcpUrl }
+  return { token, publicToken, mcpUrl };
 }
 
 function buildMcpUrl(token: string): string {
-  const host = process.env.HOST || 'localhost'
-  const port = process.env.PORT || '3000'
-  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http'
+  const host = process.env.HOST || 'localhost';
+  const port = process.env.PORT || '3000';
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
 
   if (process.env.NODE_ENV === 'production') {
-    const domain = process.env.PUBLIC_DOMAIN || 'play.neuralnation.app'
-    return `https://${domain}/api/mcp/sse?token=${token}`
+    const domain = process.env.PUBLIC_DOMAIN || 'play.neuralnation.app';
+    return `https://${domain}/api/mcp/sse?token=${token}`;
   }
 
-  return `${protocol}://${host}:${port}/api/mcp/sse?token=${token}`
+  return `${protocol}://${host}:${port}/api/mcp/sse?token=${token}`;
 }
 
 function seedStartingResources(
   db: ReturnType<typeof createGameDb>,
   difficulty: DifficultyPreset,
 ): void {
-  const config = DifficultyConfigs[difficulty]
+  const config = DifficultyConfigs[difficulty];
 
   for (const resource of config.startingResources) {
-    const quantity = randomInRange(resource.min, resource.max)
+    const quantity = randomInRange(resource.min, resource.max);
     db.insert(schema.stockpiles).values({
       resourceKey: resource.resourceKey,
       facilityId: null,
       quantity,
       capacity: quantity * 10,
       unit: resource.unit,
-    }).run()
+    }).run();
   }
 }
 
@@ -98,8 +98,8 @@ function seedStartingPopulation(
   db: ReturnType<typeof createGameDb>,
   difficulty: DifficultyPreset,
 ): void {
-  const config = DifficultyConfigs[difficulty]
-  const population = randomInRange(config.populationRange.min, config.populationRange.max)
+  const config = DifficultyConfigs[difficulty];
+  const population = randomInRange(config.populationRange.min, config.populationRange.max);
 
   db.insert(schema.humanity).values({
     key: 'global',
@@ -109,7 +109,7 @@ function seedStartingPopulation(
     foodSatisfaction: 100,
     energySatisfaction: 100,
     assignedToSpace: 0,
-  }).run()
+  }).run();
 
   db.insert(schema.environment).values({
     key: 'global',
@@ -117,82 +117,82 @@ function seedStartingPopulation(
     forestCoverage: 100,
     waterQuality: 100,
     biodiversity: 100,
-  }).run()
+  }).run();
 }
 
 function randomInRange(min: number, max: number): number {
-  return Math.round(min + Math.random() * (max - min))
+  return Math.round(min + Math.random() * (max - min));
 }
 
 export function getGameMeta(token: string) {
-  const db = createGameDb(token)
-  return db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
+  const db = createGameDb(token);
+  return db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get();
 }
 
 export function updateLastActive(token: string): void {
-  const now = new Date().toISOString()
-  const db = createGameDb(token)
+  const now = new Date().toISOString();
+  const db = createGameDb(token);
   db.update(schema.meta)
     .set({ lastActiveAt: now })
     .where(eq(schema.meta.key, 'game'))
-    .run()
+    .run();
 }
 
 export function updateLastActiveInRegistry(token: string): void {
-  updateRegistryEntry(token, { lastActive: new Date().toISOString() })
+  updateRegistryEntry(token, { lastActive: new Date().toISOString() });
 }
 
 export function revokeToken(token: string): { success: boolean } {
-  const entry = findRegistryEntry(token)
+  const entry = findRegistryEntry(token);
   if (!entry) {
-    throw new Error('Game not found')
+    throw new Error('Game not found');
   }
 
-  closeGameDb(token)
-  const basePath = getGameDbPath(token)
+  closeGameDb(token);
+  const basePath = getGameDbPath(token);
   for (const ext of ['', '-wal', '-shm']) {
-    const filePath = `${basePath}${ext}`
+    const filePath = `${basePath}${ext}`;
     if (existsSync(filePath)) {
       try {
-        unlinkSync(filePath)
+        unlinkSync(filePath);
       }
       catch { /* ignore */ }
     }
   }
-  removeFromRegistry(token)
-  return { success: true }
+  removeFromRegistry(token);
+  return { success: true };
 }
 
-export function mintNewToken(oldToken: string): { token: string, publicToken: string, mcpUrl: string } {
-  const entry = findRegistryEntry(oldToken)
+export function mintNewToken(oldToken: string): { token: string; publicToken: string; mcpUrl: string } {
+  const entry = findRegistryEntry(oldToken);
   if (!entry) {
-    throw new Error('Game not found')
+    throw new Error('Game not found');
   }
 
-  const { token: newToken, publicToken: newPublicToken } = generateTokenPair()
-  const oldDbPath = getGameDbPath(oldToken)
-  const newDbPath = getGameDbPath(newToken)
+  const { token: newToken, publicToken: newPublicToken } = generateTokenPair();
+  const oldDbPath = getGameDbPath(oldToken);
+  const newDbPath = getGameDbPath(newToken);
 
-  renameSync(oldDbPath, newDbPath)
+  renameSync(oldDbPath, newDbPath);
   for (const ext of ['-wal', '-shm']) {
     if (existsSync(`${oldDbPath}${ext}`)) {
       try {
-        renameSync(`${oldDbPath}${ext}`, `${newDbPath}${ext}`)
+        renameSync(`${oldDbPath}${ext}`, `${newDbPath}${ext}`);
       }
       catch { /* ignore */ }
     }
   }
 
-  closeGameDb(oldToken)
+  closeGameDb(oldToken);
 
-  const db = createGameDb(newToken)
+  const db = createGameDb(newToken);
   db.update(schema.meta)
     .set({ token: newToken, publicToken: newPublicToken })
     .where(eq(schema.meta.key, 'game'))
-    .run()
+    .run();
 
-  removeFromRegistry(oldToken)
-  const now = new Date().toISOString()
+  removeFromRegistry(oldToken);
+  const now = new Date().toISOString();
   const newEntry: RegistryEntry = {
     token: newToken,
     publicToken: newPublicToken,
@@ -200,8 +200,8 @@ export function mintNewToken(oldToken: string): { token: string, publicToken: st
     lastActive: now,
     status: entry.status,
     cleanupEligibleAt: entry.cleanupEligibleAt,
-  }
-  addToRegistry(newEntry)
+  };
+  addToRegistry(newEntry);
 
-  return { token: newToken, publicToken: newPublicToken, mcpUrl: buildMcpUrl(newToken) }
+  return { token: newToken, publicToken: newPublicToken, mcpUrl: buildMcpUrl(newToken) };
 }

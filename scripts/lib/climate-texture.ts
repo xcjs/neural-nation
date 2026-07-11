@@ -1,22 +1,22 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const root = join(__dirname, '..', '..')
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const root = join(__dirname, '..', '..');
 
 export interface ClimateTextureResult {
-  width: number
-  height: number
-  cellsProcessed: number
-  outputPath: string
+  width: number;
+  height: number;
+  cellsProcessed: number;
+  outputPath: string;
 }
 
-const KG_PATH = join(root, 'data', 'geological', 'raw', 'Koeppen-Geiger-ASCII.txt')
-const OUTPUT_PATH = join(root, 'public', 'data', 'geological', 'forest-density.json')
+const KG_PATH = join(root, 'data', 'geological', 'raw', 'Koeppen-Geiger-ASCII.txt');
+const OUTPUT_PATH = join(root, 'public', 'data', 'geological', 'forest-density.json');
 
-const CANVAS_W = 720
-const CANVAS_H = 360
+const CANVAS_W = 720;
+const CANVAS_H = 360;
 
 const CLIMATE_FOREST_DENSITY: Record<string, number> = {
   Af: 1.0,
@@ -50,125 +50,125 @@ const CLIMATE_FOREST_DENSITY: Record<string, number> = {
   Dwd: 0.3,
   ET: 0.15,
   EF: 0.0,
-}
+};
 
 function climateToForestDensity(code: string): number {
   if (CLIMATE_FOREST_DENSITY[code] !== undefined)
-    return CLIMATE_FOREST_DENSITY[code]!
+    return CLIMATE_FOREST_DENSITY[code]!;
   if (code.length >= 1) {
-    const first = code[0]!
+    const first = code[0]!;
     if (first === 'A')
-      return 0.7
+      return 0.7;
     if (first === 'B')
-      return 0.05
+      return 0.05;
     if (first === 'C')
-      return 0.6
+      return 0.6;
     if (first === 'D')
-      return 0.4
+      return 0.4;
     if (first === 'E')
-      return 0.05
+      return 0.05;
   }
-  return 0.3
+  return 0.3;
 }
 
 export interface ForestGridCell {
-  latIndex: number
-  lonIndex: number
-  density: number
-  maxDensity: number
+  latIndex: number;
+  lonIndex: number;
+  density: number;
+  maxDensity: number;
 }
 
 export function getForestGridCells(): ForestGridCell[] {
   if (!existsSync(KG_PATH)) {
-    throw new Error(`Köppen-Geiger data not found at ${KG_PATH}. Run 'npm run fetch:data' first.`)
+    throw new Error(`Köppen-Geiger data not found at ${KG_PATH}. Run 'npm run fetch:data' first.`);
   }
 
-  const text = readFileSync(KG_PATH, 'utf-8')
-  const lines = text.trim().split('\n')
-  const dataLines = lines.filter(l => !l.startsWith('Lat') && l.trim().length > 0)
+  const text = readFileSync(KG_PATH, 'utf-8');
+  const lines = text.trim().split('\n');
+  const dataLines = lines.filter(l => !l.startsWith('Lat') && l.trim().length > 0);
 
-  const grid = new Float32Array(CANVAS_W * CANVAS_H).fill(0)
+  const grid = new Float32Array(CANVAS_W * CANVAS_H).fill(0);
 
   for (const line of dataLines) {
-    const parts = line.trim().split(/\s+/)
+    const parts = line.trim().split(/\s+/);
     if (parts.length < 3)
-      continue
-    const lat = Number.parseFloat(parts[0]!)
-    const lon = Number.parseFloat(parts[1]!)
-    const cls = parts[2]!.trim()
+      continue;
+    const lat = Number.parseFloat(parts[0]!);
+    const lon = Number.parseFloat(parts[1]!);
+    const cls = parts[2]!.trim();
     if (Number.isNaN(lat) || Number.isNaN(lon))
-      continue
+      continue;
 
-    const density = climateToForestDensity(cls)
+    const density = climateToForestDensity(cls);
     if (density <= 0)
-      continue
+      continue;
 
-    const x = Math.floor(((lon + 180) / 360) * CANVAS_W)
-    const y = Math.floor(((90 - lat) / 180) * CANVAS_H)
+    const x = Math.floor(((lon + 180) / 360) * CANVAS_W);
+    const y = Math.floor(((90 - lat) / 180) * CANVAS_H);
     if (x < 0 || x >= CANVAS_W || y < 0 || y >= CANVAS_H)
-      continue
+      continue;
 
-    const idx = y * CANVAS_W + x
+    const idx = y * CANVAS_W + x;
     if (density > grid[idx]!)
-      grid[idx] = density
+      grid[idx] = density;
   }
 
-  const cells: ForestGridCell[] = []
+  const cells: ForestGridCell[] = [];
   for (let y = 0; y < CANVAS_H; y++) {
     for (let x = 0; x < CANVAS_W; x++) {
-      const d = grid[y * CANVAS_W + x]!
+      const d = grid[y * CANVAS_W + x]!;
       if (d > 0) {
-        cells.push({ latIndex: y, lonIndex: x, density: d, maxDensity: d })
+        cells.push({ latIndex: y, lonIndex: x, density: d, maxDensity: d });
       }
     }
   }
-  return cells
+  return cells;
 }
 
 export function buildForestDensityData(outputPath?: string): ClimateTextureResult {
   if (!existsSync(KG_PATH)) {
-    throw new Error(`Köppen-Geiger data not found at ${KG_PATH}. Run 'npm run fetch:data' first.`)
+    throw new Error(`Köppen-Geiger data not found at ${KG_PATH}. Run 'npm run fetch:data' first.`);
   }
 
-  const text = readFileSync(KG_PATH, 'utf-8')
-  const lines = text.trim().split('\n')
-  const dataLines = lines.filter(l => !l.startsWith('Lat') && l.trim().length > 0)
+  const text = readFileSync(KG_PATH, 'utf-8');
+  const lines = text.trim().split('\n');
+  const dataLines = lines.filter(l => !l.startsWith('Lat') && l.trim().length > 0);
 
-  const outDir = dirname(outputPath ?? OUTPUT_PATH)
-  mkdirSync(outDir, { recursive: true })
+  const outDir = dirname(outputPath ?? OUTPUT_PATH);
+  mkdirSync(outDir, { recursive: true });
 
-  const grid = new Float32Array(CANVAS_W * CANVAS_H).fill(0)
-  let cellsProcessed = 0
+  const grid = new Float32Array(CANVAS_W * CANVAS_H).fill(0);
+  let cellsProcessed = 0;
 
   for (const line of dataLines) {
-    const parts = line.trim().split(/\s+/)
+    const parts = line.trim().split(/\s+/);
     if (parts.length < 3)
-      continue
-    const lat = Number.parseFloat(parts[0]!)
-    const lon = Number.parseFloat(parts[1]!)
-    const cls = parts[2]!.trim()
+      continue;
+    const lat = Number.parseFloat(parts[0]!);
+    const lon = Number.parseFloat(parts[1]!);
+    const cls = parts[2]!.trim();
     if (Number.isNaN(lat) || Number.isNaN(lon))
-      continue
+      continue;
 
-    const density = climateToForestDensity(cls)
+    const density = climateToForestDensity(cls);
     if (density <= 0)
-      continue
+      continue;
 
-    const x = Math.floor(((lon + 180) / 360) * CANVAS_W)
-    const y = Math.floor(((90 - lat) / 180) * CANVAS_H)
+    const x = Math.floor(((lon + 180) / 360) * CANVAS_W);
+    const y = Math.floor(((90 - lat) / 180) * CANVAS_H);
     if (x < 0 || x >= CANVAS_W || y < 0 || y >= CANVAS_H)
-      continue
+      continue;
 
-    const idx = y * CANVAS_W + x
+    const idx = y * CANVAS_W + x;
     if (density > grid[idx]!)
-      grid[idx] = density
+      grid[idx] = density;
 
-    cellsProcessed++
+    cellsProcessed++;
   }
 
-  const out = outputPath ?? OUTPUT_PATH
-  const json = JSON.stringify({ width: CANVAS_W, height: CANVAS_H, data: Array.from(grid) })
-  writeFileSync(out, json, 'utf-8')
+  const out = outputPath ?? OUTPUT_PATH;
+  const json = JSON.stringify({ width: CANVAS_W, height: CANVAS_H, data: Array.from(grid) });
+  writeFileSync(out, json, 'utf-8');
 
-  return { width: CANVAS_W, height: CANVAS_H, cellsProcessed, outputPath: out }
+  return { width: CANVAS_W, height: CANVAS_H, cellsProcessed, outputPath: out };
 }

@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const actions = sqliteTable('actions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -10,4 +10,4 @@ export const actions = sqliteTable('actions', {
   resultData: text('result_data'),
   impactTags: text('impact_tags'),
   stateSnapshot: text('state_snapshot'),
-})
+});

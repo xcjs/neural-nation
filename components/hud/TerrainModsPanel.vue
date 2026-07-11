@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useTerrainStore } from '~/stores/terrain'
+import { useTerrainStore } from '~/stores/terrain';
 
-const terrain = useTerrainStore()
+const terrain = useTerrainStore();
 </script>
 
 <template>

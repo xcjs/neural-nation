@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const events = sqliteTable('event_log', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -9,4 +9,4 @@ export const events = sqliteTable('event_log', {
   severity: text('severity').default('info').notNull(),
   facilityId: integer('facility_id'),
   data: text('data'),
-})
+});

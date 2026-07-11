@@ -6,12 +6,12 @@
  * build is hermetic and reproducible. Grid resolution is configurable; the
  * default 1° grid produces ~65k cells.
  */
-import type Database from 'better-sqlite3'
-import { DEFAULT_TERRAIN_CONFIG, generateTerrainGrid, type TerrainCell, type TerrainGridConfig } from './value-noise'
+import type Database from 'better-sqlite3';
+import { DEFAULT_TERRAIN_CONFIG, generateTerrainGrid, type TerrainCell, type TerrainGridConfig } from './value-noise';
 
 export interface TerrainSeedResult {
-  insertedCells: number
-  resolution: number
+  insertedCells: number;
+  resolution: number;
 }
 
 /**
@@ -26,35 +26,35 @@ export function seedTerrainGrid(
   const result: TerrainSeedResult = {
     insertedCells: 0,
     resolution: config.resolution,
-  }
+  };
 
   // Idempotency: check if terrain already seeded
-  const existing = db.prepare(`SELECT COUNT(*) AS n FROM terrain`).get() as { n: number }
+  const existing = db.prepare(`SELECT COUNT(*) AS n FROM terrain`).get() as { n: number };
   if (existing.n > 0) {
-    console.log(`Terrain grid already seeded (${existing.n} cells), skipping.`)
-    return result
+    console.log(`Terrain grid already seeded (${existing.n} cells), skipping.`);
+    return result;
   }
 
-  const cells = generateTerrainGrid(config)
+  const cells = generateTerrainGrid(config);
 
   const insertStmt = db.prepare(`
     INSERT INTO terrain (lat_index, lon_index, lat, lon, elevation, terrain_class)
     VALUES (?, ?, ?, ?, ?, ?)
-  `)
+  `);
 
   const insertMany = db.transaction((rows: TerrainCell[]) => {
     for (const c of rows) {
-      insertStmt.run(c.latIndex, c.lonIndex, c.lat, c.lon, c.elevation, c.terrainClass)
+      insertStmt.run(c.latIndex, c.lonIndex, c.lat, c.lon, c.elevation, c.terrainClass);
     }
-  })
+  });
 
   // Batch in chunks of 5000
-  const BATCH_SIZE = 5000
+  const BATCH_SIZE = 5000;
   for (let i = 0; i < cells.length; i += BATCH_SIZE) {
-    const batch = cells.slice(i, i + BATCH_SIZE)
-    insertMany(batch)
-    result.insertedCells += batch.length
+    const batch = cells.slice(i, i + BATCH_SIZE);
+    insertMany(batch);
+    result.insertedCells += batch.length;
   }
 
-  return result
+  return result;
 }

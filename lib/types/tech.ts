@@ -1,15 +1,15 @@
 export interface TechTreeNode {
-  id: string
-  name: string
-  description: string
-  tier: number
-  category: TechBranch
-  prerequisites: string[]
-  researchCost: RecipeInput[]
-  researchTime: number
-  unlocks: TechUnlock[]
-  status: TechStatus
-  progress: number
+  id: string;
+  name: string;
+  description: string;
+  tier: number;
+  category: TechBranch;
+  prerequisites: string[];
+  researchCost: RecipeInput[];
+  researchTime: number;
+  unlocks: TechUnlock[];
+  status: TechStatus;
+  progress: number;
 }
 
 export enum TechBranch {
@@ -28,29 +28,29 @@ export enum TechStatus {
 }
 
 export interface TechUnlock {
-  type: 'Recipe' | 'FacilityType' | 'TerraformAction'
-  id: string
+  type: 'Recipe' | 'FacilityType' | 'TerraformAction';
+  id: string;
 }
 
 export interface Recipe {
-  id: string
-  name: string
-  facilityType: string
-  inputs: RecipeInput[]
-  outputs: RecipeOutput[]
-  craftTime: number
-  techRequired: string | null
+  id: string;
+  name: string;
+  facilityType: string;
+  inputs: RecipeInput[];
+  outputs: RecipeOutput[];
+  craftTime: number;
+  techRequired: string | null;
 }
 
 export interface RecipeInput {
-  resourceKey: string
-  quantity: number
-  unit: string
-  optional: boolean
+  resourceKey: string;
+  quantity: number;
+  unit: string;
+  optional: boolean;
 }
 
 export interface RecipeOutput {
-  resourceKey: string
-  quantity: number
-  unit: string
+  resourceKey: string;
+  quantity: number;
+  unit: string;
 }

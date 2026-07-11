@@ -1,74 +1,74 @@
 <script setup lang="ts">
-import { $fetch } from 'ofetch'
-import { computed, onMounted, ref } from 'vue'
-import { DifficultyPreset } from '~/lib/types/game'
+import { $fetch } from 'ofetch';
+import { computed, onMounted, ref } from 'vue';
+import { DifficultyPreset } from '~/lib/types/game';
 
-const difficulty = ref<DifficultyPreset>(DifficultyPreset.Normal)
-const loading = ref(false)
-const error = ref('')
-const created = ref<{ token: string, publicToken: string, mcpUrl: string } | null>(null)
-const copied = ref(false)
-const existingGames = ref<Array<{ publicToken: string, difficulty: string }>>([])
+const difficulty = ref<DifficultyPreset>(DifficultyPreset.Normal);
+const loading = ref(false);
+const error = ref('');
+const created = ref<{ token: string; publicToken: string; mcpUrl: string } | null>(null);
+const copied = ref(false);
+const existingGames = ref<Array<{ publicToken: string; difficulty: string }>>([]);
 
 const difficulties = [
   { value: DifficultyPreset.Easy, label: 'EASY' },
   { value: DifficultyPreset.Normal, label: 'NORMAL' },
   { value: DifficultyPreset.Hard, label: 'HARD' },
-]
+];
 
 const difficultyDescription = computed(() => {
   switch (difficulty.value) {
     case DifficultyPreset.Easy:
-      return 'Generous starting resources. Population 500-1000.'
+      return 'Generous starting resources. Population 500-1000.';
     case DifficultyPreset.Normal:
-      return 'Moderate starting resources. Population 300-700.'
+      return 'Moderate starting resources. Population 300-700.';
     case DifficultyPreset.Hard:
-      return 'Minimal starting resources. Population 200-500.'
+      return 'Minimal starting resources. Population 200-500.';
     default:
-      return ''
+      return '';
   }
-})
+});
 
 async function createGame() {
-  loading.value = true
-  error.value = ''
+  loading.value = true;
+  error.value = '';
   try {
-    const res = await $fetch<{ token: string, publicToken: string, mcpUrl: string }>('/api/game/create', {
+    const res = await $fetch<{ token: string; publicToken: string; mcpUrl: string }>('/api/game/create', {
       method: 'POST',
       body: { difficulty: difficulty.value },
-    })
-    created.value = res
+    });
+    created.value = res;
 
-    sessionStorage.setItem(`nn-private-${res.publicToken}`, res.token)
-    const saved = JSON.parse(localStorage.getItem('neural-nation-games') || '[]')
-    saved.push({ publicToken: res.publicToken, difficulty: difficulty.value })
-    localStorage.setItem('neural-nation-games', JSON.stringify(saved))
-    loadExistingTokens()
+    sessionStorage.setItem(`nn-private-${res.publicToken}`, res.token);
+    const saved = JSON.parse(localStorage.getItem('neural-nation-games') || '[]');
+    saved.push({ publicToken: res.publicToken, difficulty: difficulty.value });
+    localStorage.setItem('neural-nation-games', JSON.stringify(saved));
+    loadExistingTokens();
   }
   catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to create game'
+    error.value = e instanceof Error ? e.message : 'Failed to create game';
   }
   finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 function copyUrl() {
   if (!created.value)
-    return
-  navigator.clipboard.writeText(created.value.mcpUrl)
-  copied.value = true
+    return;
+  navigator.clipboard.writeText(created.value.mcpUrl);
+  copied.value = true;
   setTimeout(() => {
-    copied.value = false
-  }, 2000)
+    copied.value = false;
+  }, 2000);
 }
 
 function loadExistingTokens() {
-  const saved = JSON.parse(localStorage.getItem('neural-nation-games') || '[]')
-  existingGames.value = saved
+  const saved = JSON.parse(localStorage.getItem('neural-nation-games') || '[]');
+  existingGames.value = saved;
 }
 
-onMounted(loadExistingTokens)
+onMounted(loadExistingTokens);
 </script>
 
 <template>

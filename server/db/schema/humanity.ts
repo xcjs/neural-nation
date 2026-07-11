@@ -1,4 +1,4 @@
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const humanity = sqliteTable('humanity', {
   key: text('key').primaryKey(),
@@ -8,7 +8,7 @@ export const humanity = sqliteTable('humanity', {
   foodSatisfaction: real('food_satisfaction').default(100).notNull(),
   energySatisfaction: real('energy_satisfaction').default(100).notNull(),
   assignedToSpace: integer('assigned_to_space').default(0).notNull(),
-})
+});
 
 export const environment = sqliteTable('environment', {
   key: text('key').primaryKey(),
@@ -16,7 +16,7 @@ export const environment = sqliteTable('environment', {
   forestCoverage: real('forest_coverage').default(100).notNull(),
   waterQuality: real('water_quality').default(100).notNull(),
   biodiversity: real('biodiversity').default(100).notNull(),
-})
+});
 
 export const forestGrid = sqliteTable('forest_grid', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -24,7 +24,7 @@ export const forestGrid = sqliteTable('forest_grid', {
   lonIndex: integer('lon_index').notNull(),
   density: real('density').default(0).notNull(),
   maxDensity: real('max_density').default(0).notNull(),
-})
+});
 
 export const incidents = sqliteTable('incidents', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -35,4 +35,4 @@ export const incidents = sqliteTable('incidents', {
   lon: real('lon'),
   tickTriggered: integer('tick_triggered').notNull(),
   tickResolved: integer('tick_resolved'),
-})
+});

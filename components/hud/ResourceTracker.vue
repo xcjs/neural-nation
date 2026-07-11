@@ -1,50 +1,50 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { ELEMENT_BY_SYMBOL } from '~/lib/constants/elements'
-import { ResourceCategory } from '~/lib/types/resource'
-import { useResourcesStore } from '~/stores/resources'
-import { useUiStore } from '~/stores/ui'
+import { ref } from 'vue';
+import { ELEMENT_BY_SYMBOL } from '~/lib/constants/elements';
+import { ResourceCategory } from '~/lib/types/resource';
+import { useResourcesStore } from '~/stores/resources';
+import { useUiStore } from '~/stores/ui';
 
-const resources = useResourcesStore()
-const ui = useUiStore()
-const search = ref('')
-const collapsed = ref<Record<string, boolean>>({})
+const resources = useResourcesStore();
+const ui = useUiStore();
+const search = ref('');
+const collapsed = ref<Record<string, boolean>>({});
 
 const categories = [
   { key: ResourceCategory.Renewable, label: 'RENEWABLE', color: 'text-green-400' },
   { key: ResourceCategory.NonRenewable, label: 'NON-RENEWABLE', color: 'text-amber-400' },
   { key: ResourceCategory.Element, label: 'ELEMENTS', color: 'text-blue-400' },
   { key: ResourceCategory.Manufactured, label: 'MANUFACTURED', color: 'text-purple-400' },
-]
+];
 
 function atomicNumber(resourceKey: string): number {
-  const el = ELEMENT_BY_SYMBOL.get(resourceKey.charAt(0).toUpperCase() + resourceKey.slice(1).toLowerCase())
-  return el?.atomicNumber ?? 999
+  const el = ELEMENT_BY_SYMBOL.get(resourceKey.charAt(0).toUpperCase() + resourceKey.slice(1).toLowerCase());
+  return el?.atomicNumber ?? 999;
 }
 
 function filtered(cat: ResourceCategory) {
-  const q = search.value.toLowerCase()
+  const q = search.value.toLowerCase();
   const rows = resources.byCategory(cat).filter(r =>
     !q || r.name.toLowerCase().includes(q) || r.resourceKey.toLowerCase().includes(q),
-  )
+  );
   if (cat === ResourceCategory.Element) {
-    rows.sort((a, b) => atomicNumber(a.resourceKey) - atomicNumber(b.resourceKey))
+    rows.sort((a, b) => atomicNumber(a.resourceKey) - atomicNumber(b.resourceKey));
   }
-  return rows
+  return rows;
 }
 
 function toggle(key: string) {
-  collapsed.value[key] = !collapsed.value[key]
+  collapsed.value[key] = !collapsed.value[key];
 }
 
 function formatQty(n: number): string {
   if (n >= 1e9)
-    return `${(n / 1e9).toFixed(1)}G`
+    return `${(n / 1e9).toFixed(1)}G`;
   if (n >= 1e6)
-    return `${(n / 1e6).toFixed(1)}M`
+    return `${(n / 1e6).toFixed(1)}M`;
   if (n >= 1e3)
-    return `${(n / 1e3).toFixed(1)}k`
-  return n.toFixed(0)
+    return `${(n / 1e3).toFixed(1)}k`;
+  return n.toFixed(0);
 }
 </script>
 

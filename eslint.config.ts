@@ -1,4 +1,4 @@
-import antfu from '@antfu/eslint-config'
+import antfu from '@antfu/eslint-config';
 
 export default antfu({
   vue: true,
@@ -7,7 +7,7 @@ export default antfu({
   stylistic: {
     indent: 2,
     quotes: 'single',
-    semi: false,
+    semi: true,
   },
   rules: {
     'vue/multi-word-component-names': 'off',
@@ -17,6 +17,7 @@ export default antfu({
     'prefer-const': 'error',
     'no-console': 'warn',
     'style/eol-last': 'error',
+    'ts/no-redeclare': 'off',
   },
   ignores: [
     '.nuxt/**',
@@ -29,4 +30,4 @@ export default antfu({
     '*.db',
     'docs/**',
   ],
-})
+});

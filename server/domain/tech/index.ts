@@ -3,4 +3,4 @@ export {
   getTechTree,
   searchRecipes,
   startResearch,
-} from './service'
+} from './service';

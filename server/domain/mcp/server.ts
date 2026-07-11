@@ -1,18 +1,18 @@
-import { Server } from '@modelcontextprotocol/sdk/server/index.js'
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
-import { findRegistryEntry } from '../game/registry'
-import { executeTool } from './dispatcher'
-import { MCP_TOOLS } from './tools'
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { findRegistryEntry } from '../game/registry';
+import { executeTool } from './dispatcher';
+import { MCP_TOOLS } from './tools';
 
-const transports = new Map<string, SSEServerTransport>()
-const servers = new Map<string, Server>()
+const transports = new Map<string, SSEServerTransport>();
+const servers = new Map<string, Server>();
 
 export function createMcpServer(token: string): Server {
   const server = new Server(
     { name: 'neural-nation', version: '0.1.0' },
     { capabilities: { tools: {} } },
-  )
+  );
 
   server.setRequestHandler(ListToolsRequestSchema, () => ({
     tools: MCP_TOOLS.map(t => ({
@@ -20,11 +20,11 @@ export function createMcpServer(token: string): Server {
       description: t.description,
       inputSchema: t.inputSchema,
     })),
-  }))
+  }));
 
   server.setRequestHandler(CallToolRequestSchema, (request) => {
-    const { name, arguments: args } = request.params
-    const result = executeTool(token, name, args || {})
+    const { name, arguments: args } = request.params;
+    const result = executeTool(token, name, args || {});
 
     return {
       content: [
@@ -34,10 +34,10 @@ export function createMcpServer(token: string): Server {
         },
       ],
       isError: result.status === 'error',
-    }
-  })
+    };
+  });
 
-  return server
+  return server;
 }
 
 export async function connectSseTransport(
@@ -45,25 +45,25 @@ export async function connectSseTransport(
   endpoint: string,
   res: import('node:http').ServerResponse,
 ): Promise<SSEServerTransport> {
-  const entry = findRegistryEntry(token)
+  const entry = findRegistryEntry(token);
   if (!entry)
-    throw new Error('Game not found')
+    throw new Error('Game not found');
   if (entry.publicToken === token)
-    throw new Error('Public token cannot access MCP endpoints')
+    throw new Error('Public token cannot access MCP endpoints');
 
-  const transport = new SSEServerTransport(endpoint, res)
-  const server = createMcpServer(token)
+  const transport = new SSEServerTransport(endpoint, res);
+  const server = createMcpServer(token);
 
-  transports.set(transport.sessionId, transport)
-  servers.set(transport.sessionId, server)
+  transports.set(transport.sessionId, transport);
+  servers.set(transport.sessionId, server);
 
   transport.onclose = () => {
-    transports.delete(transport.sessionId)
-    servers.delete(transport.sessionId)
-  }
+    transports.delete(transport.sessionId);
+    servers.delete(transport.sessionId);
+  };
 
-  await server.connect(transport)
-  return transport
+  await server.connect(transport);
+  return transport;
 }
 
 export async function handlePostMessage(
@@ -71,10 +71,10 @@ export async function handlePostMessage(
   req: import('node:http').IncomingMessage,
   res: import('node:http').ServerResponse,
 ): Promise<void> {
-  const transport = transports.get(sessionId)
+  const transport = transports.get(sessionId);
   if (!transport) {
-    res.writeHead(404).end('Session not found')
-    return
+    res.writeHead(404).end('Session not found');
+    return;
   }
-  await transport.handlePostMessage(req, res)
+  await transport.handlePostMessage(req, res);
 }

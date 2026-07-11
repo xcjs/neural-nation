@@ -1,34 +1,34 @@
-type EventHandler = (event: GameEvent) => void
+type EventHandler = (event: GameEvent) => void;
 
 export interface GameEvent {
-  type: string
-  [key: string]: unknown
+  type: string;
+  [key: string]: unknown;
 }
 
-const subscribers = new Map<string, Set<EventHandler>>()
+const subscribers = new Map<string, Set<EventHandler>>();
 
 export function subscribe(token: string, handler: EventHandler): () => void {
-  let set = subscribers.get(token)
+  let set = subscribers.get(token);
   if (!set) {
-    set = new Set()
-    subscribers.set(token, set)
+    set = new Set();
+    subscribers.set(token, set);
   }
-  set.add(handler)
+  set.add(handler);
   return () => {
-    set?.delete(handler)
+    set?.delete(handler);
     if (set && set.size === 0) {
-      subscribers.delete(token)
+      subscribers.delete(token);
     }
-  }
+  };
 }
 
 export function publish(token: string, event: GameEvent): void {
-  const set = subscribers.get(token)
+  const set = subscribers.get(token);
   if (!set)
-    return
+    return;
   for (const handler of set) {
     try {
-      handler(event)
+      handler(event);
     }
     catch {
       // ignore handler errors
@@ -38,10 +38,10 @@ export function publish(token: string, event: GameEvent): void {
 
 export function publishMany(token: string, events: GameEvent[]): void {
   for (const e of events) {
-    publish(token, e)
+    publish(token, e);
   }
 }
 
 export function clearSubscribers(token: string): void {
-  subscribers.delete(token)
+  subscribers.delete(token);
 }

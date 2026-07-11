@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import { useActionsStore } from '~/stores/actions'
-import { useGameStore } from '~/stores/game'
+import { useActionsStore } from '~/stores/actions';
+import { useGameStore } from '~/stores/game';
 
-const actions = useActionsStore()
-const game = useGameStore()
-const token = game.meta?.token || ''
-let searchTimer: ReturnType<typeof setTimeout> | null = null
+const actions = useActionsStore();
+const game = useGameStore();
+const token = game.meta?.token || '';
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 function onSearch() {
   if (searchTimer)
-    clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => actions.fetchPage(token, 0), 300)
+    clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => actions.fetchPage(token, 0), 300);
 }
 
 function statusColor(status: string): string {
   switch (status) {
-    case 'success': return 'border-green-500 text-green-300'
-    case 'warning': return 'border-amber-500 text-amber-300'
-    case 'error': return 'border-red-500 text-red-300'
-    default: return 'border-cyan-900 text-cyan-500'
+    case 'success': return 'border-green-500 text-green-300';
+    case 'warning': return 'border-amber-500 text-amber-300';
+    case 'error': return 'border-red-500 text-red-300';
+    default: return 'border-cyan-900 text-cyan-500';
   }
 }
 </script>

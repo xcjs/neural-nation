@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const meta = sqliteTable('meta', {
   key: text('key').primaryKey(),
@@ -11,4 +11,4 @@ export const meta = sqliteTable('meta', {
   status: text('status').default('Active'),
   difficulty: text('difficulty').default('Normal'),
   cleanupEligibleAt: text('cleanup_eligible_at'),
-})
+});

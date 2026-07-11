@@ -23,7 +23,7 @@ decision, its context, and consequences.
 | [0014](0014-power-generation-and-transmission.md)          | Power Generation & Transmission System                                                | Proposed |
 | [0015](0015-humanity-and-environmental-impact.md)          | Humanity & Environmental Impact System                                                | Proposed |
 | [0016](0016-space-based-resource-gathering.md)             | Space-Based Resource Gathering                                                        | Proposed |
-| [0017](0017-code-organization-and-domain-driven-design.md) | Code Organization & Domain-Driven Design (PascalCase, feature folders)                | Proposed |
+| [0017](0017-code-organization-and-domain-driven-design.md) | Code Organization & Domain-Driven Design (PascalCase, feature folders)                | Superseded |
 | [0018](0018-technology-tree-and-recipe-system.md)          | Technology Tree & Recipe System (recipes, tech progression, multi-component crafting) | Proposed |
 | [0019](0019-mcp-response-management-and-search.md)         | MCP Response Management & Search (pagination, search tools, context budget)           | Proposed |
 | [0020](0020-game-lifecycle-and-cleanup.md)                 | Game Lifecycle & Cleanup (automatic stale game deletion)                              | Proposed |
@@ -33,6 +33,7 @@ decision, its context, and consequences.
 | [0024](0024-deployment-and-containerization.md)            | Deployment & Containerization (Docker, docker compose, GitLab CI/CD)                  | Proposed |
 | [0025](0025-spectating-and-public-token.md)                | Spectating & Public Token (read-only shareable watch link)                            | Proposed |
 | [0026](0026-frontend-state-management.md)                  | Frontend State Management (Pinia stores, SSE, 3D scene sync)                          | Proposed |
+| [0027](0027-server-architecture-ioc-and-design-patterns.md) | Server Architecture — IoC, DI & Design Patterns (container, services, repositories) | Proposed |
 
 ## ADR Relationships
 
@@ -60,7 +61,8 @@ decision, its context, and consequences.
                        │                   ├── 0025 (Spectating)
                        │                   └── 0026 (Frontend State)
                        ├── 0014 (Power) ── 0016 (Space)
-                       ├── 0017 (Code Org/DDD) ── applies to all ── 0022 (Testing)
+                        ├── 0017 (Code Org/DDD) ── applies to all ── 0022 (Testing)
+                        ├── 0027 (Server IoC/DI) ── supersedes 0017 ── 0001, 0004, 0005, 0006, 0019, 0022
                        ├── 0018 (Tech Tree/Recipes) ── 0003, 0004, 0007, 0011, 0012, 0021, 0023
                        ├── 0023 (Terraforming) ── 0002, 0004, 0007, 0008, 0011, 0013, 0015, 0018
                        ├── 0024 (Deployment) ── 0001, 0005, 0020

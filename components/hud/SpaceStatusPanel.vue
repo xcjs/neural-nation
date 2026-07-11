@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useSpaceStore } from '~/stores/space'
+import { useSpaceStore } from '~/stores/space';
 
-const space = useSpaceStore()
+const space = useSpaceStore();
 </script>
 
 <template>

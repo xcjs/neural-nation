@@ -1,27 +1,27 @@
-import type { FacilityDetail, FacilitySummary } from '~/lib/types/facility'
-import { $fetch } from 'ofetch'
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import type { FacilityDetail, FacilitySummary } from '~/lib/types/facility';
+import { $fetch } from 'ofetch';
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
 
 export const useFacilitiesStore = defineStore('facilities', () => {
-  const list = ref<FacilitySummary[]>([])
-  const selected = ref<FacilityDetail | null>(null)
-  const loading = ref(false)
+  const list = ref<FacilitySummary[]>([]);
+  const selected = ref<FacilityDetail | null>(null);
+  const loading = ref(false);
 
   async function fetchList(token: string) {
-    loading.value = true
+    loading.value = true;
     try {
       const res = await $fetch<{ items: FacilitySummary[] }>('/api/mcp/tools/call', {
         method: 'POST',
         body: { token, tool: 'list_facilities', args: {} },
-      })
-      list.value = res.items || []
+      });
+      list.value = res.items || [];
     }
     catch {
       // SSE will update
     }
     finally {
-      loading.value = false
+      loading.value = false;
     }
   }
 
@@ -30,25 +30,25 @@ export const useFacilitiesStore = defineStore('facilities', () => {
       const res = await $fetch<FacilityDetail>('/api/mcp/tools/call', {
         method: 'POST',
         body: { token, tool: 'get_facility_details', args: { facilityId: id } },
-      })
-      selected.value = res
+      });
+      selected.value = res;
     }
     catch {
       // ignore
     }
   }
 
-  function applyUpdate(patch: { type: string, facility?: FacilitySummary | FacilityDetail }) {
+  function applyUpdate(patch: { type: string; facility?: FacilitySummary | FacilityDetail }) {
     if (patch.type === 'facility_built' && patch.facility) {
-      const f = patch.facility as FacilitySummary
+      const f = patch.facility as FacilitySummary;
       if (!list.value.find(x => x.id === f.id))
-        list.value.push(f)
+        list.value.push(f);
     }
     else if (patch.type === 'facility_updated' && patch.facility) {
-      const f = patch.facility as FacilitySummary
-      const idx = list.value.findIndex(x => x.id === f.id)
+      const f = patch.facility as FacilitySummary;
+      const idx = list.value.findIndex(x => x.id === f.id);
       if (idx >= 0)
-        list.value[idx] = f
+        list.value[idx] = f;
     }
     else if (patch.type === 'facility_demolished') {
       // facility id in patch
@@ -56,10 +56,10 @@ export const useFacilitiesStore = defineStore('facilities', () => {
   }
 
   function reset() {
-    list.value = []
-    selected.value = null
-    loading.value = false
+    list.value = [];
+    selected.value = null;
+    loading.value = false;
   }
 
-  return { list, selected, loading, fetchList, fetchDetail, applyUpdate, reset }
-})
+  return { list, selected, loading, fetchList, fetchDetail, applyUpdate, reset };
+});

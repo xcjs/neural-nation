@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useFacilitiesStore } from '~/stores/facilities'
+import { computed } from 'vue';
+import { useFacilitiesStore } from '~/stores/facilities';
 
-const facilities = useFacilitiesStore()
+const facilities = useFacilitiesStore();
 
 const statusColor = computed(() => {
-  const s = facilities.selected?.status
+  const s = facilities.selected?.status;
   switch (s) {
-    case 'Active': return 'text-green-400'
-    case 'UnderConstruction': return 'text-amber-400'
-    case 'Idle': return 'text-cyan-500'
-    case 'Damaged': return 'text-orange-400'
-    case 'Destroyed': return 'text-red-400'
-    default: return 'text-cyan-500'
+    case 'Active': return 'text-green-400';
+    case 'UnderConstruction': return 'text-amber-400';
+    case 'Idle': return 'text-cyan-500';
+    case 'Damaged': return 'text-orange-400';
+    case 'Destroyed': return 'text-red-400';
+    default: return 'text-cyan-500';
   }
-})
+});
 </script>
 
 <template>

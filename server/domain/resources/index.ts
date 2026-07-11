@@ -5,4 +5,4 @@ export {
   getResourceStockpile,
   searchResources,
   surveyRegion,
-} from './service'
+} from './service';

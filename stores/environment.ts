@@ -1,7 +1,7 @@
-import type { EnvironmentState } from '~/lib/types/humanity'
-import { $fetch } from 'ofetch'
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import type { EnvironmentState } from '~/lib/types/humanity';
+import { $fetch } from 'ofetch';
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
 
 export const useEnvironmentStore = defineStore('environment', () => {
   const state = ref<EnvironmentState>({
@@ -23,26 +23,26 @@ export const useEnvironmentStore = defineStore('environment', () => {
     waterTrend: 'stable',
     biodiversityTrend: 'stable',
     activeIncidents: [],
-  })
-  const showPollutionHeatmap = ref(false)
-  const showBiomeDegradation = ref(false)
+  });
+  const showPollutionHeatmap = ref(false);
+  const showBiomeDegradation = ref(false);
 
   async function fetchStatus(token: string) {
     try {
       const res = await $fetch<EnvironmentState>('/api/mcp/tools/call', {
         method: 'POST',
         body: { token, tool: 'get_environmental_status', args: {} },
-      })
-      state.value = res
+      });
+      state.value = res;
     }
     catch {
       // SSE will update
     }
   }
 
-  function applyUpdate(patch: { type: string, environment?: EnvironmentState }) {
+  function applyUpdate(patch: { type: string; environment?: EnvironmentState }) {
     if (patch.type === 'environment_updated' && patch.environment) {
-      state.value = patch.environment
+      state.value = patch.environment;
     }
   }
 
@@ -66,10 +66,10 @@ export const useEnvironmentStore = defineStore('environment', () => {
       waterTrend: 'stable',
       biodiversityTrend: 'stable',
       activeIncidents: [],
-    }
-    showPollutionHeatmap.value = false
-    showBiomeDegradation.value = false
+    };
+    showPollutionHeatmap.value = false;
+    showBiomeDegradation.value = false;
   }
 
-  return { state, showPollutionHeatmap, showBiomeDegradation, fetchStatus, applyUpdate, reset }
-})
+  return { state, showPollutionHeatmap, showBiomeDegradation, fetchStatus, applyUpdate, reset };
+});

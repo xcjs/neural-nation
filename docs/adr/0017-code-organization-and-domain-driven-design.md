@@ -2,7 +2,7 @@
 
 | Field      | Value                                                                                    |
 | ---------- | ---------------------------------------------------------------------------------------- |
-| Status     | Proposed                                                                                 |
+| Status     | Superseded by ADR-0027                                                                          |
 | Date       | 2026-07-08                                                                               |
 | Deciders   | Project owner                                                                            |
 | Relates to | ADR-0001, ADR-0006, ADR-0007, ADR-0004, ADR-0013, ADR-0014, ADR-0015, ADR-0016, ADR-0022 |

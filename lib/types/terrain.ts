@@ -8,33 +8,33 @@ export enum TerrainClass {
 }
 
 export interface ElevationData {
-  lat: number
-  lon: number
-  elevation: number
-  terrainClass: TerrainClass
+  lat: number;
+  lon: number;
+  elevation: number;
+  terrainClass: TerrainClass;
 }
 
 export interface TerrainCell {
-  latIndex: number
-  lonIndex: number
-  lat: number
-  lon: number
-  baseElevation: number
-  effectiveElevation: number
-  terrainClass: TerrainClass
-  modified: boolean
+  latIndex: number;
+  lonIndex: number;
+  lat: number;
+  lon: number;
+  baseElevation: number;
+  effectiveElevation: number;
+  terrainClass: TerrainClass;
+  modified: boolean;
 }
 
 export interface TerrainModification {
-  id: number
-  latIndex: number
-  lonIndex: number
-  elevationDelta: number
-  newTerrainClass: TerrainClass | null
-  modifiedBy: string
-  modifiedAtTick: number
-  operationId: string
-  reason: string
+  id: number;
+  latIndex: number;
+  lonIndex: number;
+  elevationDelta: number;
+  newTerrainClass: TerrainClass | null;
+  modifiedBy: string;
+  modifiedAtTick: number;
+  operationId: string;
+  reason: string;
 }
 
 export enum TerraformAction {

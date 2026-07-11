@@ -1,11 +1,11 @@
-import { actions } from './action'
-import { events } from './event'
-import { facilities, facilityBuffers } from './facility'
-import { environment, forestGrid, humanity, incidents } from './humanity'
-import { meta } from './meta'
-import { batteryBanks, powerLines } from './power'
-import { resources, stockpiles, surveyLog } from './resource'
-import { spaceFacilities, spaceMissions } from './space'
+import { actions } from './action';
+import { events } from './event';
+import { facilities, facilityBuffers } from './facility';
+import { environment, forestGrid, humanity, incidents } from './humanity';
+import { meta } from './meta';
+import { batteryBanks, powerLines } from './power';
+import { resources, stockpiles, surveyLog } from './resource';
+import { spaceFacilities, spaceMissions } from './space';
 import {
   gameResearch,
   recipeInputs,
@@ -15,9 +15,9 @@ import {
   techNodes,
   techPrerequisites,
   techUnlocks,
-} from './tech'
-import { terrain, terrainModifications } from './terrain'
-import { transports } from './transport'
+} from './tech';
+import { terrain, terrainModifications } from './terrain';
+import { transports } from './transport';
 
 export const schema = {
   meta,
@@ -47,7 +47,7 @@ export const schema = {
   techUnlocks,
   techPrerequisites,
   gameResearch,
-}
+};
 
 export {
   actions,
@@ -77,4 +77,4 @@ export {
   terrain,
   terrainModifications,
   transports,
-}
+};

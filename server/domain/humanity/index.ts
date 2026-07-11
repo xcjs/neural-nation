@@ -1,1 +1,1 @@
-export { getEnvironmentalStatus, getImpactForecast, getIncidents } from './service'
+export { getEnvironmentalStatus, getImpactForecast, getIncidents } from './service';

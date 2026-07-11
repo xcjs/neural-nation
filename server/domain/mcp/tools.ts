@@ -1,4 +1,4 @@
-import type { McpToolDef } from '../../../lib/types/mcp'
+import type { McpToolDef } from '../../../lib/types/mcp';
 
 export const MCP_TOOLS: McpToolDef[] = [
   // Resource tools
@@ -392,4 +392,4 @@ export const MCP_TOOLS: McpToolDef[] = [
       },
     },
   },
-]
+];

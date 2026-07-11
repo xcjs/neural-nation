@@ -1,1 +1,1 @@
-export { getPowerGridStatus } from './service'
+export { getPowerGridStatus } from './service';

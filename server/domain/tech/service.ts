@@ -1,37 +1,37 @@
-import type { PaginatedResult } from '../../../lib/types/mcp'
-import type { Recipe, RecipeInput, TechBranch, TechTreeNode, TechUnlock } from '../../../lib/types/tech'
-import { and, eq, like, sql } from 'drizzle-orm'
-import { TechStatus } from '../../../lib/types/tech'
-import { createGameDb } from '../../db/client'
-import { schema } from '../../db/schema'
+import type { PaginatedResult } from '../../../lib/types/mcp';
+import type { Recipe, RecipeInput, TechBranch, TechTreeNode, TechUnlock } from '../../../lib/types/tech';
+import { and, eq, like, sql } from 'drizzle-orm';
+import { TechStatus } from '../../../lib/types/tech';
+import { createGameDb } from '../../db/client';
+import { schema } from '../../db/schema';
 
 export function getTechTree(token: string): TechTreeNode[] {
-  const db = createGameDb(token)
+  const db = createGameDb(token);
 
-  const nodes = db.select().from(schema.techNodes).all()
-  const research = db.select().from(schema.gameResearch).all()
-  const prerequisites = db.select().from(schema.techPrerequisites).all()
-  const costs = db.select().from(schema.techCosts).all()
-  const unlocks = db.select().from(schema.techUnlocks).all()
+  const nodes = db.select().from(schema.techNodes).all();
+  const research = db.select().from(schema.gameResearch).all();
+  const prerequisites = db.select().from(schema.techPrerequisites).all();
+  const costs = db.select().from(schema.techCosts).all();
+  const unlocks = db.select().from(schema.techUnlocks).all();
 
   return nodes.map((node) => {
-    const researchEntry = research.find(r => r.techId === node.id)
-    const nodePrerequisites = prerequisites.filter(p => p.techId === node.id).map(p => p.prerequisiteId)
+    const researchEntry = research.find(r => r.techId === node.id);
+    const nodePrerequisites = prerequisites.filter(p => p.techId === node.id).map(p => p.prerequisiteId);
 
-    let status: TechStatus
+    let status: TechStatus;
     if (researchEntry?.status === 'Completed') {
-      status = TechStatus.Completed
+      status = TechStatus.Completed;
     }
     else if (researchEntry?.status === 'InProgress') {
-      status = TechStatus.InProgress
+      status = TechStatus.InProgress;
     }
     else {
       // Check if all prerequisites are completed
       const completedTechIds = research
         .filter(r => r.status === 'Completed')
-        .map(r => r.techId)
-      const allPrereqsMet = nodePrerequisites.every(p => completedTechIds.includes(p))
-      status = allPrereqsMet ? TechStatus.Available : TechStatus.Locked
+        .map(r => r.techId);
+      const allPrereqsMet = nodePrerequisites.every(p => completedTechIds.includes(p));
+      status = allPrereqsMet ? TechStatus.Available : TechStatus.Locked;
     }
 
     const nodeCosts: RecipeInput[] = costs
@@ -41,13 +41,13 @@ export function getTechTree(token: string): TechTreeNode[] {
         quantity: c.quantity,
         unit: c.unit,
         optional: false,
-      }))
+      }));
     const nodeUnlocks: TechUnlock[] = unlocks
       .filter(u => u.techId === node.id)
       .map(u => ({
         type: u.unlockType as TechUnlock['type'],
         id: u.unlockId,
-      }))
+      }));
 
     return {
       id: node.id,
@@ -61,45 +61,45 @@ export function getTechTree(token: string): TechTreeNode[] {
       unlocks: nodeUnlocks,
       status,
       progress: researchEntry?.progress || 0,
-    }
-  })
+    };
+  });
 }
 
 export function getRecipes(
   token: string,
   params: {
-    facilityType?: string
-    techRequired?: string
-    unlockedOnly?: boolean
-    limit?: number
-    offset?: number
+    facilityType?: string;
+    techRequired?: string;
+    unlockedOnly?: boolean;
+    limit?: number;
+    offset?: number;
   } = {},
 ): PaginatedResult<Recipe> {
-  const db = createGameDb(token)
-  const limit = params.limit || 50
-  const offset = params.offset || 0
+  const db = createGameDb(token);
+  const limit = params.limit || 50;
+  const offset = params.offset || 0;
 
-  const conditions = []
+  const conditions = [];
   if (params.facilityType) {
-    conditions.push(eq(schema.recipes.facilityType, params.facilityType))
+    conditions.push(eq(schema.recipes.facilityType, params.facilityType));
   }
   if (params.techRequired) {
-    conditions.push(eq(schema.recipes.techRequired, params.techRequired))
+    conditions.push(eq(schema.recipes.techRequired, params.techRequired));
   }
 
-  let queryBuilder = db.select().from(schema.recipes).$dynamic()
+  let queryBuilder = db.select().from(schema.recipes).$dynamic();
   if (conditions.length > 0) {
-    queryBuilder = queryBuilder.where(and(...conditions))
+    queryBuilder = queryBuilder.where(and(...conditions));
   }
 
-  const recipeRows = queryBuilder.limit(limit).offset(offset).all()
+  const recipeRows = queryBuilder.limit(limit).offset(offset).all();
   const totalCount = db.select({ count: sql<number>`count(*)` })
     .from(schema.recipes)
     .get()
-    ?.count || 0
+    ?.count || 0;
 
-  const allInputs = db.select().from(schema.recipeInputs).all()
-  const allOutputs = db.select().from(schema.recipeOutputs).all()
+  const allInputs = db.select().from(schema.recipeInputs).all();
+  const allOutputs = db.select().from(schema.recipeOutputs).all();
 
   const recipes: Recipe[] = recipeRows.map(row => ({
     id: row.id,
@@ -122,19 +122,19 @@ export function getRecipes(
       })),
     craftTime: row.craftTime,
     techRequired: row.techRequired,
-  }))
+  }));
 
   if (params.unlockedOnly) {
-    const completedTech = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.status, 'Completed')).all().map(r => r.techId)
+    const completedTech = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.status, 'Completed')).all().map(r => r.techId);
 
-    const filtered = recipes.filter(r => !r.techRequired || completedTech.includes(r.techRequired))
+    const filtered = recipes.filter(r => !r.techRequired || completedTech.includes(r.techRequired));
     return {
       items: filtered,
       totalCount: filtered.length,
       limit,
       offset,
       hasMore: false,
-    }
+    };
   }
 
   return {
@@ -143,52 +143,52 @@ export function getRecipes(
     limit,
     offset,
     hasMore: offset + recipes.length < totalCount,
-  }
+  };
 }
 
 export function startResearch(
   token: string,
   techNodeId: string,
   labFacilityId: number,
-): { success: boolean, researchId: number } {
-  const db = createGameDb(token)
+): { success: boolean; researchId: number } {
+  const db = createGameDb(token);
 
-  const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get()
-  const tick = meta?.tickCount || 0
+  const meta = db.select().from(schema.meta).where(eq(schema.meta.key, 'game')).get();
+  const tick = meta?.tickCount || 0;
 
   // Validate the tech node exists
-  const techNode = db.select().from(schema.techNodes).where(eq(schema.techNodes.id, techNodeId)).get()
+  const techNode = db.select().from(schema.techNodes).where(eq(schema.techNodes.id, techNodeId)).get();
   if (!techNode) {
-    throw new Error(`Tech node not found: ${techNodeId}`)
+    throw new Error(`Tech node not found: ${techNodeId}`);
   }
 
   // Reject if already started or completed
-  const existing = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.techId, techNodeId)).get()
+  const existing = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.techId, techNodeId)).get();
   if (existing) {
-    throw new Error(`Research already ${existing.status} for ${techNodeId}`)
+    throw new Error(`Research already ${existing.status} for ${techNodeId}`);
   }
 
   // Check prerequisites are all Completed
-  const prereqs = db.select().from(schema.techPrerequisites).where(eq(schema.techPrerequisites.techId, techNodeId)).all()
+  const prereqs = db.select().from(schema.techPrerequisites).where(eq(schema.techPrerequisites.techId, techNodeId)).all();
   if (prereqs.length > 0) {
-    const completedTechIds = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.status, 'Completed')).all().map(r => r.techId)
-    const missing = prereqs.filter(p => !completedTechIds.includes(p.prerequisiteId))
+    const completedTechIds = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.status, 'Completed')).all().map(r => r.techId);
+    const missing = prereqs.filter(p => !completedTechIds.includes(p.prerequisiteId));
     if (missing.length > 0) {
-      const missingIds = missing.map(p => p.prerequisiteId).join(', ')
-      throw new Error(`Tech prerequisites not met for ${techNodeId}: requires ${missingIds}`)
+      const missingIds = missing.map(p => p.prerequisiteId).join(', ');
+      throw new Error(`Tech prerequisites not met for ${techNodeId}: requires ${missingIds}`);
     }
   }
 
   // Validate the lab facility exists, is a ResearchLab, and is Active
-  const lab = db.select().from(schema.facilities).where(eq(schema.facilities.id, labFacilityId)).get()
+  const lab = db.select().from(schema.facilities).where(eq(schema.facilities.id, labFacilityId)).get();
   if (!lab) {
-    throw new Error(`Facility not found: ${labFacilityId}`)
+    throw new Error(`Facility not found: ${labFacilityId}`);
   }
   if (lab.type !== 'ResearchLab') {
-    throw new Error(`Facility ${labFacilityId} is a ${lab.type}, not a ResearchLab`)
+    throw new Error(`Facility ${labFacilityId} is a ${lab.type}, not a ResearchLab`);
   }
   if (lab.status !== 'Active') {
-    throw new Error(`Research lab ${labFacilityId} is ${lab.status}, must be Active`)
+    throw new Error(`Research lab ${labFacilityId} is ${lab.status}, must be Active`);
   }
 
   const research = db.insert(schema.gameResearch).values({
@@ -198,66 +198,66 @@ export function startResearch(
     startedAtTick: tick,
     completedAtTick: null,
     labFacilityId,
-  }).returning().get()
+  }).returning().get();
 
-  return { success: true, researchId: research.id }
+  return { success: true, researchId: research.id };
 }
 
 export function searchRecipes(
   token: string,
   params: {
-    query?: string
-    outputResource?: string
-    inputResource?: string
-    facilityType?: string
-    techRequired?: string
-    unlockedOnly?: boolean
-    limit?: number
-    offset?: number
+    query?: string;
+    outputResource?: string;
+    inputResource?: string;
+    facilityType?: string;
+    techRequired?: string;
+    unlockedOnly?: boolean;
+    limit?: number;
+    offset?: number;
   },
 ): PaginatedResult<Recipe> {
-  const db = createGameDb(token)
-  const limit = Math.min(params.limit || 50, 200)
-  const offset = Math.max(params.offset || 0, 0)
+  const db = createGameDb(token);
+  const limit = Math.min(params.limit || 50, 200);
+  const offset = Math.max(params.offset || 0, 0);
 
-  let recipeQuery = db.select().from(schema.recipes).$dynamic()
-  const conditions = []
+  let recipeQuery = db.select().from(schema.recipes).$dynamic();
+  const conditions = [];
   if (params.facilityType) {
-    conditions.push(eq(schema.recipes.facilityType, params.facilityType))
+    conditions.push(eq(schema.recipes.facilityType, params.facilityType));
   }
   if (params.techRequired) {
-    conditions.push(eq(schema.recipes.techRequired, params.techRequired))
+    conditions.push(eq(schema.recipes.techRequired, params.techRequired));
   }
   if (params.query) {
-    conditions.push(like(schema.recipes.name, `%${params.query}%`))
+    conditions.push(like(schema.recipes.name, `%${params.query}%`));
   }
   if (conditions.length > 0) {
-    recipeQuery = recipeQuery.where(and(...conditions))
+    recipeQuery = recipeQuery.where(and(...conditions));
   }
 
-  let recipes = recipeQuery.all()
+  let recipes = recipeQuery.all();
 
   if (params.outputResource) {
-    const matchingOutputs = db.select().from(schema.recipeOutputs).where(eq(schema.recipeOutputs.resourceKey, params.outputResource)).all().map(r => r.recipeId)
-    recipes = recipes.filter(r => matchingOutputs.includes(r.id))
+    const matchingOutputs = db.select().from(schema.recipeOutputs).where(eq(schema.recipeOutputs.resourceKey, params.outputResource)).all().map(r => r.recipeId);
+    recipes = recipes.filter(r => matchingOutputs.includes(r.id));
   }
 
   if (params.inputResource) {
-    const matchingInputs = db.select().from(schema.recipeInputs).where(eq(schema.recipeInputs.resourceKey, params.inputResource)).all().map(r => r.recipeId)
-    recipes = recipes.filter(r => matchingInputs.includes(r.id))
+    const matchingInputs = db.select().from(schema.recipeInputs).where(eq(schema.recipeInputs.resourceKey, params.inputResource)).all().map(r => r.recipeId);
+    recipes = recipes.filter(r => matchingInputs.includes(r.id));
   }
 
   if (params.unlockedOnly) {
-    const completedTechIds = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.status, 'Completed')).all().map(r => r.techId)
-    recipes = recipes.filter(r => !r.techRequired || completedTechIds.includes(r.techRequired))
+    const completedTechIds = db.select().from(schema.gameResearch).where(eq(schema.gameResearch.status, 'Completed')).all().map(r => r.techId);
+    recipes = recipes.filter(r => !r.techRequired || completedTechIds.includes(r.techRequired));
   }
 
   // Apply pagination AFTER all filtering for correct totalCount + hasMore
-  const totalCount = recipes.length
-  const pagedRecipes = recipes.slice(offset, offset + limit)
+  const totalCount = recipes.length;
+  const pagedRecipes = recipes.slice(offset, offset + limit);
 
-  const allInputs = db.select().from(schema.recipeInputs).all()
-  const allOutputs = db.select().from(schema.recipeOutputs).all()
+  const allInputs = db.select().from(schema.recipeInputs).all();
+  const allOutputs = db.select().from(schema.recipeOutputs).all();
 
   const result: Recipe[] = pagedRecipes.map(r => ({
     id: r.id,
@@ -280,7 +280,7 @@ export function searchRecipes(
       })),
     craftTime: r.craftTime,
     techRequired: r.techRequired,
-  }))
+  }));
 
   return {
     items: result,
@@ -288,5 +288,5 @@ export function searchRecipes(
     limit,
     offset,
     hasMore: offset + result.length < totalCount,
-  }
+  };
 }

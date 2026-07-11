@@ -4,4 +4,4 @@ export {
   demolishTransport,
   getSupplyChainStatus,
   listTransports,
-} from './service'
+} from './service';

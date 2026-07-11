@@ -4,4 +4,4 @@ export {
   getTerrainModifications,
   getTerrainPath,
   terraform,
-} from './service'
+} from './service';
