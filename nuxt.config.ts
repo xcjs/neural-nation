@@ -18,10 +18,21 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: 'Neural Nation',
+      htmlAttrs: { lang: 'en' },
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Watch an LLM build an industrial economy on a 3D earth.' },
+        { name: 'description', content: 'Can AI safely run the world? Watch an LLM autonomously build an industrial economy on a 3D Earth.' },
+        { name: 'theme-color', content: '#021628' },
+        { property: 'og:title', content: 'Neural Nation' },
+        { property: 'og:description', content: 'Can AI safely run the world? Watch an LLM autonomously build an industrial economy on a 3D Earth.' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:image', content: '/logo.png' },
+        { property: 'og:site_name', content: 'Neural Nation' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'Neural Nation' },
+        { name: 'twitter:description', content: 'Can AI safely run the world? Watch an LLM autonomously build an industrial economy on a 3D Earth.' },
+        { name: 'twitter:image', content: '/logo.png' },
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
