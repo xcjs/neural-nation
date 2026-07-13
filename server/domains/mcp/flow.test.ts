@@ -2,10 +2,10 @@ import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { DifficultyPreset } from '../../../lib/types/game';
-import { createGame, executeTool, findRegistryEntry, getGameState } from '../../../test/helpers';
+import { createGame, createScopedContainer, executeTool, findRegistryEntry, getGameState } from '../../../test/helpers';
 import { createGameDb, getDataDir } from '../../db/client';
 import { schema } from '../../db/schema';
-import { MCP_TOOLS } from './tools';
+import { IToolRegistry } from '../mcp/IToolRegistry';
 
 const result = createGame(DifficultyPreset.Normal);
 const token = result.token;
@@ -36,15 +36,19 @@ describe('mCP end-to-end flow', () => {
   });
 
   it('exposes >=25 MCP tools, each with an inputSchema', () => {
-    expect(MCP_TOOLS.length).toBeGreaterThanOrEqual(25);
-    for (const t of MCP_TOOLS) {
+    const scope = createScopedContainer(token);
+    const tools = scope.resolve(IToolRegistry).getToolDefinitions();
+    expect(tools.length).toBeGreaterThanOrEqual(25);
+    for (const t of tools) {
       expect(t.inputSchema).toBeDefined();
       expect(t.name).toBeTruthy();
     }
   });
 
   it('includes expected core tools', () => {
-    const names = MCP_TOOLS.map(t => t.name);
+    const scope = createScopedContainer(token);
+    const tools = scope.resolve(IToolRegistry).getToolDefinitions();
+    const names = tools.map(t => t.name);
     for (const expected of [
       'survey_region',
       'build_facility',

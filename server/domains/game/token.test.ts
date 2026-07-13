@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateToken, generateTokenPair } from './token';
+import { generateToken, generateTokenPair } from './GameToken';
 
 describe('token generation', () => {
   it('generates a token of reasonable length', () => {

@@ -98,8 +98,18 @@ export class ForestGridTick implements ITick {
        WHERE density < max_density`,
     ).run(FOREST_REGEN_RATE);
 
-    const avgRow = rawDb.prepare('SELECT AVG(density) as avg FROM forest_grid').get() as { avg: number | null };
-    const forestPct = Math.max(0, Math.min(100, (avgRow.avg ?? 0) * 100));
+    // Normalize against AVG(max_density): pristine state (density == max_density
+    // for all cells) maps to 100%, and depletion drops it proportionally.
+    // Raw AVG(density) would give ~45% on tick 1 because climate-based max
+    // densities range from 0.15 (tundra) to 1.0 (tropical), not 1.0 everywhere.
+    const ratioRow = rawDb.prepare(
+      'SELECT AVG(density) as avgDensity, AVG(max_density) as avgMax FROM forest_grid',
+    ).get() as { avgDensity: number | null; avgMax: number | null };
+    const avgDensity = ratioRow.avgDensity ?? 0;
+    const avgMax = ratioRow.avgMax ?? 0;
+    const forestPct = avgMax > 0
+      ? Math.max(0, Math.min(100, (avgDensity / avgMax) * 100))
+      : Math.max(0, Math.min(100, avgDensity * 100));
     this.db.update(schema.environment)
       .set({ forestCoverage: forestPct })
       .where(eq(schema.environment.key, 'global'))

@@ -30,4 +30,12 @@ export default antfu({
     '*.db',
     'docs/**',
   ],
-});
+}).then(configs => [
+  ...configs,
+  {
+    files: ['scripts/**'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+]);
