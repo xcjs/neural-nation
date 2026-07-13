@@ -11,7 +11,7 @@ const fc = feature(topoData, topoData.objects.land as never) as unknown as GeoJS
 // Orthographic projection centered on [lat=15, lon=20] so Africa/Europe face viewer
 const CENTER_LAT = 15;
 const CENTER_LON = 20;
-const RADIUS = 24;
+const RADIUS = 30;
 const CX = 32;
 const CY = 32;
 
@@ -132,7 +132,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
       <stop offset="100%" stop-color="#0d6b4a" />
     </linearGradient>
     <clipPath id="globe">
-      <circle cx="32" cy="32" r="24" />
+      <circle cx="32" cy="32" r="30" />
     </clipPath>
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur stdDeviation="0.8" result="b" />
@@ -143,7 +143,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
     </filter>
   </defs>
 
-  <circle cx="32" cy="32" r="24" fill="url(#ocean)" stroke="#22d3ee" stroke-width="0.6" stroke-opacity="0.7" />
+  <circle cx="32" cy="32" r="30" fill="url(#ocean)" stroke="#22d3ee" stroke-width="0.6" stroke-opacity="0.7" />
 
   <g clip-path="url(#globe)">
     <g fill="url(#landN)" opacity="0.92">
