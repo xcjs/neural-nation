@@ -269,6 +269,7 @@ function buildEnvironmentOverlay(): void {
         depthWrite: false,
       });
       forestMesh = new THREE.Mesh(forestGeo, forestMaterial);
+      forestMesh.rotation.y = earthMesh.rotation.y;
       scene.add(forestMesh);
     })
     .catch(() => {
