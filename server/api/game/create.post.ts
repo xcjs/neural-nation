@@ -1,12 +1,13 @@
-import { defineEventHandler } from 'h3';
+import { defineEventHandler, getRequestURL } from 'h3';
 import { IGameFactory } from '../../domains/game/GameModule';
 import { useContainer } from '../../utils/container';
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
   const container = useContainer();
   const gameFactory = container.resolve(IGameFactory);
 
-  const result = gameFactory.createGame();
+  const origin = getRequestURL(event).origin;
+  const result = gameFactory.createGame(origin);
 
   return {
     token: result.token,

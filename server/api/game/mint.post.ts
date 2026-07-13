@@ -1,4 +1,4 @@
-import { defineEventHandler, getQuery } from 'h3';
+import { defineEventHandler, getQuery, getRequestURL } from 'h3';
 import { IGameService } from '../../domains/game/GameModule';
 import { findRegistryEntry } from '../../domains/game/GameRegistry';
 import { useContainer } from '../../utils/container';
@@ -23,7 +23,8 @@ export default defineEventHandler(async (event) => {
   try {
     const container = useContainer();
     const gameService = container.resolve(IGameService);
-    const result = gameService.mintNewToken(token);
+    const origin = getRequestURL(event).origin;
+    const result = gameService.mintNewToken(token, origin);
     return result;
   }
   catch (err) {

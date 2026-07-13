@@ -16,8 +16,8 @@ export class GameService {
     private readonly gameFactory: GameFactory,
   ) {}
 
-  createGame(): CreateGameResult {
-    return this.gameFactory.createGame();
+  createGame(origin?: string): CreateGameResult {
+    return this.gameFactory.createGame(origin);
   }
 
   getGameMeta(): GameMeta | undefined {
@@ -51,7 +51,7 @@ export class GameService {
     return { success: true };
   }
 
-  mintNewToken(oldToken: string): { token: string; publicToken: string; mcpUrl: string } {
+  mintNewToken(oldToken: string, origin?: string): { token: string; publicToken: string; mcpUrl: string } {
     const entry = findRegistryEntry(oldToken);
     if (!entry)
       throw new Error('Game not found');
@@ -88,6 +88,6 @@ export class GameService {
     };
     addToRegistry(newEntry);
 
-    return { token: newToken, publicToken: newPublicToken, mcpUrl: buildMcpUrl(newToken) };
+    return { token: newToken, publicToken: newPublicToken, mcpUrl: buildMcpUrl(newToken, origin) };
   }
 }

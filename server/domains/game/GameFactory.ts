@@ -10,7 +10,7 @@ import { generateTokenPair } from './GameToken';
 import { buildMcpUrl } from './McpUrlBuilder';
 
 export class GameFactory {
-  createGame(): CreateGameResult {
+  createGame(origin?: string): CreateGameResult {
     const { token, publicToken } = generateTokenPair();
 
     ensureDataDir();
@@ -51,7 +51,7 @@ export class GameFactory {
     };
     addToRegistry(entry);
 
-    return { token, publicToken, mcpUrl: buildMcpUrl(token) };
+    return { token, publicToken, mcpUrl: buildMcpUrl(token, origin) };
   }
 
   private seedStartingResources(db: GameDb): void {
