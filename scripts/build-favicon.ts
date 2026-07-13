@@ -4,7 +4,7 @@ import process from 'node:process';
 import { feature } from 'topojson-client';
 import data from 'world-atlas/land-50m.json';
 
-const topoData = data as unknown as { objects: Record<string, unknown>; arcs: unknown[]; transform: unknown };
+const topoData = data as unknown as { type: 'Topology'; objects: Record<string, unknown>; arcs: unknown[]; transform: unknown };
 
 // Convert to GeoJSON FeatureCollection (continental land-mass, no country borders)
 const fc = feature(topoData, topoData.objects.land as never) as unknown as GeoJSON.FeatureCollection;
@@ -56,29 +56,36 @@ function projectRing(ring: GeoJSON.Position[]): string {
   let path = '';
   const step = Math.max(2, Math.floor(ring.length / 500)); // target ~500 points per ring
   for (let i = 0; i < ring.length; i += step) {
-    const [lon, lat] = ring[i];
+    const pt = ring[i];
+    if (!pt)
+      continue;
+    const [lon, lat] = pt;
     const [px, py] = project(lon, lat);
     path += `${path === '' ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)} `;
   }
   // Close to first point
   if (ring.length > 0) {
-    const [lon, lat] = ring[0];
-    const [px, py] = project(lon, lat);
-    path += `L ${px.toFixed(1)} ${py.toFixed(1)} `;
+    const first = ring[0];
+    if (first) {
+      const [lon, lat] = first;
+      const [px, py] = project(lon, lat);
+      path += `L ${px.toFixed(1)} ${py.toFixed(1)} `;
+    }
   }
   return `${path}Z`;
 }
 
 function projectGeometry(geom: GeoJSON.Geometry): string {
   if (geom.type === 'Polygon') {
-    if (geom.coordinates[0].length < 200)
+    const outer = geom.coordinates[0];
+    if (!outer || outer.length < 200)
       return ''; // only major landmasses
-    return projectRing(geom.coordinates[0]);
+    return projectRing(outer);
   }
   else if (geom.type === 'MultiPolygon') {
     const parts = geom.coordinates
-      .filter(poly => poly[0].length >= 200)
-      .map(poly => projectRing(poly[0]));
+      .filter(poly => poly[0]?.length ?? 0 >= 200)
+      .map(poly => poly[0] ? projectRing(poly[0]) : '');
     return parts.join(' ');
   }
   return '';
@@ -117,8 +124,12 @@ const edges: Array<[number, number]> = [
   [0, 5],
 ];
 const edgePaths = edges.map(([a, b]) => {
-  const [x1, y1] = nodePts[a];
-  const [x2, y2] = nodePts[b];
+  const p1 = nodePts[a];
+  const p2 = nodePts[b];
+  if (!p1 || !p2)
+    return '';
+  const [x1, y1] = p1;
+  const [x2, y2] = p2;
   return `        <path d="M ${x1.toFixed(1)} ${y1.toFixed(1)} L ${x2.toFixed(1)} ${y2.toFixed(1)}" />`;
 }).join('\n');
 const nodeCircles = nodePts.map(([x, y]) => `        <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="0.8" />`).join('\n');
