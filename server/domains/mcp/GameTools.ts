@@ -55,7 +55,6 @@ export class GameTools {
   getGameState(): {
     tick: number | null;
     status: string;
-    difficulty: string;
     createdAt: string;
     facilityCount: number;
     transportCount: number;
@@ -78,7 +77,6 @@ export class GameTools {
     return {
       tick: meta.tickCount ?? null,
       status: meta.status,
-      difficulty: meta.difficulty,
       createdAt: meta.createdAt,
       facilityCount,
       transportCount,

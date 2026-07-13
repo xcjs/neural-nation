@@ -25,9 +25,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'facilityClick', facilityId: number): void;
+  (e: 'facilityHover', facilityId: number | null): void;
 }>();
 
 const container = ref<HTMLDivElement | null>(null);
+const hoverTooltip = ref<{ x: number; y: number; name: string; type: string; status: string } | null>(null);
 let renderer: THREE.WebGLRenderer;
 let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
@@ -136,6 +138,7 @@ function init() {
   raycaster = new THREE.Raycaster();
   pointer = new THREE.Vector2();
   renderer.domElement.addEventListener('pointerdown', onPointerDown);
+  renderer.domElement.addEventListener('pointermove', onPointerMove);
 
   // Earth sphere — wireframe/holographic style
   const geometry = new THREE.IcosahedronGeometry(EARTH_RADIUS, 6);
@@ -360,73 +363,6 @@ function updateEarthTint(): void {
   mat.color.setRGB(r, g, b);
 }
 
-function getMarkerGeometry(type: string, size: number): THREE.BufferGeometry {
-  switch (type) {
-    case 'Extractor':
-    case 'Excavator':
-    case 'Dredger':
-      // Diamond
-      return new THREE.OctahedronGeometry(size, 0);
-    case 'Farm':
-    case 'Forestry':
-    case 'WaterPump':
-    case 'HydroPlant':
-      // Circle
-      return new THREE.CircleGeometry(size, 16);
-    case 'Processor':
-    case 'Smelter':
-    case 'Refinery':
-    case 'ChemicalPlant':
-    case 'EthanolRefinery':
-    case 'SoylentPlant':
-      // Square
-      return new THREE.PlaneGeometry(size * 1.4, size * 1.4);
-    case 'Factory':
-    case 'AdvancedFactory':
-    case 'OilPlant':
-      // Square with inner square (use RingGeometry for hollow look)
-      return new THREE.RingGeometry(size * 0.5, size, 4);
-    case 'PowerPlant':
-    case 'CoalPlant':
-    case 'GasPlant':
-    case 'DieselGenerator':
-    case 'BiomassPlant':
-    case 'BiogasPlant':
-    case 'GeothermalPlant':
-    case 'NuclearReactor':
-    case 'BreederReactor':
-    case 'FusionReactor':
-      // Hexagon
-      return new THREE.CylinderGeometry(size, size, size * 0.5, 6);
-    case 'SolarFarm':
-    case 'WindFarm':
-      // Flat panel
-      return new THREE.PlaneGeometry(size * 1.6, size * 1.6);
-    case 'Storage':
-    case 'BatteryBank':
-      // Triangle
-      return new THREE.ConeGeometry(size, size * 1.5, 3);
-    case 'ResearchLab':
-    case 'SpaceStation':
-    case 'DeepSpaceProbe':
-    case 'SpaceHabitat':
-      // Star (5-point cone approximation)
-      return new THREE.ConeGeometry(size, size * 2, 5);
-    case 'Spaceport':
-    case 'RocketAssembly':
-    case 'OrbitalRefinery':
-    case 'LunarMine':
-      // Inverted cone (launch pad shape)
-      return new THREE.ConeGeometry(size, size * 1.5, 8);
-    case 'Terraformer':
-    case 'PlanetaryEngine':
-      // Large octahedron (diamond)
-      return new THREE.OctahedronGeometry(size * 1.2, 0);
-    default:
-      return new THREE.OctahedronGeometry(size, 0);
-  }
-}
-
 function onPointerDown(event: PointerEvent) {
   if (!container.value)
     return;
@@ -435,28 +371,65 @@ function onPointerDown(event: PointerEvent) {
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
   raycaster.setFromCamera(pointer, camera);
-  // Collect all marker meshes from LOD children
+  // Only raycast against invisible hit cylinders (not footprints/lines)
   const meshes: THREE.Object3D[] = [];
   markerGroup.children.forEach((child) => {
-    const lod = child as THREE.LOD;
-    if (lod.isLOD) {
-      lod.children.forEach((c) => {
-        if (c.type === 'Mesh')
-          meshes.push(c);
-      });
-    }
-    else {
-      meshes.push(child);
+    if (child.type === 'Mesh') {
+      const mat = (child as THREE.Mesh).material as THREE.MeshBasicMaterial;
+      if (mat.opacity === 0)
+        meshes.push(child);
     }
   });
 
   const intersects = raycaster.intersectObjects(meshes, false);
   if (intersects.length > 0) {
-    const hit = intersects[0]!.object;
-    const facilityId = hit.userData.facilityId as number | undefined;
+    const facilityId = intersects[0]!.object.userData.facilityId as number | undefined;
     if (facilityId !== undefined) {
       emit('facilityClick', facilityId);
     }
+  }
+}
+
+function onPointerMove(event: PointerEvent) {
+  if (!container.value || !renderer) {
+    hoverTooltip.value = null;
+    return;
+  }
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointer, camera);
+  const meshes: THREE.Object3D[] = [];
+  markerGroup.children.forEach((child) => {
+    if (child.type === 'Mesh') {
+      const mat = (child as THREE.Mesh).material as THREE.MeshBasicMaterial;
+      if (mat.opacity === 0)
+        meshes.push(child);
+    }
+  });
+
+  const intersects = raycaster.intersectObjects(meshes, false);
+  if (intersects.length > 0) {
+    const facilityId = intersects[0]!.object.userData.facilityId as number | undefined;
+    if (facilityId !== undefined) {
+      const f = props.facilities.find(fac => fac.id === facilityId);
+      if (f) {
+        hoverTooltip.value = {
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+          name: f.name,
+          type: f.type,
+          status: f.status,
+        };
+        emit('facilityHover', facilityId);
+        return;
+      }
+    }
+  }
+  if (hoverTooltip.value !== null) {
+    hoverTooltip.value = null;
+    emit('facilityHover', null);
   }
 }
 
@@ -479,7 +452,7 @@ function buildFootprintPolygon(footprint: Array<{ lat: number; lon: number }>, c
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
-  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false });
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
   const mesh = new THREE.Mesh(geo, mat);
   group.add(mesh);
   const outlineGeo = new THREE.BufferGeometry();
@@ -489,7 +462,7 @@ function buildFootprintPolygon(footprint: Array<{ lat: number; lon: number }>, c
     outlinePoints.push(p.x, p.y, p.z);
   }
   outlineGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(outlinePoints), 3));
-  const outlineMat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9 });
+  const outlineMat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
   const outline = new THREE.Line(outlineGeo, outlineMat);
   group.add(outline);
   return group;
@@ -606,39 +579,31 @@ function updateMarkers() {
     activity: number;
   }[] = [];
   for (const f of props.facilities) {
-    const pos = latLonToVec3(f.lat, f.lon, EARTH_RADIUS * 1.02);
+    const surfacePos = latLonToVec3(f.lat, f.lon, EARTH_RADIUS);
+    const topPos = latLonToVec3(f.lat, f.lon, EARTH_RADIUS * 1.04);
 
     const color = markerColors[f.type] ?? 0x00FFFF;
-    const size = f.status === 'Active' ? 0.02 : 0.015;
+    const isActive = f.status === 'Active';
 
-    // LOD: high detail (type-specific shape + glow) up close, billboard far away
-    const lod = new THREE.LOD();
-    const markerGeo = getMarkerGeometry(f.type, size);
-    const markerMat = new THREE.MeshBasicMaterial({ color });
-    const marker = new THREE.Mesh(markerGeo, markerMat);
-    marker.position.copy(pos);
-    marker.lookAt(0, 0, 0);
-    marker.userData.facilityId = f.id;
-    lod.addLevel(marker, 0);
-    lod.userData.facilityId = f.id;
+    // Vertical line marker from surface upward
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([surfacePos, topPos]);
+    const lineMat = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity: isActive ? 0.9 : 0.4,
+    });
+    const line = new THREE.Line(lineGeo, lineMat);
+    line.userData.facilityId = f.id;
+    markerGroup.add(line);
 
-    // Glow dot
-    const dotGeo = new THREE.SphereGeometry(size * 1.8, 8, 8);
-    const dotMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3 });
-    const dot = new THREE.Mesh(dotGeo, dotMat);
-    dot.position.copy(pos);
-    dot.userData.facilityId = f.id;
-    lod.addLevel(dot, 1.5);
-
-    // Simple point sprite at far distance
-    const farGeo = new THREE.BufferGeometry();
-    farGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([pos.x, pos.y, pos.z]), 3));
-    const farMat = new THREE.PointsMaterial({ color, size: 3, sizeAttenuation: false, transparent: true, opacity: 0.8 });
-    const farPoint = new THREE.Points(farGeo, farMat);
-    farPoint.userData.facilityId = f.id;
-    lod.addLevel(farPoint, 5);
-
-    markerGroup.add(lod);
+    // Invisible larger cylinder for easier raycasting
+    const hitGeo = new THREE.CylinderGeometry(0.008, 0.008, EARTH_RADIUS * 0.04, 6, 1, true);
+    const hitMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+    const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+    hitMesh.position.copy(topPos);
+    hitMesh.lookAt(0, 0, 0);
+    hitMesh.userData.facilityId = f.id;
+    markerGroup.add(hitMesh);
 
     // Footprint polygon (if facility has one)
     if (f.footprint && f.footprint.length >= 3) {
@@ -650,11 +615,11 @@ function updateMarkers() {
     }
 
     // Particle cloud data (only for Active facilities)
-    if (f.status === 'Active') {
+    if (isActive) {
       const motion = motionByType[f.type] ?? 0;
       if (motion > 0) {
         facilityParticleData.push({
-          pos: pos.clone(),
+          pos: topPos.clone(),
           color: new THREE.Color(color),
           motion,
           activity: Math.min(1, (f as { throughput?: number }).throughput || 0.5),
@@ -1128,26 +1093,13 @@ function animate() {
   if (forestMesh)
     forestMesh.rotation.y += 0.0005;
 
-  // Moon orbit
-  // Pulse markers (handle LOD children)
+  // Pulse active facility lines
   const time = Date.now() * 0.001;
   markerGroup.children.forEach((child) => {
-    const lod = child as THREE.LOD;
-    if (lod.isLOD) {
-      lod.update(camera);
-      const currentLevel = lod.getCurrentLevel();
-      const level = currentLevel >= 0 ? lod.children[currentLevel] : null;
-      if (level && level.type === 'Mesh') {
-        const mat = (level as THREE.Mesh).material as THREE.MeshBasicMaterial;
-        if (mat.transparent) {
-          mat.opacity = 0.2 + Math.sin(time * 2 + level.id) * 0.15;
-        }
-      }
-    }
-    else if (child.type === 'Mesh') {
-      const mat = (child as THREE.Mesh).material as THREE.MeshBasicMaterial;
+    if (child.type === 'Line') {
+      const mat = (child as THREE.Line).material as THREE.LineBasicMaterial;
       if (mat.transparent) {
-        mat.opacity = 0.2 + Math.sin(time * 2 + child.id) * 0.15;
+        mat.opacity = 0.6 + Math.sin(time * 2 + child.id) * 0.2;
       }
     }
   });
@@ -1214,6 +1166,7 @@ onUnmounted(() => {
   cancelAnimationFrame(animationId);
   window.removeEventListener('resize', onResize);
   renderer?.domElement.removeEventListener('pointerdown', onPointerDown);
+  renderer?.domElement.removeEventListener('pointermove', onPointerMove);
   controls?.dispose();
   renderer?.dispose();
   renderer?.forceContextLoss();
@@ -1223,5 +1176,18 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="container" class="w-full h-full" />
+  <div ref="container" class="w-full h-full">
+    <div
+      v-if="hoverTooltip"
+      class="pointer-events-none fixed z-50 rounded-md border border-cyan-500/60 bg-slate-900/95 px-2 py-1 text-xs text-cyan-100 shadow-lg shadow-cyan-500/20"
+      :style="{ left: `${hoverTooltip.x + 12}px`, top: `${hoverTooltip.y + 12}px` }"
+    >
+      <div class="font-semibold text-cyan-300">
+        {{ hoverTooltip.name }}
+      </div>
+      <div class="text-slate-300">
+        {{ hoverTooltip.type }} · {{ hoverTooltip.status }}
+      </div>
+    </div>
+  </div>
 </template>

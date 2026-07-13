@@ -13,12 +13,6 @@ export enum GameStatus {
   PendingCleanup = 'PendingCleanup',
 }
 
-export enum DifficultyPreset {
-  Easy = 'Easy',
-  Normal = 'Normal',
-  Hard = 'Hard',
-}
-
 export interface GameMeta {
   token: string;
   publicToken: string;
@@ -27,7 +21,6 @@ export interface GameMeta {
   lastTickAt: string | null;
   tickCount: number;
   status: GameStatus;
-  difficulty: DifficultyPreset;
   cleanupEligibleAt: string | null;
 }
 

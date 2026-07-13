@@ -33,7 +33,6 @@ export class GameStateService {
       lastTickAt: meta.lastTickAt,
       tickCount: meta.tickCount ?? 0,
       status: (meta.status as GameStatus) || GameStatus.Active,
-      difficulty: meta.difficulty as never,
       cleanupEligibleAt: meta.cleanupEligibleAt,
     };
 

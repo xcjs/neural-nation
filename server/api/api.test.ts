@@ -1,7 +1,6 @@
 import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { DifficultyPreset } from '../../lib/types/game';
 import { createGame, executeTool, getDataDir, removeFromRegistry } from '../../test/helpers';
 import gameStateHandler from './game-state.get';
 import actionsHandler from './game/actions.get';
@@ -23,7 +22,7 @@ function mockEvent(method: string, query: Record<string, string> = {}, body?: un
   } as never;
 }
 
-const game = createGame(DifficultyPreset.Normal);
+const game = createGame();
 const token = game.token;
 const publicToken = game.publicToken;
 
@@ -49,7 +48,7 @@ describe('aPI route handlers', () => {
 
   describe('pOST /api/game/create', () => {
     it('creates a game and returns token + mcpUrl', async () => {
-      const event = mockEvent('POST', {}, { difficulty: 'Normal' });
+      const event = mockEvent('POST');
       const result: any = await createGameHandler(event);
       expect(result.token).toBeTruthy();
       expect(result.publicToken).toBeTruthy();

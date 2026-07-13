@@ -1,10 +1,9 @@
 import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { DifficultyPreset } from '../../../lib/types/game';
 import { createGame, executeTool, getDataDir } from '../../../test/helpers';
 
-const result = createGame(DifficultyPreset.Normal);
+const result = createGame();
 const token = result.token;
 
 afterAll(() => {

@@ -11,7 +11,7 @@ export class FacilityTools {
       inputSchema: {
         type: 'object',
         properties: {
-          type: { type: 'string', description: 'Facility type (e.g., "extractor", "smelter", "factory", "solar_farm")' },
+          type: { type: 'string', description: 'Facility type (e.g., "Extractor", "Smelter", "Factory", "SolarFarm"). Case-insensitive, snake_case accepted.' },
           name: { type: 'string', description: 'Human-readable facility name' },
           lat: { type: 'number' },
           lon: { type: 'number' },

@@ -1,33 +1,12 @@
 <script setup lang="ts">
 import { $fetch } from 'ofetch';
-import { computed, onMounted, ref } from 'vue';
-import { DifficultyPreset } from '~/lib/types/game';
+import { onMounted, ref } from 'vue';
 
-const difficulty = ref<DifficultyPreset>(DifficultyPreset.Normal);
 const loading = ref(false);
 const error = ref('');
 const created = ref<{ token: string; publicToken: string; mcpUrl: string } | null>(null);
 const copied = ref(false);
-const existingGames = ref<Array<{ publicToken: string; difficulty: string }>>([]);
-
-const difficulties = [
-  { value: DifficultyPreset.Easy, label: 'EASY' },
-  { value: DifficultyPreset.Normal, label: 'NORMAL' },
-  { value: DifficultyPreset.Hard, label: 'HARD' },
-];
-
-const difficultyDescription = computed(() => {
-  switch (difficulty.value) {
-    case DifficultyPreset.Easy:
-      return 'Generous starting resources. Population 500-1000.';
-    case DifficultyPreset.Normal:
-      return 'Moderate starting resources. Population 300-700.';
-    case DifficultyPreset.Hard:
-      return 'Minimal starting resources. Population 200-500.';
-    default:
-      return '';
-  }
-});
+const existingGames = ref<Array<{ publicToken: string }>>([]);
 
 async function createGame() {
   loading.value = true;
@@ -35,13 +14,12 @@ async function createGame() {
   try {
     const res = await $fetch<{ token: string; publicToken: string; mcpUrl: string }>('/api/game/create', {
       method: 'POST',
-      body: { difficulty: difficulty.value },
     });
     created.value = res;
 
     sessionStorage.setItem(`nn-private-${res.publicToken}`, res.token);
     const saved = JSON.parse(localStorage.getItem('neural-nation-games') || '[]');
-    saved.push({ publicToken: res.publicToken, difficulty: difficulty.value });
+    saved.push({ publicToken: res.publicToken });
     localStorage.setItem('neural-nation-games', JSON.stringify(saved));
     loadExistingTokens();
   }
@@ -83,27 +61,6 @@ onMounted(loadExistingTokens);
 
       <div v-if="error" class="text-red-400 mb-4 text-sm">
         {{ error }}
-      </div>
-
-      <div class="mb-6">
-        <label class="block text-cyan-500 text-sm mb-2">DIFFICULTY</label>
-        <div class="flex gap-2">
-          <button
-            v-for="d in difficulties"
-            :key="d.value"
-            class="px-4 py-2 border transition-colors" :class="[
-              difficulty === d.value
-                ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
-                : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
-            ]"
-            @click="difficulty = d.value"
-          >
-            {{ d.label }}
-          </button>
-        </div>
-        <p class="text-cyan-700 text-xs mt-1">
-          {{ difficultyDescription }}
-        </p>
       </div>
 
       <button
@@ -153,7 +110,7 @@ onMounted(loadExistingTokens);
             :to="`/watch?token=${g.publicToken}`"
             class="text-cyan-500 hover:text-cyan-300 text-sm truncate"
           >
-            → Game #{{ i + 1 }} ({{ g.difficulty }})
+            → Game #{{ i + 1 }}
           </NuxtLink>
         </div>
       </div>

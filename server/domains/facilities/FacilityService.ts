@@ -84,6 +84,18 @@ const CONSTRUCTION_COSTS: Record<string, ConstructionCost[]> = {
   PlanetaryEngine: [{ resourceKey: 'Steel', quantity: 30, unit: 't' }, { resourceKey: 'Concrete', quantity: 50, unit: 't' }, { resourceKey: 'Machinery', quantity: 10, unit: 't' }, { resourceKey: 'Electronics', quantity: 5, unit: 't' }, { resourceKey: 'Alloys', quantity: 5, unit: 't' }, { resourceKey: 'Composites', quantity: 3, unit: 't' }],
 };
 
+function normalizeFacilityType(type: string): string {
+  const trimmed = type.trim();
+  if (trimmed in CONSTRUCTION_COSTS)
+    return trimmed;
+  const pascal = trimmed
+    .toLowerCase()
+    .replace(/(^|[_\s-])(\w)/g, (_, __, c: string) => c.toUpperCase());
+  if (pascal in CONSTRUCTION_COSTS)
+    return pascal;
+  return trimmed;
+}
+
 interface GeoPoint { lat: number; lon: number }
 
 function safeParseFootprint(json: string): GeoPoint[] | null {
@@ -148,6 +160,24 @@ function polygonsIntersect(a: GeoPoint[], b: GeoPoint[]): boolean {
   return false;
 }
 
+const BASE_FACILITY_AREA_KM2 = 1;
+
+function footprintAreaKm2(footprint: GeoPoint[]): number {
+  if (footprint.length < 3)
+    return 0;
+  let areaDeg2 = 0;
+  for (let i = 0; i < footprint.length; i++) {
+    const p1 = footprint[i]!;
+    const p2 = footprint[(i + 1) % footprint.length]!;
+    areaDeg2 += (p1.lon * p2.lat - p2.lon * p1.lat);
+  }
+  areaDeg2 = Math.abs(areaDeg2) / 2;
+  const avgLat = footprint.reduce((s, p) => s + p.lat, 0) / footprint.length;
+  const kmPerDegLat = 111;
+  const kmPerDegLon = 111 * Math.cos(avgLat * Math.PI / 180);
+  return areaDeg2 * kmPerDegLat * kmPerDegLon;
+}
+
 function mapToSummary(facility: FacilityRow): FacilitySummary {
   return {
     id: facility.id,
@@ -177,16 +207,17 @@ export class FacilityService {
     footprint?: Array<{ lat: number; lon: number }>;
   }): { facilityId: number; status: string } {
     const tick = this.facilityRepo.getTick();
+    const facilityType = normalizeFacilityType(params.type);
 
-    const requiredTech = FACILITY_TECH_REQUIREMENTS[params.type];
+    const requiredTech = FACILITY_TECH_REQUIREMENTS[facilityType];
     if (requiredTech) {
       const completedTech = this.facilityRepo.getCompletedTechIds();
       if (!completedTech.includes(requiredTech)) {
-        throw new Error(`Facility type ${params.type} requires tech "${requiredTech}" to be researched`);
+        throw new Error(`Facility type ${facilityType} requires tech "${requiredTech}" to be researched`);
       }
     }
 
-    const isPowerGenerating = POWER_GENERATING_TYPES.has(params.type);
+    const isPowerGenerating = POWER_GENERATING_TYPES.has(facilityType);
 
     if (!params.footprint || params.footprint.length < 3) {
       throw new Error('Footprint is required: provide at least 3 {lat, lon} points forming a polygon');
@@ -204,12 +235,12 @@ export class FacilityService {
       }
     }
 
-    this.checkAndConsumeConstructionCosts(params.type);
+    this.checkAndConsumeConstructionCosts(facilityType, params.footprint);
 
     const footprint = JSON.stringify(params.footprint);
 
     const facility = this.facilityRepo.insertFacility({
-      type: params.type,
+      type: facilityType,
       name: params.name,
       lat: params.lat,
       lon: params.lon,
@@ -223,22 +254,27 @@ export class FacilityService {
     return { facilityId: facility.id, status: facility.status };
   }
 
-  private checkAndConsumeConstructionCosts(type: string): void {
+  private checkAndConsumeConstructionCosts(type: string, footprint: GeoPoint[]): void {
     const costs = CONSTRUCTION_COSTS[type];
     if (!costs || costs.length === 0)
       return;
 
+    const areaKm2 = Math.max(footprintAreaKm2(footprint), 0.01);
+    const scale = areaKm2 / BASE_FACILITY_AREA_KM2;
+
     for (const cost of costs) {
+      const needed = cost.quantity * scale;
       const stockpile = this.facilityRepo.getStockpile(cost.resourceKey);
-      if (!stockpile || stockpile.quantity < cost.quantity) {
+      if (!stockpile || stockpile.quantity < needed) {
         const have = stockpile?.quantity ?? 0;
-        throw new Error(`Insufficient resources to build ${type}: need ${cost.quantity}${cost.unit} ${cost.resourceKey}, have ${have}${cost.unit}`);
+        throw new Error(`Insufficient resources to build ${type}: need ${needed.toFixed(1)}${cost.unit} ${cost.resourceKey} (footprint ${areaKm2.toFixed(2)} km² × ${cost.quantity}${cost.unit}), have ${have}${cost.unit}`);
       }
     }
 
     for (const cost of costs) {
+      const needed = cost.quantity * scale;
       const stockpile = this.facilityRepo.getStockpile(cost.resourceKey);
-      this.facilityRepo.decrementStockpile(stockpile!.id, stockpile!.quantity - cost.quantity);
+      this.facilityRepo.decrementStockpile(stockpile!.id, stockpile!.quantity - needed);
     }
   }
 

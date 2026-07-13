@@ -1,4 +1,3 @@
-import type { DifficultyPreset } from '../lib/types/game';
 import type { Container } from '../server/domains/ioc/Container';
 import { DbConnection } from '../server/domains/db/DbConnection';
 import { createGameDbFromPath, getDataDir, getGameDbPath } from '../server/domains/db/DbFactory';
@@ -11,10 +10,10 @@ import { IMcpDispatcher } from '../server/domains/mcp/McpModule';
 
 export { findRegistryEntry, getDataDir, removeFromRegistry };
 
-export function createGame(difficulty: DifficultyPreset): { token: string; publicToken: string; mcpUrl: string } {
+export function createGame(): { token: string; publicToken: string; mcpUrl: string } {
   const container = getRootContainer();
   const gameFactory = container.resolve(IGameFactory);
-  return gameFactory.createGame(difficulty);
+  return gameFactory.createGame();
 }
 
 export function createScopedContainer(token: string): Container {
@@ -34,7 +33,6 @@ export function executeTool(token: string, toolName: string, args: Record<string
 export interface GameState {
   tick: number | null;
   status: string;
-  difficulty: string;
   createdAt: string;
   facilityCount: number;
   transportCount: number;

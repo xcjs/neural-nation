@@ -1,13 +1,12 @@
 import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { DifficultyPreset } from '../../../lib/types/game';
 import { createGame, createScopedContainer, executeTool, findRegistryEntry, getGameState } from '../../../test/helpers';
 import { createGameDb, getDataDir } from '../../db/client';
 import { schema } from '../../db/schema';
 import { IToolRegistry } from '../mcp/IToolRegistry';
 
-const result = createGame(DifficultyPreset.Normal);
+const result = createGame();
 const token = result.token;
 
 afterAll(() => {

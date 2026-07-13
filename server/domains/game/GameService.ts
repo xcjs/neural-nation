@@ -1,4 +1,4 @@
-import type { DifficultyPreset, GameMeta, RegistryEntry } from '../../../lib/types/game';
+import type { GameMeta, RegistryEntry } from '../../../lib/types/game';
 import type { GameFactory } from './GameFactory';
 import type { CreateGameResult } from './Models/CreateGameResult';
 import type { IGameRepository } from './Repositories/IGameRepository';
@@ -16,8 +16,8 @@ export class GameService {
     private readonly gameFactory: GameFactory,
   ) {}
 
-  createGame(difficulty: DifficultyPreset): CreateGameResult {
-    return this.gameFactory.createGame(difficulty);
+  createGame(): CreateGameResult {
+    return this.gameFactory.createGame();
   }
 
   getGameMeta(): GameMeta | undefined {

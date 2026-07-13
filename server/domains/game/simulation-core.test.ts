@@ -2,12 +2,11 @@ import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { DifficultyPreset } from '../../../lib/types/game';
 import { createGame, executeTool, getGameState } from '../../../test/helpers';
 import { createGameDb, getDataDir } from '../../db/client';
 import { schema } from '../../db/schema';
 
-const result = createGame(DifficultyPreset.Normal);
+const result = createGame();
 const token = result.token;
 const db = createGameDb(token);
 

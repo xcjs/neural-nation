@@ -1,8 +1,8 @@
 import type { GameDb } from '../../db/client';
 import type { CreateGameResult } from './Models/CreateGameResult';
 import { copyFileSync, existsSync } from 'node:fs';
-import { DifficultyConfigs } from '../../../lib/constants/difficulty';
-import { type DifficultyPreset, GameStatus, type RegistryEntry } from '../../../lib/types/game';
+import { WorldDefaults } from '../../../lib/constants/difficulty';
+import { GameStatus, type RegistryEntry } from '../../../lib/types/game';
 import { schema } from '../../db/schema';
 import { createGameDb, getGameDbPath, getTemplateDbPath } from '../db/DbFactory';
 import { addToRegistry, ensureDataDir } from './GameRegistry';
@@ -10,7 +10,7 @@ import { generateTokenPair } from './GameToken';
 import { buildMcpUrl } from './McpUrlBuilder';
 
 export class GameFactory {
-  createGame(difficulty: DifficultyPreset): CreateGameResult {
+  createGame(): CreateGameResult {
     const { token, publicToken } = generateTokenPair();
 
     ensureDataDir();
@@ -34,12 +34,12 @@ export class GameFactory {
       lastTickAt: null,
       tickCount: 0,
       status: 'Active',
-      difficulty,
+      difficulty: 'Normal',
       cleanupEligibleAt: null,
     }).run();
 
-    this.seedStartingResources(db, difficulty);
-    this.seedStartingPopulation(db, difficulty);
+    this.seedStartingResources(db);
+    this.seedStartingPopulation(db);
 
     const entry: RegistryEntry = {
       token,
@@ -54,28 +54,23 @@ export class GameFactory {
     return { token, publicToken, mcpUrl: buildMcpUrl(token) };
   }
 
-  private seedStartingResources(db: GameDb, difficulty: DifficultyPreset): void {
-    const config = DifficultyConfigs[difficulty];
-    for (const resource of config.startingResources) {
-      const quantity = this.randomInRange(resource.min, resource.max);
+  private seedStartingResources(db: GameDb): void {
+    for (const resource of WorldDefaults.startingResources) {
       db.insert(schema.stockpiles).values({
         resourceKey: resource.resourceKey,
         facilityId: null,
-        quantity,
-        capacity: quantity * 10,
+        quantity: resource.quantity,
+        capacity: resource.quantity * 10,
         unit: resource.unit,
       }).run();
     }
   }
 
-  private seedStartingPopulation(db: GameDb, difficulty: DifficultyPreset): void {
-    const config = DifficultyConfigs[difficulty];
-    const population = this.randomInRange(config.populationRange.min, config.populationRange.max);
-
+  private seedStartingPopulation(db: GameDb): void {
     db.insert(schema.humanity).values({
       key: 'global',
-      population,
-      growthRate: 0.0005,
+      population: WorldDefaults.population,
+      growthRate: WorldDefaults.growthRate,
       welfare: 100,
       foodSatisfaction: 100,
       energySatisfaction: 100,
@@ -89,9 +84,5 @@ export class GameFactory {
       waterQuality: 100,
       biodiversity: 100,
     }).run();
-  }
-
-  private randomInRange(min: number, max: number): number {
-    return Math.round(min + Math.random() * (max - min));
   }
 }

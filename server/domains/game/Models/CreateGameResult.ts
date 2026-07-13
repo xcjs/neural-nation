@@ -1,4 +1,4 @@
-import type { DifficultyPreset, GameMeta, RegistryEntry } from '../../../../lib/types/game';
+import type { GameMeta, RegistryEntry } from '../../../../lib/types/game';
 
 export interface CreateGameResult {
   token: string;
@@ -6,4 +6,4 @@ export interface CreateGameResult {
   mcpUrl: string;
 }
 
-export type { DifficultyPreset, GameMeta, RegistryEntry };
+export type { GameMeta, RegistryEntry };

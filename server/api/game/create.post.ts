@@ -1,16 +1,12 @@
-import { defineEventHandler, readBody } from 'h3';
-import { DifficultyPreset } from '../../../lib/types/game';
+import { defineEventHandler } from 'h3';
 import { IGameFactory } from '../../domains/game/GameModule';
 import { useContainer } from '../../utils/container';
 
-export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
-  const difficulty = (body?.difficulty || DifficultyPreset.Normal) as DifficultyPreset;
-
+export default defineEventHandler(async () => {
   const container = useContainer();
   const gameFactory = container.resolve(IGameFactory);
 
-  const result = gameFactory.createGame(difficulty);
+  const result = gameFactory.createGame();
 
   return {
     token: result.token,
