@@ -11,9 +11,9 @@ export const useFacilitiesStore = defineStore('facilities', () => {
   async function fetchList(token: string) {
     loading.value = true;
     try {
-      const res = await $fetch<{ items: FacilitySummary[] }>('/api/mcp/tools/call', {
+      const res = await $fetch<{ items: FacilitySummary[] }>('/api/game/facilities', {
         method: 'POST',
-        body: { token, tool: 'list_facilities', args: {} },
+        body: { token },
       });
       list.value = res.items || [];
     }
@@ -27,9 +27,8 @@ export const useFacilitiesStore = defineStore('facilities', () => {
 
   async function fetchDetail(token: string, id: number) {
     try {
-      const res = await $fetch<FacilityDetail>('/api/mcp/tools/call', {
-        method: 'POST',
-        body: { token, tool: 'get_facility_details', args: { facilityId: id } },
+      const res = await $fetch<FacilityDetail>(`/api/game/facility`, {
+        query: { token, facilityId: id },
       });
       selected.value = res;
     }

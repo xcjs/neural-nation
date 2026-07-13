@@ -1,5 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import process from 'node:process';
 import { feature } from 'topojson-client';
 import data from 'world-atlas/land-50m.json';
 
@@ -57,7 +58,7 @@ function projectRing(ring: GeoJSON.Position[]): string {
   for (let i = 0; i < ring.length; i += step) {
     const [lon, lat] = ring[i];
     const [px, py] = project(lon, lat);
-    path += (path === '' ? 'M' : 'L') + ` ${px.toFixed(1)} ${py.toFixed(1)} `;
+    path += `${path === '' ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)} `;
   }
   // Close to first point
   if (ring.length > 0) {
@@ -65,12 +66,13 @@ function projectRing(ring: GeoJSON.Position[]): string {
     const [px, py] = project(lon, lat);
     path += `L ${px.toFixed(1)} ${py.toFixed(1)} `;
   }
-  return path + 'Z';
+  return `${path}Z`;
 }
 
 function projectGeometry(geom: GeoJSON.Geometry): string {
   if (geom.type === 'Polygon') {
-    if (geom.coordinates[0].length < 200) return ''; // only major landmasses
+    if (geom.coordinates[0].length < 200)
+      return ''; // only major landmasses
     return projectRing(geom.coordinates[0]);
   }
   else if (geom.type === 'MultiPolygon') {
@@ -86,7 +88,8 @@ function projectGeometry(geom: GeoJSON.Geometry): string {
 const paths: string[] = [];
 for (const feat of fc.features) {
   const p = projectGeometry(feat.geometry);
-  if (p && p.length > 10) paths.push(p);
+  if (p && p.length > 10)
+    paths.push(p);
 }
 
 const landPaths = paths.map(p => `      <path d="${p}" />`).join('\n');

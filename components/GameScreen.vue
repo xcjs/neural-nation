@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import EarthGlobe from '~/components/EarthGlobe.vue';
 import ActionConsole from '~/components/hud/ActionConsole.vue';
@@ -112,6 +112,11 @@ onMounted(async () => {
 
 onUnmounted(() => {
   sse.disconnect();
+});
+
+watch(() => ui.selectedFacilityId, (id) => {
+  if (id !== null)
+    facilities.fetchDetail(token, id);
 });
 </script>
 
