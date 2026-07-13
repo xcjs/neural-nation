@@ -19,6 +19,9 @@ RUN apt-get update && apt-get install -y libsqlite3-0 curl && rm -rf /var/lib/ap
 COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/data/games/_template.db /app/seed/_template.db
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 RUN mkdir -p /app/data/games
 
@@ -35,4 +38,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD curl -f http://localhost:3000/api/health || exit 1
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", ".output/server/index.mjs"]
