@@ -44,7 +44,7 @@ function copyUrl() {
         NEURAL NATION
       </h1>
       <p class="text-cyan-600 mb-8 text-sm">
-        Watch an LLM autonomously build an industrial economy on a 3D Earth.
+        Can AI safely run the world? Watch an LLM autonomously build an industrial economy on a 3D Earth.
       </p>
 
       <div v-if="error" class="text-red-400 mb-4 text-sm">
