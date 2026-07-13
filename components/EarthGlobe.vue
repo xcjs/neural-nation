@@ -262,7 +262,7 @@ function buildEnvironmentOverlay(): void {
       forestMaterial = new THREE.MeshBasicMaterial({
         map: forestTexture,
         transparent: true,
-        opacity: 0.15 + ((props.forestCoverage ?? 100) / 100) * 0.25,
+        opacity: 0.4,
         depthWrite: false,
       });
       forestMesh = new THREE.Mesh(forestGeo, forestMaterial);
@@ -1182,11 +1182,8 @@ watch(() => props.facilities, updateMarkers, { deep: true });
 watch(() => props.transports, updateMarkers, { deep: true });
 watch(() => props.terrainModifications, updateMarkers, { deep: true });
 watch(() => [props.pollutionLevel, props.forestCoverage, props.biodiversity, props.waterQuality], () => {
-  const forest = (props.forestCoverage ?? 100) / 100;
-  // Forest texture opacity scales with coverage (shrinks as wood collected, grows as planted)
-  if (forestMaterial) {
-    forestMaterial.opacity = 0.1 + forest * 0.3;
-  }
+  // Forest overlay opacity is constant — individual cell depletion is handled
+  // per-pixel via updateForestGrid() (alpha driven by grid density).
   // Update pollution haze shader uniform
   if (pollutionMesh) {
     const mat = pollutionMesh.material as THREE.ShaderMaterial;
