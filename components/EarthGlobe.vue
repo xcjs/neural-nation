@@ -350,11 +350,9 @@ async function updateForestGrid(): Promise<void> {
 
 function updateEarthTint(): void {
   const pollution = (props.pollutionLevel ?? 0) / 100;
-  const forest = (props.forestCoverage ?? 100) / 100;
-  const biodiversity = (props.biodiversity ?? 100) / 100;
-  const water = (props.waterQuality ?? 100) / 100;
-  // Healthy earth: blue-cyan (0x002233). Degraded: brownish gray.
-  const health = (forest + biodiversity + water) / 3 * (1 - pollution * 0.3);
+  // Earth surface tint reflects pollution only. Forest, biodiversity, and water
+  // have their own visual indicators (forest overlay opacity, HUD metrics).
+  const health = 1 - pollution * 0.3;
   const r = 0.0 + (1 - health) * 0.25;
   const g = 0.13 * health + (1 - health) * 0.1;
   const b = 0.2 * health + (1 - health) * 0.05;
