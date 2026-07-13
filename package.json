@@ -3,6 +3,12 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
+  "allowScripts": {
+    "better-sqlite3": true,
+    "esbuild": true,
+    "@parcel/watcher": true,
+    "unrs-resolver": true
+  },
   "scripts": {
     "dev": "nuxt dev",
     "build": "nuxt build",
@@ -53,6 +59,7 @@
     "@vue/test-utils": "^2.4.0",
     "adm-zip": "^0.5.18",
     "autoprefixer": "^10.4.0",
+    "commander": "^13.1.0",
     "drizzle-kit": "^0.28.0",
     "eslint": "^9.0.0",
     "eslint-plugin-format": "^2.0.1",
