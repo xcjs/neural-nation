@@ -127,11 +127,6 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
       <stop offset="55%" stop-color="#062a44" />
       <stop offset="100%" stop-color="#021628" />
     </radialGradient>
-    <radialGradient id="atmo" cx="50%" cy="50%" r="55%">
-      <stop offset="78%" stop-color="#22d3ee" stop-opacity="0" />
-      <stop offset="92%" stop-color="#22d3ee" stop-opacity="0.45" />
-      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0" />
-    </radialGradient>
     <linearGradient id="landN" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#1ea578" />
       <stop offset="100%" stop-color="#0d6b4a" />
@@ -148,7 +143,6 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
     </filter>
   </defs>
 
-  <circle cx="32" cy="32" r="30" fill="url(#atmo)" />
   <circle cx="32" cy="32" r="24" fill="url(#ocean)" stroke="#22d3ee" stroke-width="0.6" stroke-opacity="0.7" />
 
   <g clip-path="url(#globe)">
