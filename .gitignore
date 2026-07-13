@@ -50,3 +50,6 @@ temp/
 
 # Local TODO
 TODO.md
+
+# Production compose (contains domain/registry config, not committed)
+docker-compose.prod.yml
