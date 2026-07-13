@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { useEventsStore } from '~/stores/events';
-import { useGameStore } from '~/stores/game';
 
 const events = useEventsStore();
-const game = useGameStore();
-const token = game.meta?.token || '';
 
 function severityColor(sev: string): string {
   switch (sev) {
@@ -34,23 +31,6 @@ function severityColor(sev: string): string {
       <div v-if="events.items.length === 0" class="text-cyan-700 text-xs">
         No events yet.
       </div>
-    </div>
-    <div v-if="events.total > events.pageSize" class="flex items-center justify-between mt-2 text-xs">
-      <button
-        :disabled="events.page === 0"
-        class="text-cyan-500 disabled:opacity-30"
-        @click="events.fetchPage(token, events.page - 1)"
-      >
-        ← PREV
-      </button>
-      <span class="text-cyan-700">{{ events.page + 1 }}/{{ Math.ceil(events.total / events.pageSize) }}</span>
-      <button
-        :disabled="(events.page + 1) * events.pageSize >= events.total"
-        class="text-cyan-500 disabled:opacity-30"
-        @click="events.fetchPage(token, events.page + 1)"
-      >
-        NEXT →
-      </button>
     </div>
   </div>
 </template>

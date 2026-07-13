@@ -66,40 +66,14 @@ describe('eventFeed.vue', () => {
     expect(html).toContain('border-cyan-500');
   });
 
-  it('shows pagination when total > pageSize', async () => {
+  it('caps the feed at the max event count', async () => {
     const events = useEventsStore();
-    events.items = [makeEntry({ id: 1 })];
-    events.total = 50;
-    events.pageSize = 25;
+    for (let i = 0; i < 60; i++)
+      events.applyUpdate({ type: 'event_logged', event: makeEntry({ id: i + 1, tick: i }) });
     await new Promise(r => setTimeout(r, 0));
     const wrapper = mount(EventFeed);
-    const text = wrapper.text();
-    expect(text).toContain('PREV');
-    expect(text).toContain('NEXT');
-    expect(text).toContain('1/2');
-  });
-
-  it('disables prev button on first page', async () => {
-    const events = useEventsStore();
-    events.items = [makeEntry({ id: 1 })];
-    events.total = 50;
-    events.pageSize = 25;
-    events.page = 0;
-    await new Promise(r => setTimeout(r, 0));
-    const wrapper = mount(EventFeed);
-    const prevBtn = wrapper.findAll('button')[0]!;
-    expect(prevBtn.attributes('disabled')).toBeDefined();
-  });
-
-  it('disables next button on last page', async () => {
-    const events = useEventsStore();
-    events.items = [makeEntry({ id: 1 })];
-    events.total = 50;
-    events.pageSize = 25;
-    events.page = 1;
-    await new Promise(r => setTimeout(r, 0));
-    const wrapper = mount(EventFeed);
-    const nextBtn = wrapper.findAll('button')[1]!;
-    expect(nextBtn.attributes('disabled')).toBeDefined();
+    const tickLabels = wrapper.findAll('span').filter(s => s.text().startsWith('[T'));
+    expect(tickLabels.length).toBe(50);
+    expect(tickLabels[0]!.text()).toContain('[T59]');
   });
 });

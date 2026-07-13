@@ -498,6 +498,8 @@ function buildFootprintPolygon(footprint: Array<{ lat: number; lon: number }>, c
 }
 
 function updateMarkers() {
+  if (!markerGroup || !transportGroup || !particleGroup || !terrainModGroup)
+    return;
   while (markerGroup.children.length > 0) markerGroup.remove(markerGroup.children[0]!);
   while (transportGroup.children.length > 0) transportGroup.remove(transportGroup.children[0]!);
   while (particleGroup.children.length > 0) particleGroup.remove(particleGroup.children[0]!);
@@ -1202,7 +1204,13 @@ watch(() => [props.pollutionLevel, props.forestCoverage, props.biodiversity, pro
 });
 
 onMounted(() => {
-  init();
+  try {
+    init();
+  }
+  catch (err) {
+    console.error('EarthGlobe init failed:', err);
+    return;
+  }
   updateMarkers();
   window.addEventListener('resize', onResize);
 });
@@ -1213,6 +1221,9 @@ onUnmounted(() => {
   renderer?.domElement.removeEventListener('pointerdown', onPointerDown);
   controls?.dispose();
   renderer?.dispose();
+  renderer?.forceContextLoss();
+  if (container.value && renderer?.domElement.parentNode === container.value)
+    container.value.removeChild(renderer.domElement);
 });
 </script>
 

@@ -94,7 +94,8 @@ export function useGameSSE(token: string) {
         break;
       }
       case 'tick': {
-        game.applyUpdate({ tick: event.tick as never });
+        const tickNumber = event.tick as number;
+        game.applyUpdate({ tick: { ...game.tick, tickCount: tickNumber, lastTickAt: new Date().toISOString() } });
         break;
       }
       case 'facility_built':
