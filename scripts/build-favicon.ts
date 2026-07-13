@@ -91,6 +91,35 @@ for (const feat of fc.features) {
 
 const landPaths = paths.map(p => `      <path d="${p}" />`).join('\n');
 
+// Neural-network nodes at continent interior locations (lat, lon)
+const nodes: Array<[number, number]> = [
+  [10, 20], // Central Africa
+  [50, 10], // Central Europe
+  [45, 90], // Central Asia
+  [25, 80], // India
+  [35, 105], // East China
+  [-20, 135], // Australia
+];
+const nodePts = nodes.map(([lat, lon]) => project(lon, lat));
+
+// Edges connecting nearby nodes
+const edges: Array<[number, number]> = [
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [2, 4],
+  [3, 4],
+  [0, 3],
+  [4, 5],
+  [0, 5],
+];
+const edgePaths = edges.map(([a, b]) => {
+  const [x1, y1] = nodePts[a];
+  const [x2, y2] = nodePts[b];
+  return `        <path d="M ${x1.toFixed(1)} ${y1.toFixed(1)} L ${x2.toFixed(1)} ${y2.toFixed(1)}" />`;
+}).join('\n');
+const nodeCircles = nodePts.map(([x, y]) => `        <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="0.8" />`).join('\n');
+
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
     <radialGradient id="ocean" cx="38%" cy="34%" r="75%">
@@ -127,27 +156,15 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
 ${landPaths}
     </g>
 
-    <g stroke="#22d3ee" stroke-width="0.9" fill="#22d3ee" filter="url(#glow)" opacity="0.95">
+    <g stroke="#22d3ee" stroke-width="0.5" fill="#22d3ee" filter="url(#glow)" opacity="0.9">
       <g fill="none">
-        <path d="M 19 23 L 31 21" />
-        <path d="M 31 21 L 46 20" />
-        <path d="M 46 20 L 50 43" />
-        <path d="M 50 43 L 31 43" />
-        <path d="M 31 43 L 19 23" />
-        <path d="M 31 21 L 31 43" />
-        <path d="M 19 23 L 50 43" />
+${edgePaths}
       </g>
       <g>
-        <circle cx="19" cy="23" r="1.4" />
-        <circle cx="31" cy="21" r="1.5" />
-        <circle cx="46" cy="20" r="1.4" />
-        <circle cx="50" cy="43" r="1.3" />
-        <circle cx="31" cy="43" r="1.2" />
+${nodeCircles}
       </g>
     </g>
-  </g>
-
-  <ellipse cx="32" cy="32" rx="24" ry="6.5" fill="none" stroke="#22d3ee" stroke-width="0.4" stroke-opacity="0.3" />
+    </g>
 </svg>`;
 
 const outPath = process.argv[2] ?? resolve('public', 'favicon.svg');
