@@ -4,10 +4,10 @@ import process from 'node:process';
 import { feature } from 'topojson-client';
 import data from 'world-atlas/land-50m.json';
 
-const topoData = data as unknown as { type: 'Topology'; objects: Record<string, unknown>; arcs: unknown[]; transform: unknown };
+const topoData = data as unknown as { objects: Record<string, unknown> };
 
 // Convert to GeoJSON FeatureCollection (continental land-mass, no country borders)
-const fc = feature(topoData, topoData.objects.land as never) as unknown as GeoJSON.FeatureCollection;
+const fc = feature(topoData as never, topoData.objects.land as never) as unknown as GeoJSON.FeatureCollection;
 
 // Orthographic projection centered on [lat=15, lon=20] so Africa/Europe face viewer
 const CENTER_LAT = 15;
@@ -60,7 +60,7 @@ function projectRing(ring: GeoJSON.Position[]): string {
     if (!pt)
       continue;
     const [lon, lat] = pt;
-    const [px, py] = project(lon, lat);
+    const [px, py] = project(lon!, lat!);
     path += `${path === '' ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)} `;
   }
   // Close to first point
@@ -68,7 +68,7 @@ function projectRing(ring: GeoJSON.Position[]): string {
     const first = ring[0];
     if (first) {
       const [lon, lat] = first;
-      const [px, py] = project(lon, lat);
+      const [px, py] = project(lon!, lat!);
       path += `L ${px.toFixed(1)} ${py.toFixed(1)} `;
     }
   }
