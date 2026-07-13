@@ -46,6 +46,7 @@ coverage/
 # Temp
 tmp/
 temp/
+.opencode/
 
 # Local TODO
 TODO.md
