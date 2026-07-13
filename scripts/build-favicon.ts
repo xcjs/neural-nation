@@ -1,13 +1,12 @@
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { feature } from 'topojson-client';
-import * as topo from 'topojson-specification';
-import data from 'world-atlas/countries-50m.json';
+import data from 'world-atlas/land-50m.json';
 
-const topoData = data as unknown as topo.Topology;
+const topoData = data as unknown as { objects: Record<string, unknown>; arcs: unknown[]; transform: unknown };
 
-// Convert to GeoJSON FeatureCollection
-const fc = feature(topoData, topoData.objects.countries as unknown as topo.GeometryObjectName) as unknown as GeoJSON.FeatureCollection;
+// Convert to GeoJSON FeatureCollection (continental land-mass, no country borders)
+const fc = feature(topoData, topoData.objects.land as never) as unknown as GeoJSON.FeatureCollection;
 
 // Orthographic projection centered on [lat=15, lon=20] so Africa/Europe face viewer
 const CENTER_LAT = 15;
@@ -52,35 +51,33 @@ function project(lon: number, lat: number): [number, number] {
 }
 
 // Simplify a polygon by keeping every Nth point (decimation)
-const DECIMATE = 15; // keep every 15th point
-
-function projectRing(ring: GeoJSON.Position[], close: boolean): string {
+function projectRing(ring: GeoJSON.Position[]): string {
   let path = '';
-  const step = Math.max(1, Math.floor(ring.length / 80)); // target ~80 points per ring
+  const step = Math.max(2, Math.floor(ring.length / 500)); // target ~500 points per ring
   for (let i = 0; i < ring.length; i += step) {
     const [lon, lat] = ring[i];
     const [px, py] = project(lon, lat);
-    path += (path === '' ? 'M' : 'L') + ` ${px.toFixed(2)} ${py.toFixed(2)} `;
+    path += (path === '' ? 'M' : 'L') + ` ${px.toFixed(1)} ${py.toFixed(1)} `;
   }
   // Close to first point
   if (ring.length > 0) {
     const [lon, lat] = ring[0];
     const [px, py] = project(lon, lat);
-    path += `L ${px.toFixed(2)} ${py.toFixed(2)} `;
+    path += `L ${px.toFixed(1)} ${py.toFixed(1)} `;
   }
   return path + 'Z';
 }
 
 function projectGeometry(geom: GeoJSON.Geometry): string {
   if (geom.type === 'Polygon') {
-    // Use outer ring only for simplicity
-    return projectRing(geom.coordinates[0], true);
+    if (geom.coordinates[0].length < 200) return ''; // only major landmasses
+    return projectRing(geom.coordinates[0]);
   }
   else if (geom.type === 'MultiPolygon') {
-    // Project each polygon, join into one path string
-    return geom.coordinates
-      .map(poly => projectRing(poly[0], true))
-      .join(' ');
+    const parts = geom.coordinates
+      .filter(poly => poly[0].length >= 200)
+      .map(poly => projectRing(poly[0]));
+    return parts.join(' ');
   }
   return '';
 }
