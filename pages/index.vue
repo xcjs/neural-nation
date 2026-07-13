@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { $fetch } from 'ofetch';
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 
 const loading = ref(false);
 const error = ref('');
 const created = ref<{ token: string; publicToken: string; mcpUrl: string } | null>(null);
 const copied = ref(false);
-const existingGames = ref<Array<{ publicToken: string }>>([]);
 
 async function createGame() {
   loading.value = true;
@@ -18,10 +17,6 @@ async function createGame() {
     created.value = res;
 
     sessionStorage.setItem(`nn-private-${res.publicToken}`, res.token);
-    const saved = JSON.parse(localStorage.getItem('neural-nation-games') || '[]');
-    saved.push({ publicToken: res.publicToken });
-    localStorage.setItem('neural-nation-games', JSON.stringify(saved));
-    loadExistingTokens();
   }
   catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to create game';
@@ -40,13 +35,6 @@ function copyUrl() {
     copied.value = false;
   }, 2000);
 }
-
-function loadExistingTokens() {
-  const saved = JSON.parse(localStorage.getItem('neural-nation-games') || '[]');
-  existingGames.value = saved;
-}
-
-onMounted(loadExistingTokens);
 </script>
 
 <template>
@@ -97,22 +85,6 @@ onMounted(loadExistingTokens);
         >
           ENTER GAME →
         </NuxtLink>
-      </div>
-
-      <div v-if="existingGames.length > 0" class="mt-8">
-        <p class="text-cyan-700 text-xs mb-2">
-          EXISTING GAMES ON THIS SERVER
-        </p>
-        <div class="flex flex-col gap-1">
-          <NuxtLink
-            v-for="(g, i) in existingGames"
-            :key="i"
-            :to="`/watch?token=${g.publicToken}`"
-            class="text-cyan-500 hover:text-cyan-300 text-sm truncate"
-          >
-            → Game #{{ i + 1 }}
-          </NuxtLink>
-        </div>
       </div>
     </div>
   </div>
