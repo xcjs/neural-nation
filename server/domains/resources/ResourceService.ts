@@ -2,6 +2,7 @@ import type { PaginatedResult, PaginationParams } from '../../../lib/types/mcp';
 import type { ResourceOverviewRow, ResourceStockpileEntry } from '../../../lib/types/resource';
 import type { IResourceRepository } from './Repositories/IResourceRepository';
 import { ELEMENTS } from '../../../lib/constants/elements';
+import { getResourceDisplayName } from '../../../lib/constants/resource-names';
 import { ResourceCategory, ResourceUnit, TrendDirection } from '../../../lib/types/resource';
 
 export class ResourceService {
@@ -195,20 +196,17 @@ export class ResourceService {
   }
 
   private categorizeResource(resourceKey: string): ResourceCategory {
-    const element = ELEMENTS.find(e => e.symbol.toLowerCase() === resourceKey.toLowerCase() || e.name === resourceKey);
-    if (element) {
+    const key = resourceKey.toLowerCase();
+    if (ELEMENTS.some(e => e.symbol.toLowerCase() === key))
       return ResourceCategory.Element;
-    }
 
-    const renewableKeys = ['wood', 'water', 'arableland', 'biomass', 'population', 'solar', 'wind', 'hydro', 'Wood', 'Water', 'ArableLand', 'Biomass', 'Population', 'Solar', 'Wind', 'Hydro'];
-    if (renewableKeys.includes(resourceKey)) {
+    const renewableKeys = ['wood', 'water', 'arableland', 'biomass', 'population', 'solar', 'wind', 'hydro'];
+    if (renewableKeys.includes(key))
       return ResourceCategory.Renewable;
-    }
 
-    const nonRenewableKeys = ['coal', 'oil', 'naturalgas', 'stone', 'gravel', 'uranium', 'thorium', 'Coal', 'Oil', 'NaturalGas', 'Stone', 'Gravel', 'Uranium', 'Thorium'];
-    if (nonRenewableKeys.includes(resourceKey)) {
+    const nonRenewableKeys = ['coal', 'naturalgas', 'oil', 'peat', 'geothermal', 'stone', 'sand', 'gravel', 'clay', 'limestone', 'gypsum', 'salt', 'mica', 'asbestos', 'talc', 'graphite', 'diamond', 'gemstone', 'ree'];
+    if (nonRenewableKeys.includes(key))
       return ResourceCategory.NonRenewable;
-    }
 
     return ResourceCategory.Manufactured;
   }
@@ -225,10 +223,6 @@ export class ResourceService {
   }
 
   private getResourceName(resourceKey: string): string {
-    const element = ELEMENTS.find(e => e.symbol.toLowerCase() === resourceKey.toLowerCase());
-    if (element) {
-      return element.name;
-    }
-    return resourceKey;
+    return getResourceDisplayName(resourceKey);
   }
 }

@@ -355,8 +355,8 @@ async function main() {
 
   // Seed tech costs (research consumes resources)
   const insertTechCost = db.prepare(`INSERT OR IGNORE INTO tech_costs (tech_id, resource_key, quantity, unit) VALUES (?, ?, ?, ?)`);
-  insertTechCost.run('metallurgy_1', 'iron', 5, 't');
-  insertTechCost.run('precision_manufacturing', 'machinery', 2, 't');
+  insertTechCost.run('metallurgy_1', 'fe', 5, 't');
+  insertTechCost.run('precision_manufacturing', 'iron', 2, 't');
   insertTechCost.run('precision_manufacturing', 'steel', 5, 't');
   insertTechCost.run('nuclear_power', 'electronics', 2, 't');
   insertTechCost.run('nuclear_power', 'machinery', 3, 't');
@@ -422,20 +422,20 @@ async function main() {
   const insertOutput = db.prepare(`INSERT INTO recipe_outputs (recipe_id, resource_key, quantity, unit) VALUES (?, ?, ?, ?)`);
   // iron_smelting: iron ore + coal (fuel)
   insertInput.run('iron_smelting', 'fe', 2, 't', 0);
-  insertInput.run('iron_smelting', 'c', 0.5, 't', 0);
+  insertInput.run('iron_smelting', 'coal', 0.5, 't', 0);
   insertOutput.run('iron_smelting', 'iron', 1, 't');
   // copper_smelting: copper ore + coal
   insertInput.run('copper_smelting', 'cu', 2, 't', 0);
-  insertInput.run('copper_smelting', 'c', 0.3, 't', 0);
+  insertInput.run('copper_smelting', 'coal', 0.3, 't', 0);
   insertOutput.run('copper_smelting', 'copper', 1, 't');
   // steel_making: iron + coal + limestone (flux)
   insertInput.run('steel_making', 'fe', 3, 't', 0);
-  insertInput.run('steel_making', 'c', 0.5, 't', 0);
+  insertInput.run('steel_making', 'coal', 0.5, 't', 0);
   insertInput.run('steel_making', 'ca', 0.2, 't', 1);
   insertOutput.run('steel_making', 'steel', 2, 't');
   // aluminum_smelting: bauxite + coal
   insertInput.run('aluminum_smelting', 'al', 2, 't', 0);
-  insertInput.run('aluminum_smelting', 'c', 0.5, 't', 0);
+  insertInput.run('aluminum_smelting', 'coal', 0.5, 't', 0);
   insertOutput.run('aluminum_smelting', 'aluminum', 1, 't');
   // silicon_extraction: quartz/silicon ore
   insertInput.run('silicon_extraction', 'si', 2, 't', 0);
@@ -494,13 +494,13 @@ async function main() {
   // Seed renewable resources (not from MRDS — these are global availability)
   const insertRenewable = db.prepare(`INSERT OR IGNORE INTO resources (resource_key, name, category, lat, lon, quantity, remaining, grade, discovered, surface, depth, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
   const renewables: Array<[string, string, number, string]> = [
-    ['Wood', 'Wood', 1e9, 't'],
-    ['Water', 'Water', 1e10, 't'],
-    ['ArableLand', 'Arable Land', 5e8, 't'],
-    ['Biomass', 'Biomass', 1e8, 't'],
-    ['Solar', 'Solar Energy', 1e9, 'MW'],
-    ['Wind', 'Wind Energy', 1e8, 'MW'],
-    ['Hydro', 'Hydro Power', 5e7, 'MW'],
+    ['wood', 'Wood', 1e9, 't'],
+    ['water', 'Water', 1e10, 't'],
+    ['arableland', 'Arable Land', 5e8, 't'],
+    ['biomass', 'Biomass', 1e8, 't'],
+    ['solar', 'Solar Energy', 1e9, 'MW'],
+    ['wind', 'Wind Energy', 1e8, 'MW'],
+    ['hydro', 'Hydro Power', 5e7, 'MW'],
   ];
   for (const [key, name, qty, unit] of renewables) {
     insertRenewable.run(key, name, 'Renewable', null, null, qty, qty, 1.0, 0, 1, null, unit);

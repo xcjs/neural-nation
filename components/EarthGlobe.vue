@@ -54,7 +54,6 @@ let composer: EffectComposer | null = null;
 let bloomPass: UnrealBloomPass | null = null;
 let pollutionMesh: THREE.Mesh | null = null;
 let pollutionMaterial: THREE.MeshBasicMaterial | null = null;
-let pollutionTexture: THREE.DataTexture | null = null;
 let forestMesh: THREE.Mesh | null = null;
 let forestMaterial: THREE.MeshBasicMaterial | null = null;
 let forestTexture: THREE.DataTexture | null = null;
@@ -287,75 +286,19 @@ function buildEnvironmentOverlay(): void {
   // --- Water: earth base sphere IS the ocean ---
   updateEarthTint();
 
-  // --- Pollution: sickly brown texture overlay on the surface ---
+  // --- Pollution: flat brown translucent overlay on the surface ---
   if (pollutionMesh) {
     scene.remove(pollutionMesh);
     pollutionMesh.geometry.dispose();
     pollutionMaterial?.dispose();
-    pollutionTexture?.dispose();
   }
   const pollution = (props.pollutionLevel ?? 0) / 100;
-  // Procedural patchy brown smog texture: low-frequency value noise clamped into
-  // irregular blotches so the overlay looks like polluted regions rather than a
-  // uniform tint. Stored as RGBA with alpha encoded per-pixel.
-  const POLLUTION_TEX_W = 360;
-  const POLLUTION_TEX_H = 180;
-  const smogRgba = new Uint8Array(POLLUTION_TEX_W * POLLUTION_TEX_H * 4);
-  // Deterministic hash-based value noise (no external dependency, stable across reloads)
-  const hash2 = (x: number, y: number): number => {
-    let h = x * 374761393 + y * 668265263;
-    h = (h ^ (h >> 13)) * 1274126177;
-    return ((h ^ (h >> 16)) >>> 0) / 4294967295;
-  };
-  const smoothstep = (e0: number, e1: number, x: number): number => {
-    const t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0)));
-    return t * t * (3 - 2 * t);
-  };
-  for (let y = 0; y < POLLUTION_TEX_H; y++) {
-    for (let x = 0; x < POLLUTION_TEX_W; x++) {
-      // Two octaves of value noise → blotchy patches
-      let n = 0;
-      let amp = 0.5;
-      let freq = 6;
-      for (let o = 0; o < 3; o++) {
-        const fx = x / POLLUTION_TEX_W * freq;
-        const fy = y / POLLUTION_TEX_H * freq;
-        const ix = Math.floor(fx);
-        const iy = Math.floor(fy);
-        const rx = fx - ix;
-        const ry = fy - iy;
-        const a = hash2(ix, iy);
-        const b = hash2(ix + 1, iy);
-        const c = hash2(ix, iy + 1);
-        const d = hash2(ix + 1, iy + 1);
-        const u = smoothstep(0, 1, rx);
-        const v = smoothstep(0, 1, ry);
-        n += amp * (a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v);
-        amp *= 0.5;
-        freq *= 2;
-      }
-      // Threshold into irregular blotches: only show where noise exceeds 0.55
-      const blotch = smoothstep(0.55, 0.8, n);
-      const idx = (y * POLLUTION_TEX_W + x) * 4;
-      // Sickly brown: muted ochre with slight green tint at the edges
-      smogRgba[idx] = Math.round(90 + blotch * 50); // R
-      smogRgba[idx + 1] = Math.round(65 + blotch * 30); // G
-      smogRgba[idx + 2] = Math.round(35 + blotch * 15); // B
-      smogRgba[idx + 3] = Math.round(blotch * 220); // A
-    }
-  }
-  pollutionTexture = new THREE.DataTexture(smogRgba, POLLUTION_TEX_W, POLLUTION_TEX_H, THREE.RGBAFormat);
-  pollutionTexture.flipY = false;
-  pollutionTexture.unpackAlignment = 1;
-  pollutionTexture.needsUpdate = true;
-  pollutionTexture.wrapS = THREE.RepeatWrapping;
-  pollutionTexture.wrapT = THREE.ClampToEdgeWrapping;
   // Thin shell just above the ocean surface, below the forest (1.001) and coastlines (1.002)
   const pollutionGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.0005, 360, 180);
   pollutionMaterial = new THREE.MeshBasicMaterial({
-    map: pollutionTexture,
+    color: 0x6B4A2B,
     transparent: true,
-    opacity: Math.min(0.85, pollution * 1.2),
+    opacity: Math.min(0.5, pollution * 0.7),
     depthWrite: false,
   });
   pollutionMesh = new THREE.Mesh(pollutionGeo, pollutionMaterial);
@@ -1183,7 +1126,7 @@ watch(() => [props.pollutionLevel, props.forestCoverage, props.biodiversity, pro
   // Update pollution overlay opacity (driven by pollutionLevel)
   if (pollutionMaterial) {
     const pollution = (props.pollutionLevel ?? 0) / 100;
-    pollutionMaterial.opacity = Math.min(0.85, pollution * 1.2);
+    pollutionMaterial.opacity = Math.min(0.5, pollution * 0.7);
   }
   // Earth tint reflects water quality + overall health
   updateEarthTint();

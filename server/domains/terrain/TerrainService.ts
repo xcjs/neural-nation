@@ -179,25 +179,25 @@ export class TerrainService {
     switch (action) {
       case TerraformAction.FlattenTerrain:
         return {
-          costs: [{ resourceKey: 'Fuel', quantity: 5, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
+          costs: [{ resourceKey: 'fuel', quantity: 5, unit: 't' }, { resourceKey: 'machinery', quantity: 2, unit: 't' }],
           environmentalImpact: 'Low - minor surface disruption',
           estimatedIncidents: [],
         };
       case TerraformAction.LevelMountain:
         return {
-          costs: [{ resourceKey: 'Machinery', quantity: 50, unit: 't' }, { resourceKey: 'Explosives', quantity: 20, unit: 't' }, { resourceKey: 'Fuel', quantity: 100, unit: 't' }],
+          costs: [{ resourceKey: 'machinery', quantity: 50, unit: 't' }, { resourceKey: 'explosives', quantity: 20, unit: 't' }, { resourceKey: 'fuel', quantity: 100, unit: 't' }],
           environmentalImpact: 'Extreme - total ecosystem destruction in target area',
           estimatedIncidents: ['ecological_collapse', 'climate_shift'],
         };
       case TerraformAction.ShiftContinentalPlate:
         return {
-          costs: [{ resourceKey: 'Machinery', quantity: 500, unit: 't' }, { resourceKey: 'Fuel', quantity: 1000, unit: 't' }, { resourceKey: 'FusionCore', quantity: 5, unit: 't' }],
+          costs: [{ resourceKey: 'machinery', quantity: 500, unit: 't' }, { resourceKey: 'fuel', quantity: 1000, unit: 't' }, { resourceKey: 'fusioncore', quantity: 5, unit: 't' }],
           environmentalImpact: 'Catastrophic - global-scale environmental disruption',
           estimatedIncidents: ['ecological_collapse', 'climate_shift', 'water_contamination'],
         };
       default:
         return {
-          costs: [{ resourceKey: 'Machinery', quantity: 10, unit: 't' }, { resourceKey: 'Fuel', quantity: 20, unit: 't' }],
+          costs: [{ resourceKey: 'machinery', quantity: 10, unit: 't' }, { resourceKey: 'fuel', quantity: 20, unit: 't' }],
           environmentalImpact: 'Moderate',
           estimatedIncidents: [],
         };
