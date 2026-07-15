@@ -75,14 +75,14 @@ describe('mCP end-to-end flow', () => {
   });
 
   it('surveys a region and advances the tick to 1', () => {
-    const r = executeTool(token, 'survey_region', { lat: 40, lon: -100, radius: 2 });
+    const r = executeTool(token, 'survey_region', { lat: 39, lon: -100, radius: 2 });
     expect(r.status).toBe('success');
     expect(typeof r.data).toBe('object');
     expect(getGameState(token).tick).toBe(1);
   });
 
   it('builds an Extractor facility and advances the tick to 2', () => {
-    const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Test Mine', lat: 40, lon: -100, footprint: [{ lat: 40.01, lon: -100.01 }, { lat: 40.01, lon: -99.99 }, { lat: 39.99, lon: -99.99 }, { lat: 39.99, lon: -100.01 }] });
+    const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Test Mine', lat: 39, lon: -100, footprint: [{ lat: 39.01, lon: -100.01 }, { lat: 39.01, lon: -99.99 }, { lat: 38.99, lon: -99.99 }, { lat: 38.99, lon: -100.01 }] });
     expect(r.status).toBe('success');
     const data = r.data as { facilityId: number; status: string };
     expect(typeof data.facilityId).toBe('number');

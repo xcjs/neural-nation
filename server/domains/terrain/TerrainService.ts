@@ -94,6 +94,9 @@ export class TerrainService {
     const operationId = `terraform-${tick}-${params.facilityId}`;
     let modificationsApplied = 0;
 
+    const costs = this.computeTerraformCosts(action, params.targetCells);
+    this.consumeTerraformCosts(costs);
+
     for (const target of params.targetCells) {
       const { elevationDelta, newTerrainClass } = this.getTerraformEffect(action);
 
@@ -132,10 +135,71 @@ export class TerrainService {
 
   getTerraformCostEstimate(
     action: TerraformAction,
-    _params: { targetCells: Array<{ latIndex: number; lonIndex: number }> },
+    params: { targetCells: Array<{ latIndex: number; lonIndex: number }> },
   ): { costs: Array<{ resourceKey: string; quantity: number; unit: string }>; environmentalImpact: string; estimatedIncidents: string[] } {
-    const { costs, environmentalImpact, estimatedIncidents } = this.getTerraformDefaults(action);
+    const costs = this.computeTerraformCosts(action, params.targetCells);
+    const { environmentalImpact, estimatedIncidents } = this.getTerraformDefaults(action);
     return { costs, environmentalImpact, estimatedIncidents };
+  }
+
+  private computeTerraformCosts(
+    action: TerraformAction,
+    targetCells: Array<{ latIndex: number; lonIndex: number }>,
+  ): Array<{ resourceKey: string; quantity: number; unit: string }> {
+    const defaults = this.getTerraformDefaults(action);
+    const baseCosts = defaults.costs;
+
+    const isOceanOp = action === TerraformAction.OceanToLand || action === TerraformAction.RaiseLand;
+
+    if (!isOceanOp) {
+      return baseCosts.map(c => ({ ...c }));
+    }
+
+    const aggregated = new Map<string, number>();
+    for (const target of targetCells) {
+      const cell = this.terrainRepo.getTerrainCellByIndex(target.latIndex, target.lonIndex);
+      if (!cell)
+        continue;
+
+      const mods = this.terrainRepo.getTerrainModificationsForCell(target.latIndex, target.lonIndex);
+      const elevDelta = mods.reduce((sum, m) => sum + m.elevationDelta, 0);
+      const effElev = cell.elevation + elevDelta;
+
+      if (effElev >= 0)
+        continue;
+
+      const depth = Math.abs(effElev);
+      const depthFactor = 1 + depth / 200;
+
+      for (const cost of baseCosts) {
+        const key = `${cost.resourceKey}:${cost.unit}`;
+        const qty = cost.quantity * depthFactor;
+        aggregated.set(key, (aggregated.get(key) ?? 0) + qty);
+      }
+    }
+
+    return Array.from(aggregated.entries()).map(([key, qty]) => {
+      const [resourceKey, unit] = key.split(':');
+      return { resourceKey: resourceKey!, quantity: Math.ceil(qty), unit: unit! };
+    });
+  }
+
+  private consumeTerraformCosts(costs: Array<{ resourceKey: string; quantity: number; unit: string }>): void {
+    if (costs.length === 0)
+      return;
+
+    for (const cost of costs) {
+      const stockpile = this.terrainRepo.getStockpile(cost.resourceKey);
+      if (!stockpile || stockpile.quantity < cost.quantity) {
+        const have = stockpile?.quantity ?? 0;
+        throw new Error(`Insufficient resources to terraform: need ${cost.quantity}${cost.unit} ${cost.resourceKey}, have ${have}${cost.unit}`);
+      }
+    }
+
+    for (const cost of costs) {
+      const stockpile = this.terrainRepo.getStockpile(cost.resourceKey)!;
+      this.terrainRepo.decrementStockpile(stockpile.id, stockpile.quantity - cost.quantity);
+    }
   }
 
   private getTerraformEffect(action: TerraformAction): { elevationDelta: number; newTerrainClass: string | null } {

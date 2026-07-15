@@ -15,6 +15,15 @@ export class TerrainRepository implements ITerrainRepository {
     ).get();
   }
 
+  getTerrainCellByIndex(latIndex: number, lonIndex: number): typeof schema.terrain.$inferSelect | undefined {
+    return this.db.select().from(schema.terrain).where(
+      and(
+        eq(schema.terrain.latIndex, latIndex),
+        eq(schema.terrain.lonIndex, lonIndex),
+      ),
+    ).get();
+  }
+
   getTerrainModificationsForCell(latIndex: number, lonIndex: number): Array<typeof schema.terrainModifications.$inferSelect> {
     return this.db.select().from(schema.terrainModifications).where(
       and(
@@ -51,5 +60,16 @@ export class TerrainRepository implements ITerrainRepository {
       .from(schema.terrainModifications)
       .get()
       ?.count || 0;
+  }
+
+  getStockpile(resourceKey: string): typeof schema.stockpiles.$inferSelect | undefined {
+    return this.db.select().from(schema.stockpiles).where(eq(schema.stockpiles.resourceKey, resourceKey)).get();
+  }
+
+  decrementStockpile(stockpileId: number, quantity: number): void {
+    this.db.update(schema.stockpiles)
+      .set({ quantity })
+      .where(eq(schema.stockpiles.id, stockpileId))
+      .run();
   }
 }

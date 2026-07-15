@@ -556,7 +556,28 @@ function updateMarkers() {
     });
     const line = new THREE.Line(lineGeo, lineMat);
     line.userData.facilityId = f.id;
+    line.userData.isActive = isActive;
     markerGroup.add(line);
+
+    // Small sphere at top so marker is visible from any viewing angle
+    const dotGeo = new THREE.SphereGeometry(0.003, 8, 8);
+    const dotMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: isActive ? 1.0 : 0.5 });
+    const dot = new THREE.Mesh(dotGeo, dotMat);
+    dot.position.copy(topPos);
+    dot.userData.facilityId = f.id;
+    dot.userData.isActive = isActive;
+    markerGroup.add(dot);
+
+    // Faint halo for glow effect (bloom picks this up on medium/high quality)
+    if (isActive) {
+      const haloGeo = new THREE.SphereGeometry(0.006, 8, 8);
+      const haloMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.4, depthWrite: false });
+      const halo = new THREE.Mesh(haloGeo, haloMat);
+      halo.position.copy(topPos);
+      halo.userData.facilityId = f.id;
+      halo.userData.isActive = true;
+      markerGroup.add(halo);
+    }
 
     // Invisible larger cylinder for easier raycasting
     const hitGeo = new THREE.CylinderGeometry(0.008, 0.008, EARTH_RADIUS * 0.04, 6, 1, true);
@@ -856,14 +877,19 @@ function animate() {
   if (forestMesh)
     forestMesh.rotation.y += 0.0005;
 
-  // Pulse active facility lines
+  // Pulse active facility markers
   const time = Date.now() * 0.001;
   markerGroup.children.forEach((child) => {
-    if (child.type === 'Line') {
-      const mat = (child as THREE.Line).material as THREE.LineBasicMaterial;
-      if (mat.transparent) {
-        mat.opacity = 0.6 + Math.sin(time * 2 + child.id) * 0.2;
-      }
+    const active = (child.userData as { isActive?: boolean }).isActive;
+    if (!active)
+      return;
+    const mat = (child as THREE.Mesh).material as THREE.Material | undefined;
+    if (mat && 'opacity' in mat) {
+      // Lines (type Line) and halos (larger spheres) pulse more softly
+      const isLine = child.type === 'Line';
+      const base = isLine ? 0.8 : 0.5;
+      const mat3 = mat as { opacity: number };
+      mat3.opacity = base + Math.sin(time * 2 + child.id) * 0.15;
     }
   });
 

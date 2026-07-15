@@ -1,5 +1,6 @@
 import type { FacilityDetail, FacilitySummary } from '../../../lib/types/facility';
 import type { PaginatedResult, PaginationParams } from '../../../lib/types/mcp';
+import type { ITerrainRepository } from '../terrain/Repositories/ITerrainRepository';
 import type { ConstructionCost } from './Models/ConstructionCost';
 import type { FacilityBufferEntry } from './Models/FacilityBuffer';
 import type { FacilityRow, IFacilityRepository, SearchFacilitiesParams } from './Repositories/IFacilityRepository';
@@ -197,6 +198,7 @@ function mapToSummary(facility: FacilityRow): FacilitySummary {
 export class FacilityService {
   constructor(
     private readonly facilityRepo: IFacilityRepository,
+    private readonly terrainRepo?: ITerrainRepository,
   ) {}
 
   buildFacility(params: {
@@ -232,6 +234,22 @@ export class FacilityService {
         continue;
       if (polygonsIntersect(params.footprint, existingFootprint)) {
         throw new Error(`Facility footprint overlaps existing facility "${existing.name}" (id: ${existing.id})`);
+      }
+    }
+
+    // Cannot build on ocean — must terraform to land first
+    if (this.terrainRepo) {
+      const cell = this.terrainRepo.getTerrainCellNear(params.lat, params.lon);
+      if (cell) {
+        const mods = this.terrainRepo.getTerrainModificationsForCell(cell.latIndex, cell.lonIndex);
+        const elevDelta = mods.reduce((sum, m) => sum + m.elevationDelta, 0);
+        const effElev = cell.elevation + elevDelta;
+        if (effElev < 0) {
+          throw new Error(
+            `Cannot build on ocean (effective elevation ${effElev.toFixed(0)}m at ${params.lat}, ${params.lon}). `
+            + `Use terraform with action 'ocean_to_land' or 'raise_land' to create land first.`,
+          );
+        }
       }
     }
 
