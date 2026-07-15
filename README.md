@@ -14,15 +14,15 @@ The LLM is the player. You are a passive overseer — or a spectator via the sha
 
 ## Tech Stack
 
-| Layer        | Technology                                            |
-| ------------ | ----------------------------------------------------- |
-| Frontend     | Nuxt 4, Vue 3, TypeScript, Tailwind CSS, Pinia        |
+| Layer        | Technology                                               |
+| ------------ | -------------------------------------------------------- |
+| Frontend     | Nuxt 4, Vue 3, TypeScript, Tailwind CSS, Pinia           |
 | 3D           | Three.js (globe, facilities, transport lines, particles) |
-| Backend      | Nitro (Nuxt server engine)                            |
-| Database     | SQLite (better-sqlite3), Drizzle ORM                  |
-| LLM Protocol | Model Context Protocol (MCP) over HTTP/SSE           |
-| Testing      | Vitest (unit, component, integration)                 |
-| Deployment   | Docker multi-stage build, GitLab CI/CD               |
+| Backend      | Nitro (Nuxt server engine)                               |
+| Database     | SQLite (better-sqlite3), Drizzle ORM                     |
+| LLM Protocol | Model Context Protocol (MCP) over HTTP/SSE               |
+| Testing      | Vitest (unit, component, integration)                    |
+| Deployment   | Docker multi-stage build, GitLab CI/CD                   |
 
 ## Game Systems
 
@@ -95,14 +95,14 @@ Navigate to `http://localhost:3000`, click **START NEW GAME**, and copy the MCP 
 | `npm run lint`             | ESLint                                                   |
 | `npm run typecheck`        | Vue + TypeScript type checking                           |
 | `npm run test`             | Run all tests                                            |
-| `npm run test:coverage`    | Tests with V8 coverage report                           |
+| `npm run test:coverage`    | Tests with V8 coverage report                            |
 | `npm run test:unit`        | Unit tests only                                          |
 | `npm run test:components`  | Component tests only                                     |
 | `npm run db:rebuild`       | Rebuild template DB (climate → template → seed deposits) |
 | `npm run db:generate`      | Generate Drizzle migrations                              |
 | `npm run db:studio`        | Open Drizzle Studio                                      |
-| `npm run fetch:data`       | Fetch geological data for resource distribution         |
-| `npm run build:climate`    | Build climate texture from dataset                      |
+| `npm run fetch:data`       | Fetch geological data for resource distribution          |
+| `npm run build:climate`    | Build climate texture from dataset                       |
 | `npm run db:seed-terrain`  | Seed terrain data into template DB                       |
 | `npm run db:seed-deposits` | Seed resource deposits into template DB                  |
 
@@ -131,15 +131,15 @@ This publishes two image tags: `:latest` and `:v1.0.0`.
 
 ### Environment Variables
 
-| Variable                     | Default | Description                              |
-| ---------------------------- | ------- | ---------------------------------------- |
-| `NODE_ENV`                   | -       | `production` for deployments             |
-| `HOST`                       | `0.0.0.0` | Bind address                           |
-| `PORT`                       | `3000`  | Server port                              |
-| `GAME_CLEANUP_ENABLED`       | `true`  | Enable stale game cleanup               |
-| `GAME_CLEANUP_AGE_DAYS`      | `7`     | Age before a game is eligible for cleanup |
-| `GAME_CLEANUP_GRACE_DAYS`    | `1`     | Grace period after first warning          |
-| `GAME_CLEANUP_INTERVAL_HOURS`| `6`     | Cleanup check interval                   |
+| Variable                      | Default   | Description                               |
+| ----------------------------- | --------- | ----------------------------------------- |
+| `NODE_ENV`                    | -         | `production` for deployments              |
+| `HOST`                        | `0.0.0.0` | Bind address                              |
+| `PORT`                        | `3000`    | Server port                               |
+| `GAME_CLEANUP_ENABLED`        | `true`    | Enable stale game cleanup                 |
+| `GAME_CLEANUP_AGE_DAYS`       | `7`       | Age before a game is eligible for cleanup |
+| `GAME_CLEANUP_GRACE_DAYS`     | `1`       | Grace period after first warning          |
+| `GAME_CLEANUP_INTERVAL_HOURS` | `6`       | Cleanup check interval                    |
 
 ## Architecture
 
