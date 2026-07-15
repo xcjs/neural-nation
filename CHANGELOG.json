@@ -11,7 +11,9 @@
         "Globe spin GIF in README.",
         "CHANGELOG.json with per-version changes.",
         "Changelog panel modal accessible from landing page and game HUD (\"What's new?\").",
-        "Server API endpoint /api/changelog serving CHANGELOG.json."
+        "Server API endpoint /api/changelog serving CHANGELOG.json.",
+        "Reusable Spinner component with loading-state wiring across landing page and game HUD.",
+        "Unit tests for changelog API endpoint and ChangelogPanel component."
       ],
       "changed": [
         "Docker images published by GitLab CI only on tag push (:latest and :version).",
