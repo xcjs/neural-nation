@@ -22,4 +22,4 @@ WHERE NOT EXISTS (SELECT 1 FROM pollution_grid LIMIT 1);
 -- Reset global pollution to match the fresh grid (all zeros).
 -- Old EnvironmentTick accumulated pollution as a global scalar;
 -- PollutionGridTick now derives it from the per-cell grid average.
-UPDATE environment SET pollutionLevel = 0 WHERE key = 'global';
+UPDATE environment SET pollution_level = 0 WHERE key = 'global';

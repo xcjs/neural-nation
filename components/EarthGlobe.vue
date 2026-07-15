@@ -20,7 +20,6 @@ const props = defineProps<{
   forestCoverage?: number;
   biodiversity?: number;
   waterQuality?: number;
-  showPollutionMap?: boolean;
   token?: string;
 }>();
 
@@ -306,7 +305,7 @@ function buildEnvironmentOverlay(): void {
     });
     pollutionMesh = new THREE.Mesh(pollutionGeo, pollutionMaterial);
     pollutionMesh.rotation.y = earthMesh.rotation.y;
-    pollutionMesh.visible = props.showPollutionMap ?? false;
+    pollutionMesh.visible = true;
     scene.add(pollutionMesh);
   }
 
@@ -901,13 +900,6 @@ watch(() => [props.pollutionLevel, props.forestCoverage, props.biodiversity, pro
   updateForestGrid();
   // Fetch updated pollution grid (location-specific pollution)
   updatePollutionGrid();
-});
-
-// Toggle pollution overlay visibility from the HUD "POLLUTION MAP" button
-watch(() => props.showPollutionMap, (visible) => {
-  if (pollutionMesh) {
-    pollutionMesh.visible = visible ?? false;
-  }
 });
 
 onMounted(() => {

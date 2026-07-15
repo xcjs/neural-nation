@@ -24,7 +24,6 @@ export const useEnvironmentStore = defineStore('environment', () => {
     biodiversityTrend: 'stable',
     activeIncidents: [],
   });
-  const showPollutionHeatmap = ref(false);
   const showBiomeDegradation = ref(false);
 
   async function fetchStatus(token: string) {
@@ -67,9 +66,8 @@ export const useEnvironmentStore = defineStore('environment', () => {
       biodiversityTrend: 'stable',
       activeIncidents: [],
     };
-    showPollutionHeatmap.value = false;
     showBiomeDegradation.value = false;
   }
 
-  return { state, showPollutionHeatmap, showBiomeDegradation, fetchStatus, applyUpdate, reset };
+  return { state, showBiomeDegradation, fetchStatus, applyUpdate, reset };
 });
