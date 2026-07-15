@@ -1,0 +1,152 @@
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-07-15",
+    "summary": "Public release: AGPL-3.0 license, README, version display, CI publishing.",
+    "changes": {
+      "added": [
+        "Display game version in landing page footer and game HUD top bar.",
+        "AGPL-3.0 license file and package metadata.",
+        "Project README with tech stack, game systems, and Play now link.",
+        "Globe spin GIF in README."
+      ],
+      "changed": [
+        "Docker images published by GitLab CI only on tag push (:latest and :version)."
+      ],
+      "fixed": [
+        "Replace glowing pollution haze shell with toggleable brown smog overlay.",
+        "Wrap game-cleanup scheduled task in defineTask.",
+        "Sync forest mesh rotation to earth on async load."
+      ]
+    }
+  },
+  {
+    "version": "0.0.5",
+    "date": "2026-07-13",
+    "summary": "UI polish, SEO, favicon, and Docker hardening.",
+    "changes": {
+      "added": [
+        "SEO meta tags (Open Graph, Twitter cards) with logo.",
+        "SVG favicon with orthographic-projected continents.",
+        "128x128 transparent logo.png.",
+        "Startup cleanup plugin for dev mode scheduled task cleanup."
+      ],
+      "changed": [
+        "Remove difficulty levels; scale construction costs by footprint.",
+        "Replace facility markers with lines + hover/click; add facility name to detail panel.",
+        "Derive MCP URL from request origin instead of env var.",
+        "Update tagline on landing page."
+      ],
+      "fixed": [
+        "Facility click now loads facility details via REST endpoint and watcher.",
+        "db:clean prunes orphaned registry sessions.",
+        "Use npm install in Dockerfile for cross-platform lock compatibility.",
+        "Upgrade vue-router to v5 for vue-tsc compatibility.",
+        "Install curl in runtime image for healthcheck.",
+        "Seed template DB into mounted volume via entrypoint.",
+        "Use node:24-slim to match CI build environment.",
+        "Resolve TS strict errors in build-favicon.ts.",
+        "Remove game session listing from landing page."
+      ]
+    }
+  },
+  {
+    "version": "0.0.4",
+    "date": "2026-07-12",
+    "summary": "IoC container, dead code removal, earth tint fixes.",
+    "changes": {
+      "added": [
+        "IoC container with dependency injection and modular MCP tools (ADR-0027)."
+      ],
+      "changed": [
+        "Remove dead server/domain/ code.",
+        "Earth tint only affected by pollution, not forest cover."
+      ],
+      "fixed": [
+        "WebGL context leak, tick display, and event feed pagination.",
+        "Forest coverage cliff-drop.",
+        "Project neural nodes onto continents; remove equator line.",
+        "Use world-atlas land-50m for continental outlines (500-point detail).",
+        "Remove atmosphere glow from favicon."
+      ]
+    }
+  },
+  {
+    "version": "0.0.3",
+    "date": "2026-07-10",
+    "summary": "Climate-driven forests, facility footprints, eslint compliance.",
+    "changes": {
+      "added": [
+        "Climate-data-driven forest overlay via Köppen-Geiger.",
+        "Location-specific forest grid with dynamic texture updates.",
+        "Facility footprint polygons with overlap detection.",
+        "3D rendering of facility footprints as filled polygons with glow.",
+        "Vector forest points + element sorting by atomic number."
+      ],
+      "fixed": [
+        "Forest density texture inversion (DataTexture flipY).",
+        "Forest sphere segment resolution (720x360 to match texture).",
+        "Prevent left/right panels from rendering under bottom toggle bar.",
+        "Research chicken-and-egg problem.",
+        "Resolve all eslint errors (52 to 0).",
+        "Add pretest/pretypecheck hooks for CI.",
+        "Parallel test race condition via registry cache + singleFork."
+      ]
+    }
+  },
+  {
+    "version": "0.0.2",
+    "date": "2026-07-09",
+    "summary": "Tick processing, tech tree, environment, transport, testing.",
+    "changes": {
+      "added": [
+        "Facility production and transport flow processing per tick.",
+        "Facility construction progress advancement per tick.",
+        "Tech prerequisite and power validation.",
+        "Granular SSE events via in-memory event bus.",
+        "GPU particle clouds and transport flow streams (ADR-0008).",
+        "Terrain modification visualization on globe.",
+        "LOD markers, bloom, moon, pollution overlay, biome tint.",
+        "OrbitControls, type-specific marker shapes, clickable facilities.",
+        "Real continent coastlines as vector outlines on globe.",
+        "Coastline patching on terraform.",
+        "Per-facility environmental impact, incidents, logistic population.",
+        "Chemistry branch in tech tree with unlocks, costs, recipe gating.",
+        "Construction resource consumption and complete lose condition.",
+        "Token revoke/mint, cleanup scheduler, last_active_at tracking.",
+        "MCP end-to-end flow test (18 cases).",
+        "Simulation tests (ADR-0022 layer 4).",
+        "Integration tests (ADR-0022 layer 2) + complete recipe seed data.",
+        "API and component tests (ADR-0022 layers 3 + 5).",
+        "Real MRDS deposits and deterministic terrain grid seeded into template DB."
+      ],
+      "fixed": [
+        "Typecheck, build, and runtime errors across scaffold.",
+        "Add /api/game/actions route; fix watch.vue broken page import.",
+        "Token leak, event_log wiring, and game status gating.",
+        "Search tool filters and pagination (ADR-0019).",
+        "Close unclosed @layer base block in main.css.",
+        "Tailwind, Three.js Vite, SSR route, and Nitro tasks config.",
+        "Add /api prefix to MCP URL in buildMcpUrl.",
+        "Use official MCP SDK for SSE transport protocol.",
+        "TICK display blank, LOD crash, resource overview stubs.",
+        "Existing games list uses public token + spectator link.",
+        "SSE tick event sends TickState object instead of bare number.",
+        "Event feed shape, renewable resources, geographic environment overlay.",
+        "Forest fill below coastline lines to remove green border halo."
+      ]
+    }
+  },
+  {
+    "version": "0.0.1",
+    "date": "2026-07-08",
+    "summary": "Initial project scaffold, architecture, and ADRs.",
+    "changes": {
+      "added": [
+        "Full project scaffold: types, DB schema, domain services, MCP server, web UI, 3D earth, Docker, tests, editor config.",
+        "27 Architecture Decision Records (ADRs) covering MCP server, per-game SQLite, terraforming, tech tree, deployment, and more.",
+        "Resource model, game loop, lose condition, and geological data sourcing strategy design."
+      ]
+    }
+  }
+]
