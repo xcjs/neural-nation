@@ -1,12 +1,19 @@
 <script setup lang="ts">
+import type { ChangelogEntry } from '~/types/changelog';
 import { $fetch } from 'ofetch';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
 const loading = ref(false);
 const error = ref('');
 const created = ref<{ token: string; publicToken: string; mcpUrl: string } | null>(null);
 const copied = ref(false);
 const { version } = useRuntimeConfig().public;
+const changelog = ref<ChangelogEntry[]>([]);
+const changelogOpen = ref(false);
+
+onMounted(async () => {
+  changelog.value = await $fetch<ChangelogEntry[]>('/api/changelog');
+});
 
 async function createGame() {
   loading.value = true;
@@ -88,9 +95,20 @@ function copyUrl() {
         </NuxtLink>
       </div>
 
-      <p class="text-cyan-800 text-xs mt-8 text-center">
-        v{{ version }}
-      </p>
+      <div class="flex items-center justify-center gap-4 mt-8">
+        <p class="text-cyan-800 text-xs">
+          v{{ version }}
+        </p>
+        <button
+          v-if="changelog.length"
+          class="text-cyan-600 hover:text-cyan-400 text-xs underline"
+          @click="changelogOpen = true"
+        >
+          What's new?
+        </button>
+      </div>
     </div>
+
+    <ChangelogPanel v-if="changelog.length" v-model:open="changelogOpen" :data="changelog" />
   </div>
 </template>

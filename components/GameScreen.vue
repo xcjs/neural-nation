@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, watch } from 'vue';
+import type { ChangelogEntry } from '~/types/changelog';
+import { $fetch } from 'ofetch';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import EarthGlobe from '~/components/EarthGlobe.vue';
 import ActionConsole from '~/components/hud/ActionConsole.vue';
@@ -31,6 +33,8 @@ const props = defineProps<{ spectator?: boolean; token?: string }>();
 const router = useRouter();
 const token = props.token || '';
 const { version } = useRuntimeConfig().public;
+const changelog = ref<ChangelogEntry[]>([]);
+const changelogOpen = ref(false);
 
 if (!token && import.meta.client) {
   router.push('/');
@@ -108,6 +112,7 @@ onMounted(async () => {
   }
 
   await game.fetchState(token);
+  changelog.value = await $fetch<ChangelogEntry[]>('/api/changelog');
   sse.connect();
 });
 
@@ -188,6 +193,13 @@ watch(() => ui.selectedFacilityId, (id) => {
               {{ ui.connectionStatus }}
             </span>
             <span v-if="game.meta?.status === 'Active'" class="text-cyan-600 animate-pulse">WAITING FOR LLM...</span>
+            <button
+              v-if="changelog.length"
+              class="text-cyan-600 hover:text-cyan-400 text-xs underline"
+              @click="changelogOpen = true"
+            >
+              WHAT'S NEW?
+            </button>
           </div>
         </div>
       </div>
@@ -228,5 +240,7 @@ watch(() => ui.selectedFacilityId, (id) => {
         </div>
       </div>
     </div>
+
+    <ChangelogPanel v-if="changelog.length" v-model:open="changelogOpen" :data="changelog" />
   </div>
 </template>
