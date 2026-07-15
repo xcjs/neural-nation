@@ -60,6 +60,7 @@ function copyUrl() {
       </div>
 
       <button
+        v-if="!created"
         :disabled="loading"
         class="w-full py-3 border border-cyan-400 bg-cyan-950 text-cyan-300 font-bold tracking-wider hover:bg-cyan-900 transition-colors disabled:opacity-50"
         @click="createGame"

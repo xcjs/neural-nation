@@ -8,10 +8,14 @@
         "Display game version in landing page footer and game HUD top bar.",
         "AGPL-3.0 license file and package metadata.",
         "Project README with tech stack, game systems, and Play now link.",
-        "Globe spin GIF in README."
+        "Globe spin GIF in README.",
+        "CHANGELOG.json with per-version changes.",
+        "Changelog panel modal accessible from landing page and game HUD (\"What's new?\").",
+        "Server API endpoint /api/changelog serving CHANGELOG.json."
       ],
       "changed": [
-        "Docker images published by GitLab CI only on tag push (:latest and :version)."
+        "Docker images published by GitLab CI only on tag push (:latest and :version).",
+        "Hide START NEW GAME button after game creation to avoid confusion with ENTER GAME controls."
       ],
       "fixed": [
         "Replace glowing pollution haze shell with toggleable brown smog overlay.",
