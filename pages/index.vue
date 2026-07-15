@@ -2,6 +2,7 @@
 import type { ChangelogEntry } from '~/types/changelog';
 import { $fetch } from 'ofetch';
 import { onMounted, ref } from 'vue';
+import Spinner from '~/components/Spinner.vue';
 
 const loading = ref(false);
 const error = ref('');
@@ -65,7 +66,9 @@ function copyUrl() {
         class="w-full py-3 border border-cyan-400 bg-cyan-950 text-cyan-300 font-bold tracking-wider hover:bg-cyan-900 transition-colors disabled:opacity-50"
         @click="createGame"
       >
-        {{ loading ? 'INITIALIZING...' : 'START NEW GAME' }}
+        {{ loading ? '' : 'START NEW GAME' }}
+        <Spinner v-if="loading" size="0.9em" class="mr-2" />
+        <span v-if="loading">INITIALIZING...</span>
       </button>
 
       <div v-if="created" class="mt-8 border border-cyan-900 p-4 bg-cyan-950 bg-opacity-30">
@@ -107,6 +110,9 @@ function copyUrl() {
         >
           What's new?
         </button>
+        <div v-else class="flex items-center gap-1">
+          <Spinner size="0.7rem" class="text-cyan-800" />
+        </div>
       </div>
     </div>
 

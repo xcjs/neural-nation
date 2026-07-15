@@ -14,6 +14,7 @@ import SpaceStatusPanel from '~/components/hud/SpaceStatusPanel.vue';
 import TechTreePanel from '~/components/hud/TechTreePanel.vue';
 import TerrainModsPanel from '~/components/hud/TerrainModsPanel.vue';
 import TokenManagement from '~/components/hud/TokenManagement.vue';
+import Spinner from '~/components/Spinner.vue';
 import { useGameSSE } from '~/composables/useGameSSE';
 import { useActionsStore } from '~/stores/actions';
 import { useEnvironmentStore } from '~/stores/environment';
@@ -166,8 +167,9 @@ watch(() => ui.selectedFacilityId, (id) => {
       <ClientOnly>
         <EarthGlobe :facilities="facilities.list" :transports="transports.list" :quality="ui.quality" :terrain-modifications="terrain.modifications" :pollution-level="environment.state.pollutionLevel" :forest-coverage="environment.state.forestCoverage" :biodiversity="environment.state.biodiversity" :water-quality="environment.state.waterQuality" :show-pollution-map="environment.showPollutionHeatmap" :token="token" @facility-click="ui.selectFacility" />
         <template #fallback>
-          <div class="w-full h-full flex items-center justify-center">
-            <p class="text-cyan-700 text-sm animate-pulse">
+          <div class="w-full h-full flex items-center justify-center gap-2">
+            <Spinner size="1rem" class="text-cyan-700" />
+            <p class="text-cyan-700 text-sm">
               INITIALIZING GLOBE...
             </p>
           </div>
@@ -192,7 +194,10 @@ watch(() => ui.selectedFacilityId, (id) => {
               <span :class="connectionDot" class="w-2 h-2 rounded-full inline-block" />
               {{ ui.connectionStatus }}
             </span>
-            <span v-if="game.meta?.status === 'Active'" class="text-cyan-600 animate-pulse">WAITING FOR LLM...</span>
+            <span v-if="game.meta?.status === 'Active'" class="text-cyan-600 flex items-center gap-1">
+              <Spinner size="0.8rem" color="rgb(8 145 178)" />
+              WAITING FOR LLM...
+            </span>
             <button
               v-if="changelog.length"
               class="text-cyan-600 hover:text-cyan-400 text-xs underline"
@@ -200,6 +205,9 @@ watch(() => ui.selectedFacilityId, (id) => {
             >
               WHAT'S NEW?
             </button>
+            <span v-else class="flex items-center">
+              <Spinner size="0.7rem" class="text-cyan-800" />
+            </span>
           </div>
         </div>
       </div>
