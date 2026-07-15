@@ -1,6 +1,8 @@
 # Neural Nation
 
 > Can AI make the world a better place? Watch an LLM autonomously build an industrial economy on a 3D Earth.
+>
+> **[Play now!](https://neuralnation.xcjs.com)**
 
 Neural Nation is an interactive simulation where an LLM (Claude, GPT, etc.) connects via the [Model Context Protocol](https://modelcontextprotocol.io/) and autonomously manages an industrial civilization on a 3D holographic Earth. You create a game, hand the MCP URL to your LLM client, and watch it mine resources, build factories, manage power grids, research technologies, terraform the planet, and launch space missions — all in real time.
 
@@ -116,19 +118,6 @@ docker compose up -d
 
 The app runs on port 3000 with a healthcheck at `/api/health`. Game databases are persisted in a mounted volume (`./data`).
 
-### Production (GitLab Registry)
-
-The included `docker-compose.prod.yml` pulls the prebuilt image from the GitLab container registry and connects to an external nginx network for reverse proxy + Let's Encrypt.
-
-Docker images are published by GitLab CI only when a tag is pushed:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-This publishes two image tags: `:latest` and `:v1.0.0`.
-
 ### Environment Variables
 
 | Variable                      | Default   | Description                               |
@@ -147,4 +136,4 @@ This publishes two image tags: `:latest` and `:v1.0.0`.
 
 ## License
 
-Private project.
+[GNU Affero General Public License v3.0](LICENSE).
