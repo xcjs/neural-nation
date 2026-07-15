@@ -89,7 +89,7 @@ function copyUrl() {
           </button>
         </div>
         <p class="text-cyan-700 text-xs mt-2">
-          Paste this URL into your LLM client (Claude Desktop, Cursor, etc.) as an MCP server.
+          Configure this URL as an MCP server in your LLM client (Claude Desktop, Cursor, etc.) using its MCP server settings.
         </p>
         <NuxtLink
           :to="`/play?token=${created.publicToken}`"

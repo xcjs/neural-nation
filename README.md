@@ -10,7 +10,7 @@
 Neural Nation is an interactive simulation where an LLM (Claude, GPT, etc.)
 connects via the [Model Context Protocol](https://modelcontextprotocol.io/)
 and autonomously manages an industrial civilization on a 3D holographic Earth.
-You create a game, hand the MCP URL to your LLM client, and watch it mine
+You create a game, configure the MCP URL in your LLM client, and watch it mine
 resources, build factories, manage power grids, research technologies,
 terraform the planet, and launch space missions — all in real time.
 
@@ -18,9 +18,10 @@ terraform the planet, and launch space missions — all in real time.
 
 1. **Create a game** — generates a private token (for your LLM), a public
    token (for spectators), and a per-game SQLite database.
-2. **Connect your LLM** — paste the MCP URL into Claude Desktop, Cursor, or
-   any MCP-compatible client. The LLM discovers ~30+ tools for building,
-   surveying, researching, and managing the economy.
+2. **Connect your LLM** — configure the MCP URL in your LLM client's MCP
+   server settings (Claude Desktop, Cursor, or any MCP-compatible client).
+   The LLM discovers ~30+ tools for building, surveying, researching, and
+   managing the economy.
 3. **Watch it play** — the 3D globe and HUD panels update live via SSE as the
    LLM issues actions each tick (1 tick = 1 day).
 
@@ -112,7 +113,8 @@ npm run dev
 ```
 
 Navigate to `http://localhost:3000`, click **START NEW GAME**, and copy the
-MCP URL.
+MCP URL shown on the game page. Configure it as an MCP server in your
+LLM client's settings.
 
 ### Scripts
 
