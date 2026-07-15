@@ -9,6 +9,7 @@ import { ProductionTick } from '../facilities/Ticks/ProductionTick';
 import { LoseConditionTick } from '../game/Ticks/LoseConditionTick';
 import { EnvironmentTick } from '../humanity/Ticks/EnvironmentTick';
 import { ForestGridTick } from '../humanity/Ticks/ForestGridTick';
+import { PollutionGridTick } from '../humanity/Ticks/PollutionGridTick';
 import { PopulationTick } from '../humanity/Ticks/PopulationTick';
 import { RegenTick } from '../resources/Ticks/RegenTick';
 import { ResearchTick } from '../tech/Ticks/ResearchTick';
@@ -52,6 +53,7 @@ export class TickProcessor {
       new PopulationTick(tx).process(newTick);
       new EnvironmentTick(tx).process(newTick);
       new ForestGridTick(tx).process(newTick);
+      new PollutionGridTick(tx).process(newTick);
       new ConstructionTick(tx).process(newTick);
       new ProductionTick(tx).process(newTick);
       new TransportFlowTick(tx).process(newTick);

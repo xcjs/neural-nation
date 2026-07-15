@@ -188,6 +188,14 @@ async function main() {
     );
     CREATE INDEX IF NOT EXISTS idx_forest_grid_lat_lon ON forest_grid(lat_index, lon_index);
 
+    CREATE TABLE IF NOT EXISTS pollution_grid (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lat_index INTEGER NOT NULL,
+      lon_index INTEGER NOT NULL,
+      pollution REAL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_pollution_grid_lat_lon ON pollution_grid(lat_index, lon_index);
+
     CREATE TABLE IF NOT EXISTS incidents (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       type TEXT,
@@ -545,6 +553,28 @@ async function main() {
   }
   else {
     console.log('Forest grid already seeded, skipping');
+  }
+
+  // Seed pollution grid — same grid resolution as forest (720x360), all cells start at 0.
+  // Idempotent — no-ops if pollution_grid already populated.
+  const pollutionCount = db.prepare('SELECT COUNT(*) as c FROM pollution_grid').get() as { c: number };
+  if (pollutionCount.c === 0) {
+    console.log('Seeding pollution grid...');
+    const insertPollution = db.prepare('INSERT INTO pollution_grid (lat_index, lon_index, pollution) VALUES (?, ?, 0)');
+    const batchPollution = db.transaction(() => {
+      for (let lat = 0; lat < 360; lat++) {
+        for (let lon = 0; lon < 720; lon++) {
+          insertPollution.run(lat, lon);
+        }
+        if (lat % 50 === 0)
+          console.log(`  pollution_grid: ${lat}/360...`);
+      }
+    });
+    batchPollution();
+    console.log('Pollution grid: 259200 cells seeded');
+  }
+  else {
+    console.log('Pollution grid already seeded, skipping');
   }
 
   // VACUUM

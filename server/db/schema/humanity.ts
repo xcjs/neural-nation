@@ -26,6 +26,13 @@ export const forestGrid = sqliteTable('forest_grid', {
   maxDensity: real('max_density').default(0).notNull(),
 });
 
+export const pollutionGrid = sqliteTable('pollution_grid', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  latIndex: integer('lat_index').notNull(),
+  lonIndex: integer('lon_index').notNull(),
+  pollution: real('pollution').default(0).notNull(),
+});
+
 export const incidents = sqliteTable('incidents', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   type: text('type').notNull(),
