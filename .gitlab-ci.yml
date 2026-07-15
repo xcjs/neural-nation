@@ -77,11 +77,12 @@ Publish Docker Image:
   services:
     - docker:dind
   only:
-    - master
+    - tags
   tags:
     - docker
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - docker build -t $CI_REGISTRY/xcjs/neural-nation:latest .
+    - docker build -t $CI_REGISTRY/xcjs/neural-nation:latest -t $CI_REGISTRY/xcjs/neural-nation:$CI_COMMIT_TAG .
     - docker push $CI_REGISTRY/xcjs/neural-nation:latest
+    - docker push $CI_REGISTRY/xcjs/neural-nation:$CI_COMMIT_TAG
