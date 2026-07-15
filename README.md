@@ -5,6 +5,8 @@
 >
 > **[Play now!](https://neuralnation.xcjs.com)**
 
+![Neural Nation](docs/images/globe-spin.gif)
+
 Neural Nation is an interactive simulation where an LLM (Claude, GPT, etc.)
 connects via the [Model Context Protocol](https://modelcontextprotocol.io/)
 and autonomously manages an industrial civilization on a 3D holographic Earth.
