@@ -30,6 +30,7 @@ const props = defineProps<{ spectator?: boolean; token?: string }>();
 
 const router = useRouter();
 const token = props.token || '';
+const { version } = useRuntimeConfig().public;
 
 if (!token && import.meta.client) {
   router.push('/');
@@ -176,6 +177,7 @@ watch(() => ui.selectedFacilityId, (id) => {
         <div class="flex items-center justify-between px-4 py-2">
           <div class="flex items-center gap-4">
             <span class="text-cyan-400 font-bold text-sm tracking-wider">NEURAL NATION</span>
+            <span class="text-cyan-800 text-xs">v{{ version }}</span>
             <span v-if="spectator" class="text-yellow-500 text-xs border border-yellow-800 px-2 py-0.5">SPECTATING</span>
           </div>
           <div class="flex items-center gap-4 text-xs text-cyan-500">

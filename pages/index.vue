@@ -6,6 +6,7 @@ const loading = ref(false);
 const error = ref('');
 const created = ref<{ token: string; publicToken: string; mcpUrl: string } | null>(null);
 const copied = ref(false);
+const { version } = useRuntimeConfig().public;
 
 async function createGame() {
   loading.value = true;
@@ -86,6 +87,10 @@ function copyUrl() {
           ENTER GAME →
         </NuxtLink>
       </div>
+
+      <p class="text-cyan-800 text-xs mt-8 text-center">
+        v{{ version }}
+      </p>
     </div>
   </div>
 </template>
