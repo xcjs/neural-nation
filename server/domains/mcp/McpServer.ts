@@ -4,6 +4,7 @@ import type { McpDispatcher } from './McpDispatcher';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { useRuntimeConfig } from 'nitropack/runtime';
 
 const transports = new Map<string, SSEServerTransport>();
 const servers = new Map<string, Server>();
@@ -15,8 +16,9 @@ export class McpServer {
   ) {}
 
   createServer(token: string): Server {
+    const { version } = useRuntimeConfig().public;
     const server = new Server(
-      { name: 'neural-nation', version: '0.2.0' },
+      { name: 'neural-nation', version },
       { capabilities: { tools: {} } },
     );
 
