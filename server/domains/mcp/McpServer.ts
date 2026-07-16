@@ -12,11 +12,12 @@ export class McpServer {
   constructor(
     private readonly toolRegistry: IToolRegistry,
     private readonly dispatcher: McpDispatcher,
+    private readonly version: string,
   ) {}
 
   createServer(token: string): Server {
     const server = new Server(
-      { name: 'neural-nation', version: '0.2.0' },
+      { name: 'neural-nation', version: this.version },
       { capabilities: { tools: {} } },
     );
 

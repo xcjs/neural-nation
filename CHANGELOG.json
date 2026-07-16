@@ -1,5 +1,15 @@
 [
   {
+    "version": "0.2.2",
+    "date": "2026-07-16",
+    "summary": "Pull version from package.json instead of hardcoding.",
+    "changes": {
+      "fixed": [
+        "runtimeConfig public.version and MCP server version now derive from package.json via import, eliminating hardcoded version strings that drifted out of sync."
+      ]
+    }
+  },
+  {
     "version": "0.2.1",
     "date": "2026-07-15",
     "summary": "Docker runtime fix for changelog API.",

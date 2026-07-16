@@ -1,4 +1,5 @@
 import type { Container } from '../ioc/Container';
+import pkg from '../../../package.json' with { type: 'json' };
 import { IDbConnection } from '../db/IDbConnection';
 import { IEventBus } from '../events/IEventBus';
 import { IFacilityService } from '../facilities/FacilitiesModule';
@@ -68,5 +69,6 @@ export function registerMcpModule(container: Container): void {
   container.bind(IMcpServer, c => new McpServer(
     c.resolve(IToolRegistry),
     c.resolve(IMcpDispatcher),
+    pkg.version,
   ), Lifecycle.Scoped);
 }
