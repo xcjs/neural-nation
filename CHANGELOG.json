@@ -1,5 +1,15 @@
 [
   {
+    "version": "0.2.1",
+    "date": "2026-07-15",
+    "summary": "Docker runtime fix for changelog API.",
+    "changes": {
+      "fixed": [
+        "Include CHANGELOG.json in the Docker runtime image so /api/changelog can serve it."
+      ]
+    }
+  },
+  {
     "version": "0.2.0",
     "date": "2026-07-15",
     "summary": "Pollution grid, resource key normalization, power recipes, ocean terraforming.",

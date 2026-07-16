@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y libsqlite3-0 curl && rm -rf /var/lib/ap
 COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/CHANGELOG.json ./
 COPY --from=builder /app/data/games/_template.db /app/seed/_template.db
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
