@@ -1,3 +1,5 @@
+import pkg from './package.json' with { type: 'json' };
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: true },
@@ -72,7 +74,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      version: '',
+      version: pkg.version,
     },
     gameCleanupEnabled: true,
     gameCleanupAgeDays: 7,

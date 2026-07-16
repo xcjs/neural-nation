@@ -4,7 +4,6 @@ import type { McpDispatcher } from './McpDispatcher';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { useRuntimeConfig } from 'nitropack/runtime';
 
 const transports = new Map<string, SSEServerTransport>();
 const servers = new Map<string, Server>();
@@ -13,12 +12,12 @@ export class McpServer {
   constructor(
     private readonly toolRegistry: IToolRegistry,
     private readonly dispatcher: McpDispatcher,
+    private readonly version: string,
   ) {}
 
   createServer(token: string): Server {
-    const { version } = useRuntimeConfig().public;
     const server = new Server(
-      { name: 'neural-nation', version },
+      { name: 'neural-nation', version: this.version },
       { capabilities: { tools: {} } },
     );
 
