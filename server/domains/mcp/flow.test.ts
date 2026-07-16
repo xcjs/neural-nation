@@ -135,9 +135,9 @@ describe('mCP end-to-end flow', () => {
     expect(allData.items.length).toBeGreaterThanOrEqual(5);
 
     const unlocked = executeTool(token, 'get_recipes', { unlockedOnly: true });
-    const unlockedData = unlocked.data as { items: Array<{ id: string }>; totalCount: number };
+    const unlockedData = unlocked.data as { items: Array<{ id: string; techRequired: string | null }>; totalCount: number };
     expect(unlockedData.items.length).toBeGreaterThanOrEqual(1);
-    expect(unlockedData.items.every(r => r.id === 'lumber')).toBe(true);
+    expect(unlockedData.items.every(r => r.techRequired === null)).toBe(true);
   });
 
   it('returns environmental status with numeric pollutionLevel', () => {

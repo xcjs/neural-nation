@@ -117,3 +117,64 @@ describe('simulation: extractor production', () => {
     expect(facility?.throughput).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe('simulation: power generation', () => {
+  const lat = 39;
+  const lon = -100;
+  let solarFarmId: number;
+
+  beforeAll(() => {
+    const r = executeTool(token, 'build_facility', { type: 'SolarFarm', name: 'Solar Array', lat, lon, footprint: [{ lat: lat + 0.01, lon: lon + 0.01 }, { lat: lat + 0.01, lon: lon + 0.02 }, { lat, lon: lon + 0.02 }, { lat, lon: lon + 0.01 }] });
+    solarFarmId = (r.data as { facilityId: number }).facilityId;
+    // SolarFarm construction time = 2 ticks; build_facility advanced 1
+    advanceTicks(2);
+  });
+
+  it('builds a SolarFarm and it becomes Active', () => {
+    const facility = getFacilityById(solarFarmId);
+    expect(facility?.status).toBe('Active');
+    expect(facility?.type).toBe('SolarFarm');
+  });
+
+  it('rejects set_production_target with wrong recipe for SolarFarm', () => {
+    const r = executeTool(token, 'set_production_target', { facilityId: solarFarmId, recipeId: 'iron_smelting', targetRate: 1 });
+    expect(r.status).toBe('error');
+    expect(r.errorMessage).toContain('requires a Smelter');
+  });
+
+  it('sets solar_generation recipe and produces energy', () => {
+    const r = executeTool(token, 'set_production_target', { facilityId: solarFarmId, recipeId: 'solar_generation', targetRate: 1 });
+    expect(r.status).toBe('success');
+
+    advanceTicks(3);
+
+    const facility = getFacilityById(solarFarmId);
+    expect(facility?.activeRecipeId).toBe('solar_generation');
+    expect(facility?.throughput).toBeGreaterThan(0);
+
+    // Check energy output buffer
+    const buffer = db.select().from(schema.facilityBuffers).where(and(
+      eq(schema.facilityBuffers.facilityId, solarFarmId),
+      eq(schema.facilityBuffers.resourceKey, 'energy'),
+      eq(schema.facilityBuffers.direction, 'output'),
+    )).get();
+    expect(buffer).toBeDefined();
+    expect(buffer!.quantity).toBeGreaterThan(0);
+  });
+
+  it('returns solar_generation in get_recipes for SolarFarm', () => {
+    const r = executeTool(token, 'get_recipes', { facilityType: 'SolarFarm' });
+    expect(r.status).toBe('success');
+    const data = r.data as { items: Array<{ id: string }> };
+    const ids = data.items.map(i => i.id);
+    expect(ids).toContain('solar_generation');
+  });
+
+  it('returns solar_generation in unlockedOnly recipes (no tech required)', () => {
+    const r = executeTool(token, 'get_recipes', { unlockedOnly: true });
+    expect(r.status).toBe('success');
+    const data = r.data as { items: Array<{ id: string }> };
+    const ids = data.items.map(i => i.id);
+    expect(ids).toContain('solar_generation');
+  });
+});
