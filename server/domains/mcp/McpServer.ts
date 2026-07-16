@@ -16,7 +16,7 @@ export class McpServer {
 
   createServer(token: string): Server {
     const server = new Server(
-      { name: 'neural-nation', version: '0.1.0' },
+      { name: 'neural-nation', version: '0.2.0' },
       { capabilities: { tools: {} } },
     );
 

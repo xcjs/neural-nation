@@ -72,7 +72,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      version: '0.1.0',
+      version: '0.2.0',
     },
     gameCleanupEnabled: true,
     gameCleanupAgeDays: 7,
