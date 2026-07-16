@@ -113,9 +113,9 @@ describe('template DB seed data', () => {
     expect(count.n).toBe(13);
   });
 
-  it('seeds 17 recipes', () => {
+  it('seeds 30 recipes', () => {
     const count = db.prepare('SELECT COUNT(*) as n FROM recipes').get() as { n: number };
-    expect(count.n).toBe(17);
+    expect(count.n).toBe(30);
   });
 
   it('seeds tech prerequisites forming a valid DAG (no cycles)', () => {

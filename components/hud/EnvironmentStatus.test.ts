@@ -33,21 +33,11 @@ describe('environmentStatus.vue', () => {
     expect(text).toContain('60%');
   });
 
-  it('toggles pollution heatmap on button click', async () => {
-    const env = useEnvironmentStore();
-    const wrapper = mount(EnvironmentStatus);
-    const buttons = wrapper.findAll('button');
-    const pollutionBtn = buttons[0]!;
-    expect(env.showPollutionHeatmap).toBe(false);
-    await pollutionBtn.trigger('click');
-    expect(env.showPollutionHeatmap).toBe(true);
-  });
-
   it('toggles biome degradation on button click', async () => {
     const env = useEnvironmentStore();
     const wrapper = mount(EnvironmentStatus);
     const buttons = wrapper.findAll('button');
-    const biomeBtn = buttons[1]!;
+    const biomeBtn = buttons[0]!;
     expect(env.showBiomeDegradation).toBe(false);
     await biomeBtn.trigger('click');
     expect(env.showBiomeDegradation).toBe(true);

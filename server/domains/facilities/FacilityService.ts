@@ -1,5 +1,6 @@
 import type { FacilityDetail, FacilitySummary } from '../../../lib/types/facility';
 import type { PaginatedResult, PaginationParams } from '../../../lib/types/mcp';
+import type { ITerrainRepository } from '../terrain/Repositories/ITerrainRepository';
 import type { ConstructionCost } from './Models/ConstructionCost';
 import type { FacilityBufferEntry } from './Models/FacilityBuffer';
 import type { FacilityRow, IFacilityRepository, SearchFacilitiesParams } from './Repositories/IFacilityRepository';
@@ -42,46 +43,46 @@ const FACILITY_TECH_REQUIREMENTS: Record<string, string> = {
 };
 
 const CONSTRUCTION_COSTS: Record<string, ConstructionCost[]> = {
-  Extractor: [{ resourceKey: 'Steel', quantity: 2, unit: 't' }, { resourceKey: 'Concrete', quantity: 3, unit: 't' }],
-  Farm: [{ resourceKey: 'Steel', quantity: 1, unit: 't' }, { resourceKey: 'Concrete', quantity: 2, unit: 't' }],
-  Forestry: [{ resourceKey: 'Steel', quantity: 1, unit: 't' }, { resourceKey: 'Concrete', quantity: 1, unit: 't' }],
-  WaterPump: [{ resourceKey: 'Steel', quantity: 1, unit: 't' }, { resourceKey: 'Concrete', quantity: 2, unit: 't' }],
-  Processor: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Concrete', quantity: 5, unit: 't' }],
-  Smelter: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Concrete', quantity: 5, unit: 't' }],
-  Refinery: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 5, unit: 't' }],
-  Factory: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Concrete', quantity: 8, unit: 't' }, { resourceKey: 'Machinery', quantity: 1, unit: 't' }],
-  AdvancedFactory: [{ resourceKey: 'Steel', quantity: 8, unit: 't' }, { resourceKey: 'Concrete', quantity: 10, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }, { resourceKey: 'Electronics', quantity: 1, unit: 't' }],
-  ChemicalPlant: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 6, unit: 't' }, { resourceKey: 'Machinery', quantity: 1, unit: 't' }],
-  ResearchLab: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Concrete', quantity: 8, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
-  PowerPlant: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Concrete', quantity: 10, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
-  SolarFarm: [{ resourceKey: 'Steel', quantity: 2, unit: 't' }, { resourceKey: 'Concrete', quantity: 3, unit: 't' }],
-  WindFarm: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Concrete', quantity: 4, unit: 't' }],
-  HydroPlant: [{ resourceKey: 'Steel', quantity: 8, unit: 't' }, { resourceKey: 'Concrete', quantity: 15, unit: 't' }, { resourceKey: 'Machinery', quantity: 3, unit: 't' }],
-  NuclearReactor: [{ resourceKey: 'Steel', quantity: 10, unit: 't' }, { resourceKey: 'Concrete', quantity: 20, unit: 't' }, { resourceKey: 'Machinery', quantity: 3, unit: 't' }, { resourceKey: 'Electronics', quantity: 2, unit: 't' }],
-  BreederReactor: [{ resourceKey: 'Steel', quantity: 12, unit: 't' }, { resourceKey: 'Concrete', quantity: 25, unit: 't' }, { resourceKey: 'Machinery', quantity: 4, unit: 't' }, { resourceKey: 'Electronics', quantity: 3, unit: 't' }],
-  FusionReactor: [{ resourceKey: 'Steel', quantity: 20, unit: 't' }, { resourceKey: 'Concrete', quantity: 30, unit: 't' }, { resourceKey: 'Machinery', quantity: 5, unit: 't' }, { resourceKey: 'Electronics', quantity: 5, unit: 't' }, { resourceKey: 'Alloys', quantity: 2, unit: 't' }],
-  BiomassPlant: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Concrete', quantity: 4, unit: 't' }],
-  BiogasPlant: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Concrete', quantity: 4, unit: 't' }],
-  EthanolRefinery: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 6, unit: 't' }, { resourceKey: 'Machinery', quantity: 1, unit: 't' }],
-  SoylentPlant: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 6, unit: 't' }, { resourceKey: 'Machinery', quantity: 1, unit: 't' }],
-  DieselGenerator: [{ resourceKey: 'Steel', quantity: 2, unit: 't' }, { resourceKey: 'Machinery', quantity: 1, unit: 't' }],
-  CoalPlant: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Concrete', quantity: 8, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
-  GasPlant: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 6, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
-  OilPlant: [{ resourceKey: 'Steel', quantity: 4, unit: 't' }, { resourceKey: 'Concrete', quantity: 6, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
-  GeothermalPlant: [{ resourceKey: 'Steel', quantity: 6, unit: 't' }, { resourceKey: 'Concrete', quantity: 10, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
-  Storage: [{ resourceKey: 'Steel', quantity: 2, unit: 't' }, { resourceKey: 'Concrete', quantity: 4, unit: 't' }],
-  BatteryBank: [{ resourceKey: 'Steel', quantity: 3, unit: 't' }, { resourceKey: 'Electronics', quantity: 1, unit: 't' }],
-  Spaceport: [{ resourceKey: 'Steel', quantity: 15, unit: 't' }, { resourceKey: 'Concrete', quantity: 20, unit: 't' }, { resourceKey: 'Machinery', quantity: 5, unit: 't' }, { resourceKey: 'Electronics', quantity: 3, unit: 't' }, { resourceKey: 'Fuel', quantity: 10, unit: 't' }],
-  RocketAssembly: [{ resourceKey: 'Steel', quantity: 10, unit: 't' }, { resourceKey: 'Machinery', quantity: 3, unit: 't' }, { resourceKey: 'Electronics', quantity: 2, unit: 't' }, { resourceKey: 'Fuel', quantity: 5, unit: 't' }],
-  SpaceStation: [{ resourceKey: 'Steel', quantity: 20, unit: 't' }, { resourceKey: 'Alloys', quantity: 5, unit: 't' }, { resourceKey: 'Electronics', quantity: 5, unit: 't' }, { resourceKey: 'Composites', quantity: 3, unit: 't' }],
-  OrbitalRefinery: [{ resourceKey: 'Steel', quantity: 15, unit: 't' }, { resourceKey: 'Machinery', quantity: 3, unit: 't' }, { resourceKey: 'Electronics', quantity: 3, unit: 't' }],
-  LunarMine: [{ resourceKey: 'Steel', quantity: 12, unit: 't' }, { resourceKey: 'Machinery', quantity: 3, unit: 't' }, { resourceKey: 'Composites', quantity: 2, unit: 't' }],
-  DeepSpaceProbe: [{ resourceKey: 'Steel', quantity: 8, unit: 't' }, { resourceKey: 'Electronics', quantity: 4, unit: 't' }, { resourceKey: 'Composites', quantity: 2, unit: 't' }],
-  SpaceHabitat: [{ resourceKey: 'Steel', quantity: 25, unit: 't' }, { resourceKey: 'Alloys', quantity: 8, unit: 't' }, { resourceKey: 'Composites', quantity: 5, unit: 't' }, { resourceKey: 'Electronics', quantity: 5, unit: 't' }],
-  Excavator: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
-  Dredger: [{ resourceKey: 'Steel', quantity: 5, unit: 't' }, { resourceKey: 'Machinery', quantity: 2, unit: 't' }],
-  Terraformer: [{ resourceKey: 'Steel', quantity: 10, unit: 't' }, { resourceKey: 'Machinery', quantity: 5, unit: 't' }, { resourceKey: 'Electronics', quantity: 3, unit: 't' }, { resourceKey: 'Alloys', quantity: 2, unit: 't' }],
-  PlanetaryEngine: [{ resourceKey: 'Steel', quantity: 30, unit: 't' }, { resourceKey: 'Concrete', quantity: 50, unit: 't' }, { resourceKey: 'Machinery', quantity: 10, unit: 't' }, { resourceKey: 'Electronics', quantity: 5, unit: 't' }, { resourceKey: 'Alloys', quantity: 5, unit: 't' }, { resourceKey: 'Composites', quantity: 3, unit: 't' }],
+  Extractor: [{ resourceKey: 'steel', quantity: 2, unit: 't' }, { resourceKey: 'concrete', quantity: 3, unit: 't' }],
+  Farm: [{ resourceKey: 'steel', quantity: 1, unit: 't' }, { resourceKey: 'concrete', quantity: 2, unit: 't' }],
+  Forestry: [{ resourceKey: 'steel', quantity: 1, unit: 't' }, { resourceKey: 'concrete', quantity: 1, unit: 't' }],
+  WaterPump: [{ resourceKey: 'steel', quantity: 1, unit: 't' }, { resourceKey: 'concrete', quantity: 2, unit: 't' }],
+  Processor: [{ resourceKey: 'steel', quantity: 3, unit: 't' }, { resourceKey: 'concrete', quantity: 5, unit: 't' }],
+  Smelter: [{ resourceKey: 'steel', quantity: 3, unit: 't' }, { resourceKey: 'concrete', quantity: 5, unit: 't' }],
+  Refinery: [{ resourceKey: 'steel', quantity: 4, unit: 't' }, { resourceKey: 'concrete', quantity: 5, unit: 't' }],
+  Factory: [{ resourceKey: 'steel', quantity: 5, unit: 't' }, { resourceKey: 'concrete', quantity: 8, unit: 't' }, { resourceKey: 'machinery', quantity: 1, unit: 't' }],
+  AdvancedFactory: [{ resourceKey: 'steel', quantity: 8, unit: 't' }, { resourceKey: 'concrete', quantity: 10, unit: 't' }, { resourceKey: 'machinery', quantity: 2, unit: 't' }, { resourceKey: 'electronics', quantity: 1, unit: 't' }],
+  ChemicalPlant: [{ resourceKey: 'steel', quantity: 4, unit: 't' }, { resourceKey: 'concrete', quantity: 6, unit: 't' }, { resourceKey: 'machinery', quantity: 1, unit: 't' }],
+  ResearchLab: [{ resourceKey: 'steel', quantity: 5, unit: 't' }, { resourceKey: 'concrete', quantity: 8, unit: 't' }, { resourceKey: 'machinery', quantity: 2, unit: 't' }],
+  PowerPlant: [{ resourceKey: 'steel', quantity: 5, unit: 't' }, { resourceKey: 'concrete', quantity: 10, unit: 't' }, { resourceKey: 'machinery', quantity: 2, unit: 't' }],
+  SolarFarm: [{ resourceKey: 'steel', quantity: 2, unit: 't' }, { resourceKey: 'concrete', quantity: 3, unit: 't' }],
+  WindFarm: [{ resourceKey: 'steel', quantity: 3, unit: 't' }, { resourceKey: 'concrete', quantity: 4, unit: 't' }],
+  HydroPlant: [{ resourceKey: 'steel', quantity: 8, unit: 't' }, { resourceKey: 'concrete', quantity: 15, unit: 't' }, { resourceKey: 'machinery', quantity: 3, unit: 't' }],
+  NuclearReactor: [{ resourceKey: 'steel', quantity: 10, unit: 't' }, { resourceKey: 'concrete', quantity: 20, unit: 't' }, { resourceKey: 'machinery', quantity: 3, unit: 't' }, { resourceKey: 'electronics', quantity: 2, unit: 't' }],
+  BreederReactor: [{ resourceKey: 'steel', quantity: 12, unit: 't' }, { resourceKey: 'concrete', quantity: 25, unit: 't' }, { resourceKey: 'machinery', quantity: 4, unit: 't' }, { resourceKey: 'electronics', quantity: 3, unit: 't' }],
+  FusionReactor: [{ resourceKey: 'steel', quantity: 20, unit: 't' }, { resourceKey: 'concrete', quantity: 30, unit: 't' }, { resourceKey: 'machinery', quantity: 5, unit: 't' }, { resourceKey: 'electronics', quantity: 5, unit: 't' }, { resourceKey: 'alloys', quantity: 2, unit: 't' }],
+  BiomassPlant: [{ resourceKey: 'steel', quantity: 3, unit: 't' }, { resourceKey: 'concrete', quantity: 4, unit: 't' }],
+  BiogasPlant: [{ resourceKey: 'steel', quantity: 3, unit: 't' }, { resourceKey: 'concrete', quantity: 4, unit: 't' }],
+  EthanolRefinery: [{ resourceKey: 'steel', quantity: 4, unit: 't' }, { resourceKey: 'concrete', quantity: 6, unit: 't' }, { resourceKey: 'machinery', quantity: 1, unit: 't' }],
+  SoylentPlant: [{ resourceKey: 'steel', quantity: 4, unit: 't' }, { resourceKey: 'concrete', quantity: 6, unit: 't' }, { resourceKey: 'machinery', quantity: 1, unit: 't' }],
+  DieselGenerator: [{ resourceKey: 'steel', quantity: 2, unit: 't' }, { resourceKey: 'machinery', quantity: 1, unit: 't' }],
+  CoalPlant: [{ resourceKey: 'steel', quantity: 5, unit: 't' }, { resourceKey: 'concrete', quantity: 8, unit: 't' }, { resourceKey: 'machinery', quantity: 2, unit: 't' }],
+  GasPlant: [{ resourceKey: 'steel', quantity: 4, unit: 't' }, { resourceKey: 'concrete', quantity: 6, unit: 't' }, { resourceKey: 'machinery', quantity: 2, unit: 't' }],
+  OilPlant: [{ resourceKey: 'steel', quantity: 4, unit: 't' }, { resourceKey: 'concrete', quantity: 6, unit: 't' }, { resourceKey: 'machinery', quantity: 2, unit: 't' }],
+  GeothermalPlant: [{ resourceKey: 'steel', quantity: 6, unit: 't' }, { resourceKey: 'concrete', quantity: 10, unit: 't' }, { resourceKey: 'machinery', quantity: 2, unit: 't' }],
+  Storage: [{ resourceKey: 'steel', quantity: 2, unit: 't' }, { resourceKey: 'concrete', quantity: 4, unit: 't' }],
+  BatteryBank: [{ resourceKey: 'steel', quantity: 3, unit: 't' }, { resourceKey: 'electronics', quantity: 1, unit: 't' }],
+  Spaceport: [{ resourceKey: 'steel', quantity: 15, unit: 't' }, { resourceKey: 'concrete', quantity: 20, unit: 't' }, { resourceKey: 'machinery', quantity: 5, unit: 't' }, { resourceKey: 'electronics', quantity: 3, unit: 't' }, { resourceKey: 'fuel', quantity: 10, unit: 't' }],
+  RocketAssembly: [{ resourceKey: 'steel', quantity: 10, unit: 't' }, { resourceKey: 'machinery', quantity: 3, unit: 't' }, { resourceKey: 'electronics', quantity: 2, unit: 't' }, { resourceKey: 'fuel', quantity: 5, unit: 't' }],
+  SpaceStation: [{ resourceKey: 'steel', quantity: 20, unit: 't' }, { resourceKey: 'alloys', quantity: 5, unit: 't' }, { resourceKey: 'electronics', quantity: 5, unit: 't' }, { resourceKey: 'composites', quantity: 3, unit: 't' }],
+  OrbitalRefinery: [{ resourceKey: 'steel', quantity: 15, unit: 't' }, { resourceKey: 'machinery', quantity: 3, unit: 't' }, { resourceKey: 'electronics', quantity: 3, unit: 't' }],
+  LunarMine: [{ resourceKey: 'steel', quantity: 12, unit: 't' }, { resourceKey: 'machinery', quantity: 3, unit: 't' }, { resourceKey: 'composites', quantity: 2, unit: 't' }],
+  DeepSpaceProbe: [{ resourceKey: 'steel', quantity: 8, unit: 't' }, { resourceKey: 'electronics', quantity: 4, unit: 't' }, { resourceKey: 'composites', quantity: 2, unit: 't' }],
+  SpaceHabitat: [{ resourceKey: 'steel', quantity: 25, unit: 't' }, { resourceKey: 'alloys', quantity: 8, unit: 't' }, { resourceKey: 'composites', quantity: 5, unit: 't' }, { resourceKey: 'electronics', quantity: 5, unit: 't' }],
+  Excavator: [{ resourceKey: 'steel', quantity: 5, unit: 't' }, { resourceKey: 'machinery', quantity: 2, unit: 't' }],
+  Dredger: [{ resourceKey: 'steel', quantity: 5, unit: 't' }, { resourceKey: 'machinery', quantity: 2, unit: 't' }],
+  Terraformer: [{ resourceKey: 'steel', quantity: 10, unit: 't' }, { resourceKey: 'machinery', quantity: 5, unit: 't' }, { resourceKey: 'electronics', quantity: 3, unit: 't' }, { resourceKey: 'alloys', quantity: 2, unit: 't' }],
+  PlanetaryEngine: [{ resourceKey: 'steel', quantity: 30, unit: 't' }, { resourceKey: 'concrete', quantity: 50, unit: 't' }, { resourceKey: 'machinery', quantity: 10, unit: 't' }, { resourceKey: 'electronics', quantity: 5, unit: 't' }, { resourceKey: 'alloys', quantity: 5, unit: 't' }, { resourceKey: 'composites', quantity: 3, unit: 't' }],
 };
 
 function normalizeFacilityType(type: string): string {
@@ -197,6 +198,7 @@ function mapToSummary(facility: FacilityRow): FacilitySummary {
 export class FacilityService {
   constructor(
     private readonly facilityRepo: IFacilityRepository,
+    private readonly terrainRepo?: ITerrainRepository,
   ) {}
 
   buildFacility(params: {
@@ -232,6 +234,22 @@ export class FacilityService {
         continue;
       if (polygonsIntersect(params.footprint, existingFootprint)) {
         throw new Error(`Facility footprint overlaps existing facility "${existing.name}" (id: ${existing.id})`);
+      }
+    }
+
+    // Cannot build on ocean — must terraform to land first
+    if (this.terrainRepo) {
+      const cell = this.terrainRepo.getTerrainCellNear(params.lat, params.lon);
+      if (cell) {
+        const mods = this.terrainRepo.getTerrainModificationsForCell(cell.latIndex, cell.lonIndex);
+        const elevDelta = mods.reduce((sum, m) => sum + m.elevationDelta, 0);
+        const effElev = cell.elevation + elevDelta;
+        if (effElev < 0) {
+          throw new Error(
+            `Cannot build on ocean (effective elevation ${effElev.toFixed(0)}m at ${params.lat}, ${params.lon}). `
+            + `Use terraform with action 'ocean_to_land' or 'raise_land' to create land first.`,
+          );
+        }
       }
     }
 

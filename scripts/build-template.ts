@@ -188,6 +188,14 @@ async function main() {
     );
     CREATE INDEX IF NOT EXISTS idx_forest_grid_lat_lon ON forest_grid(lat_index, lon_index);
 
+    CREATE TABLE IF NOT EXISTS pollution_grid (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lat_index INTEGER NOT NULL,
+      lon_index INTEGER NOT NULL,
+      pollution REAL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_pollution_grid_lat_lon ON pollution_grid(lat_index, lon_index);
+
     CREATE TABLE IF NOT EXISTS incidents (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       type TEXT,
@@ -355,8 +363,8 @@ async function main() {
 
   // Seed tech costs (research consumes resources)
   const insertTechCost = db.prepare(`INSERT OR IGNORE INTO tech_costs (tech_id, resource_key, quantity, unit) VALUES (?, ?, ?, ?)`);
-  insertTechCost.run('metallurgy_1', 'iron', 5, 't');
-  insertTechCost.run('precision_manufacturing', 'machinery', 2, 't');
+  insertTechCost.run('metallurgy_1', 'fe', 5, 't');
+  insertTechCost.run('precision_manufacturing', 'iron', 2, 't');
   insertTechCost.run('precision_manufacturing', 'steel', 5, 't');
   insertTechCost.run('nuclear_power', 'electronics', 2, 't');
   insertTechCost.run('nuclear_power', 'machinery', 3, 't');
@@ -386,7 +394,10 @@ async function main() {
   insertUnlock.run('basic_construction', 'recipe', 'lumber');
   insertUnlock.run('nuclear_power', 'facility', 'NuclearReactor');
   insertUnlock.run('nuclear_power', 'facility', 'BreederReactor');
+  insertUnlock.run('nuclear_power', 'recipe', 'nuclear_generation');
+  insertUnlock.run('nuclear_power', 'recipe', 'breeder_generation');
   insertUnlock.run('fusion_power', 'facility', 'FusionReactor');
+  insertUnlock.run('fusion_power', 'recipe', 'fusion_generation');
   insertUnlock.run('aerospace_engineering', 'facility', 'Spaceport');
   insertUnlock.run('aerospace_engineering', 'facility', 'RocketAssembly');
   insertUnlock.run('aerospace_engineering', 'facility', 'SpaceStation');
@@ -416,26 +427,40 @@ async function main() {
   insertRecipe.run('ethanol', 'Ethanol', 'EthanolRefinery', 3, 'biotechnology');
   insertRecipe.run('alloys', 'Advanced Alloys', 'AdvancedFactory', 5, 'advanced_materials');
   insertRecipe.run('composites', 'Composite Materials', 'AdvancedFactory', 5, 'advanced_materials');
+  // Power generation recipes
+  insertRecipe.run('solar_generation', 'Solar Generation', 'SolarFarm', 1, null);
+  insertRecipe.run('wind_generation', 'Wind Generation', 'WindFarm', 1, null);
+  insertRecipe.run('hydro_generation', 'Hydro Generation', 'HydroPlant', 1, null);
+  insertRecipe.run('geothermal_generation', 'Geothermal Generation', 'GeothermalPlant', 1, null);
+  insertRecipe.run('coal_generation', 'Coal Power', 'CoalPlant', 1, null);
+  insertRecipe.run('gas_generation', 'Gas Power', 'GasPlant', 1, null);
+  insertRecipe.run('oil_generation', 'Oil Power', 'OilPlant', 1, null);
+  insertRecipe.run('diesel_generation', 'Diesel Power', 'DieselGenerator', 1, null);
+  insertRecipe.run('biomass_generation', 'Biomass Power', 'BiomassPlant', 1, null);
+  insertRecipe.run('biogas_generation', 'Biogas Power', 'BiogasPlant', 1, null);
+  insertRecipe.run('nuclear_generation', 'Nuclear Power', 'NuclearReactor', 1, 'nuclear_power');
+  insertRecipe.run('breeder_generation', 'Breeder Power', 'BreederReactor', 1, 'nuclear_power');
+  insertRecipe.run('fusion_generation', 'Fusion Power', 'FusionReactor', 1, 'fusion_power');
 
   // Seed recipe inputs/outputs — enriched with multi-component inputs per ADR-0018
   const insertInput = db.prepare(`INSERT INTO recipe_inputs (recipe_id, resource_key, quantity, unit, optional) VALUES (?, ?, ?, ?, ?)`);
   const insertOutput = db.prepare(`INSERT INTO recipe_outputs (recipe_id, resource_key, quantity, unit) VALUES (?, ?, ?, ?)`);
   // iron_smelting: iron ore + coal (fuel)
   insertInput.run('iron_smelting', 'fe', 2, 't', 0);
-  insertInput.run('iron_smelting', 'c', 0.5, 't', 0);
+  insertInput.run('iron_smelting', 'coal', 0.5, 't', 0);
   insertOutput.run('iron_smelting', 'iron', 1, 't');
   // copper_smelting: copper ore + coal
   insertInput.run('copper_smelting', 'cu', 2, 't', 0);
-  insertInput.run('copper_smelting', 'c', 0.3, 't', 0);
+  insertInput.run('copper_smelting', 'coal', 0.3, 't', 0);
   insertOutput.run('copper_smelting', 'copper', 1, 't');
   // steel_making: iron + coal + limestone (flux)
   insertInput.run('steel_making', 'fe', 3, 't', 0);
-  insertInput.run('steel_making', 'c', 0.5, 't', 0);
+  insertInput.run('steel_making', 'coal', 0.5, 't', 0);
   insertInput.run('steel_making', 'ca', 0.2, 't', 1);
   insertOutput.run('steel_making', 'steel', 2, 't');
   // aluminum_smelting: bauxite + coal
   insertInput.run('aluminum_smelting', 'al', 2, 't', 0);
-  insertInput.run('aluminum_smelting', 'c', 0.5, 't', 0);
+  insertInput.run('aluminum_smelting', 'coal', 0.5, 't', 0);
   insertOutput.run('aluminum_smelting', 'aluminum', 1, 't');
   // silicon_extraction: quartz/silicon ore
   insertInput.run('silicon_extraction', 'si', 2, 't', 0);
@@ -490,17 +515,43 @@ async function main() {
   insertInput.run('composites', 'machinery', 0.5, 't', 0);
   insertInput.run('composites', 'chemicals', 0.5, 't', 1);
   insertOutput.run('composites', 'composites', 1, 't');
+  // Power generation: free renewables (no inputs)
+  insertOutput.run('solar_generation', 'energy', 10, 'MW');
+  insertOutput.run('wind_generation', 'energy', 8, 'MW');
+  insertOutput.run('hydro_generation', 'energy', 20, 'MW');
+  insertOutput.run('geothermal_generation', 'energy', 15, 'MW');
+  // Power generation: fuel-burning plants
+  insertInput.run('coal_generation', 'coal', 2, 't', 0);
+  insertOutput.run('coal_generation', 'energy', 15, 'MW');
+  insertInput.run('gas_generation', 'naturalgas', 1, 't', 0);
+  insertOutput.run('gas_generation', 'energy', 12, 'MW');
+  insertInput.run('oil_generation', 'oil', 1, 't', 0);
+  insertOutput.run('oil_generation', 'energy', 12, 'MW');
+  insertInput.run('diesel_generation', 'fuel', 0.5, 't', 0);
+  insertOutput.run('diesel_generation', 'energy', 5, 'MW');
+  insertInput.run('biomass_generation', 'biomass', 2, 't', 0);
+  insertOutput.run('biomass_generation', 'energy', 8, 'MW');
+  insertInput.run('biogas_generation', 'biomass', 1, 't', 0);
+  insertOutput.run('biogas_generation', 'energy', 5, 'MW');
+  // Nuclear: consumes uranium
+  insertInput.run('nuclear_generation', 'u', 0.1, 't', 0);
+  insertOutput.run('nuclear_generation', 'energy', 50, 'MW');
+  insertInput.run('breeder_generation', 'u', 0.05, 't', 0);
+  insertOutput.run('breeder_generation', 'energy', 80, 'MW');
+  // Fusion: consumes fusioncore
+  insertInput.run('fusion_generation', 'fusioncore', 0.01, 't', 0);
+  insertOutput.run('fusion_generation', 'energy', 200, 'MW');
 
   // Seed renewable resources (not from MRDS — these are global availability)
   const insertRenewable = db.prepare(`INSERT OR IGNORE INTO resources (resource_key, name, category, lat, lon, quantity, remaining, grade, discovered, surface, depth, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
   const renewables: Array<[string, string, number, string]> = [
-    ['Wood', 'Wood', 1e9, 't'],
-    ['Water', 'Water', 1e10, 't'],
-    ['ArableLand', 'Arable Land', 5e8, 't'],
-    ['Biomass', 'Biomass', 1e8, 't'],
-    ['Solar', 'Solar Energy', 1e9, 'MW'],
-    ['Wind', 'Wind Energy', 1e8, 'MW'],
-    ['Hydro', 'Hydro Power', 5e7, 'MW'],
+    ['wood', 'Wood', 1e9, 't'],
+    ['water', 'Water', 1e10, 't'],
+    ['arableland', 'Arable Land', 5e8, 't'],
+    ['biomass', 'Biomass', 1e8, 't'],
+    ['solar', 'Solar Energy', 1e9, 'MW'],
+    ['wind', 'Wind Energy', 1e8, 'MW'],
+    ['hydro', 'Hydro Power', 5e7, 'MW'],
   ];
   for (const [key, name, qty, unit] of renewables) {
     insertRenewable.run(key, name, 'Renewable', null, null, qty, qty, 1.0, 0, 1, null, unit);
@@ -545,6 +596,28 @@ async function main() {
   }
   else {
     console.log('Forest grid already seeded, skipping');
+  }
+
+  // Seed pollution grid — same grid resolution as forest (720x360), all cells start at 0.
+  // Idempotent — no-ops if pollution_grid already populated.
+  const pollutionCount = db.prepare('SELECT COUNT(*) as c FROM pollution_grid').get() as { c: number };
+  if (pollutionCount.c === 0) {
+    console.log('Seeding pollution grid...');
+    const insertPollution = db.prepare('INSERT INTO pollution_grid (lat_index, lon_index, pollution) VALUES (?, ?, 0)');
+    const batchPollution = db.transaction(() => {
+      for (let lat = 0; lat < 360; lat++) {
+        for (let lon = 0; lon < 720; lon++) {
+          insertPollution.run(lat, lon);
+        }
+        if (lat % 50 === 0)
+          console.log(`  pollution_grid: ${lat}/360...`);
+      }
+    });
+    batchPollution();
+    console.log('Pollution grid: 259200 cells seeded');
+  }
+  else {
+    console.log('Pollution grid already seeded, skipping');
   }
 
   // VACUUM

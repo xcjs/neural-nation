@@ -57,7 +57,7 @@ describe('simulation: recipe production chain', () => {
     const recipe = executeTool(token, 'set_production_target', { facilityId: smelterId, recipeId: 'iron_smelting', targetRate: 1 });
     expect(recipe.status).toBe('success');
 
-    // The smelter should have created input buffer for 'fe' and output buffer for 'iron'
+    // The smelter should have created input buffer for 'fe' and 'coal' and output buffer for 'iron'
     // Run a tick to let production logic create buffers
     advanceTicks(1);
 
@@ -82,8 +82,8 @@ describe('simulation: recipe production chain', () => {
     advanceTicks(1);
 
     // Manually insert iron ore AND coal into the input buffers to simulate transport delivery
-    // iron_smelting requires fe:2t + c:0.5t per cycle
-    for (const key of ['fe', 'c']) {
+    // iron_smelting requires fe:2t + coal:0.5t per cycle
+    for (const key of ['fe', 'coal']) {
       const existing = db.select().from(schema.facilityBuffers).where(and(
         eq(schema.facilityBuffers.facilityId, smelterId),
         eq(schema.facilityBuffers.resourceKey, key),

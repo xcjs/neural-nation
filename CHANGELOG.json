@@ -1,5 +1,34 @@
 [
   {
+    "version": "0.2.0",
+    "date": "2026-07-15",
+    "summary": "Pollution grid, resource key normalization, power recipes, ocean terraforming.",
+    "changes": {
+      "added": [
+        "Per-cell pollution grid with DataTexture overlay (720x360) replacing global scalar.",
+        "PollutionGridTick with radius-based facility pollution and dissipation.",
+        "Database migration system with /server/db/migrations and migrate-dbs script.",
+        "Power generation recipes for all power plant types (solar, wind, hydro, geothermal, coal, gas, oil, diesel, biomass, biogas, nuclear, breeder, fusion).",
+        "Unit tests for power generation (SolarFarm recipe, energy output, unlockedOnly filtering)."
+      ],
+      "changed": [
+        "Normalize all resource keys to lowercase; UI displays proper names via getResourceDisplayName.",
+        "Remove facility GPU particle system (source of orange bloom blobs).",
+        "Always show pollution map; remove toggle button.",
+        "Remove pollution-based earth tint; earth uses clean base color.",
+        "Facility markers use dot + halo spheres for top-down visibility.",
+        "Block ocean building; require terraforming (ocean_to_land/raise_land) first.",
+        "Terraforming costs scale with ocean depth; terraform now consumes resources from stockpiles."
+      ],
+      "fixed": [
+        "Fix circular tech dependencies: metallurgy_1 requires fe (not iron), precision_manufacturing requires iron (not machinery).",
+        "Fix case-sensitivity bug: recipes use lowercase 'coal' matching MRDS deposits.",
+        "Add missing MRDS commodities: Niobium, Bismuth, Chlorine, Rare Earths, Quartz/Silica→si.",
+        "SolarFarm and all power generators now produce energy via recipes instead of sitting idle."
+      ]
+    }
+  },
+  {
     "version": "0.1.0",
     "date": "2026-07-15",
     "summary": "Public release: AGPL-3.0 license, README, version display, CI publishing.",

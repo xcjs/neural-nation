@@ -22,23 +22,30 @@ export const MRDS_ENTRY_NAME = 'mrds.csv';
 
 /**
  * Commodity token → resourceKey map.
- * Element symbols are lowercased. Non-element resources use camelCase.
+ * All resource keys are lowercase. Elements use their lowercase chemical
+ * symbol (e.g. 'fe'); non-element resources use their lowercase full name
+ * (e.g. 'coal').
  */
 const COMMODITY_MAP: Record<string, string> = {
   'Aluminum': 'al',
   'Antimony': 'sb',
   'Arsenic': 'as',
   'Barium': 'ba',
+  'Barium-Barite': 'ba',
   'Beryllium': 'be',
+  'Bismuth': 'bi',
   'Boron': 'b',
+  'Boron-Borates': 'b',
   'Cadmium': 'cd',
   'Calcium': 'ca',
   'Cerium': 'ce',
   'Cesium': 'cs',
+  'Chlorine': 'cl',
   'Chromium': 'cr',
   'Cobalt': 'co',
   'Copper': 'cu',
   'Fluorine': 'f',
+  'Fluorine-Fluorite': 'f',
   'Gallium': 'ga',
   'Germanium': 'ge',
   'Gold': 'au',
@@ -55,17 +62,25 @@ const COMMODITY_MAP: Record<string, string> = {
   'Mercury': 'hg',
   'Molybdenum': 'mo',
   'Nickel': 'ni',
+  'Niobium': 'nb',
+  'Niobium (Columbium)': 'nb',
   'Osmium': 'os',
   'Palladium': 'pd',
+  'Phosphorus': 'p',
+  'Phosphorus-Phosphates': 'p',
   'Platinum': 'pt',
   'Potassium': 'k',
   'Radium': 'ra',
+  'Rare Earths': 'ree',
+  'REE': 'ree',
   'Rhenium': 're',
   'Rhodium': 'rh',
   'Rubidium': 'rb',
   'Ruthenium': 'ru',
   'Scandium': 'sc',
   'Selenium': 'se',
+  'Silica': 'si',
+  'Silicon': 'si',
   'Silver': 'ag',
   'Sodium': 'na',
   'Strontium': 'sr',
@@ -79,36 +94,39 @@ const COMMODITY_MAP: Record<string, string> = {
   'Tungsten': 'w',
   'Uranium': 'u',
   'Vanadium': 'v',
+  'Yttrium': 'y',
   'Zinc': 'zn',
   'Zirconium': 'zr',
-  'Phosphorus': 'p',
   'Nitrogen': 'n',
+  'Nitrogen-Nitrates': 'n',
   // Non-element mappable resources
-  'Coal': 'Coal',
-  'Anthracite': 'Coal',
-  'Bituminous': 'Coal',
-  'Subbituminous': 'Coal',
-  'Lignite': 'Coal',
-  'Natural Gas': 'NaturalGas',
-  'Petroleum (Oil)': 'Oil',
-  'Oil Shale': 'Oil',
-  'Oil Sands': 'Oil',
-  'Peat': 'Peat',
-  'Geothermal': 'Geothermal',
-  'Stone': 'Stone',
-  'Sand': 'Sand',
-  'Gravel': 'Gravel',
-  'Clay': 'Clay',
-  'Limestone': 'Limestone',
-  'Gypsum': 'Gypsum',
-  'Salt': 'Salt',
-  'Quartz': 'Quartz',
-  'Mica': 'Mica',
-  'Asbestos': 'Asbestos',
-  'Talc': 'Talc',
-  'Graphite': 'Graphite',
-  'Diamond': 'Diamond',
-  'Gemstone': 'Gemstone',
+  'Coal': 'coal',
+  'Anthracite': 'coal',
+  'Bituminous': 'coal',
+  'Subbituminous': 'coal',
+  'Lignite': 'coal',
+  'Natural Gas': 'naturalgas',
+  'Petroleum (Oil)': 'oil',
+  'Oil Shale': 'oil',
+  'Oil Sands': 'oil',
+  'Peat': 'peat',
+  'Geothermal': 'geothermal',
+  'Stone': 'stone',
+  'Sand': 'sand',
+  'Gravel': 'gravel',
+  'Clay': 'clay',
+  'Limestone': 'limestone',
+  'Gypsum': 'gypsum',
+  'Gypsum-Anhydrite': 'gypsum',
+  'Salt': 'salt',
+  'Quartz': 'si',
+  'Mica': 'mica',
+  'Asbestos': 'asbestos',
+  'Talc': 'talc',
+  'Talc-Soapstone': 'talc',
+  'Graphite': 'graphite',
+  'Diamond': 'diamond',
+  'Gemstone': 'gemstone',
 };
 
 /** Build a lookup from element symbol (lowercase) → crustalAbundance. */
@@ -267,13 +285,17 @@ export function seedMrdsDeposits(
       continue;
     }
 
-    // Determine category
-    const isElement = /^[a-z]{1,2}$/.test(resourceKey);
+    // Determine category — elements are 1-2 char lowercase symbols,
+    // plus 'ree' for rare earth elements
+    const isElement = /^[a-z]{1,2}$/.test(resourceKey) || resourceKey === 'ree';
     const category = isElement ? 'Element' : 'NonRenewable';
 
     // Determine name
     let name = resourceKey;
-    if (isElement) {
+    if (resourceKey === 'ree') {
+      name = 'Rare Earth Elements';
+    }
+    else if (isElement) {
       const el = ELEMENTS.find(e => e.symbol.toLowerCase() === resourceKey);
       name = el?.name ?? resourceKey;
     }

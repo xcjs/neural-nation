@@ -1,7 +1,7 @@
 import { actions } from './action';
 import { events } from './event';
 import { facilities, facilityBuffers } from './facility';
-import { environment, forestGrid, humanity, incidents } from './humanity';
+import { environment, forestGrid, humanity, incidents, pollutionGrid } from './humanity';
 import { meta } from './meta';
 import { batteryBanks, powerLines } from './power';
 import { resources, stockpiles, surveyLog } from './resource';
@@ -34,6 +34,7 @@ export const schema = {
   humanity,
   environment,
   forestGrid,
+  pollutionGrid,
   incidents,
   spaceFacilities,
   spaceMissions,
@@ -61,6 +62,7 @@ export {
   humanity,
   incidents,
   meta,
+  pollutionGrid,
   powerLines,
   recipeInputs,
   recipeOutputs,

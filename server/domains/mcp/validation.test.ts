@@ -19,19 +19,19 @@ afterAll(() => {
 
 describe('validation hardening', () => {
   it('rejects building a tech-gated facility type without the required tech', () => {
-    const r = executeTool(token, 'build_facility', { type: 'NuclearReactor', name: 'Reactor', lat: 40, lon: -100, footprint: [{ lat: 40.01, lon: -100.01 }, { lat: 40.01, lon: -99.99 }, { lat: 39.99, lon: -99.99 }, { lat: 39.99, lon: -100.01 }] });
+    const r = executeTool(token, 'build_facility', { type: 'NuclearReactor', name: 'Reactor', lat: 39, lon: -100, footprint: [{ lat: 39.01, lon: -100.01 }, { lat: 39.01, lon: -99.99 }, { lat: 38.99, lon: -99.99 }, { lat: 38.99, lon: -100.01 }] });
     expect(r.status).toBe('error');
     expect(r.errorMessage).toContain('requires tech');
     expect(r.errorMessage).toContain('nuclear_power');
   });
 
   it('allows building a ResearchLab without any tech requirement (chicken-and-egg fix)', () => {
-    const r = executeTool(token, 'build_facility', { type: 'ResearchLab', name: 'Lab', lat: 41, lon: -101, footprint: [{ lat: 41.01, lon: -101.01 }, { lat: 41.01, lon: -100.99 }, { lat: 40.99, lon: -100.99 }, { lat: 40.99, lon: -101.01 }] });
+    const r = executeTool(token, 'build_facility', { type: 'ResearchLab', name: 'Lab', lat: 40, lon: -101, footprint: [{ lat: 40.01, lon: -101.01 }, { lat: 40.01, lon: -100.99 }, { lat: 39.99, lon: -100.99 }, { lat: 39.99, lon: -101.01 }] });
     expect(r.status).toBe('success');
   });
 
   it('allows building a tech-free facility type (Extractor)', () => {
-    const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Mine', lat: 40, lon: -100, footprint: [{ lat: 40.01, lon: -100.01 }, { lat: 40.01, lon: -99.99 }, { lat: 39.99, lon: -99.99 }, { lat: 39.99, lon: -100.01 }] });
+    const r = executeTool(token, 'build_facility', { type: 'Extractor', name: 'Mine', lat: 39, lon: -100, footprint: [{ lat: 39.01, lon: -100.01 }, { lat: 39.01, lon: -99.99 }, { lat: 38.99, lon: -99.99 }, { lat: 38.99, lon: -100.01 }] });
     expect(r.status).toBe('success');
   });
 

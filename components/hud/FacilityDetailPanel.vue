@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { getResourceDisplayName } from '~/lib/constants/resource-names';
 import { useFacilitiesStore } from '~/stores/facilities';
 
 const facilities = useFacilitiesStore();
@@ -137,7 +138,7 @@ const footprintSvg = computed(() => {
           INPUTS
         </p>
         <div v-for="buf in facilities.selected.inputs" :key="buf.resourceKey" class="flex justify-between">
-          <span class="text-cyan-300">{{ buf.resourceKey }}</span>
+          <span class="text-cyan-300">{{ getResourceDisplayName(buf.resourceKey) }}</span>
           <span class="text-cyan-500">{{ buf.quantity.toFixed(1) }}/{{ buf.capacity }}{{ buf.unit }}</span>
         </div>
       </div>
@@ -146,7 +147,7 @@ const footprintSvg = computed(() => {
           OUTPUTS
         </p>
         <div v-for="buf in facilities.selected.outputs" :key="buf.resourceKey" class="flex justify-between">
-          <span class="text-cyan-300">{{ buf.resourceKey }}</span>
+          <span class="text-cyan-300">{{ getResourceDisplayName(buf.resourceKey) }}</span>
           <span class="text-cyan-500">{{ buf.quantity.toFixed(1) }}/{{ buf.capacity }}{{ buf.unit }}</span>
         </div>
       </div>

@@ -49,12 +49,6 @@ const metrics = computed(() => [
     </div>
     <div class="mt-2 flex gap-1">
       <button
-        class="text-xs px-2 py-0.5 border" :class="[env.showPollutionHeatmap ? 'border-red-500 text-red-300' : 'border-cyan-900 text-cyan-700']"
-        @click="env.showPollutionHeatmap = !env.showPollutionHeatmap"
-      >
-        POLLUTION MAP
-      </button>
-      <button
         class="text-xs px-2 py-0.5 border" :class="[env.showBiomeDegradation ? 'border-green-500 text-green-300' : 'border-cyan-900 text-cyan-700']"
         @click="env.showBiomeDegradation = !env.showBiomeDegradation"
       >
