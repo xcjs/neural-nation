@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import process from 'node:process';
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { runMigrations } from '../../db/migrate';
 import { schema } from '../../db/schema';
 
 export function getDataDir(): string {
@@ -21,6 +22,7 @@ export function createGameDbFromPath(path: string): GameDb {
   const sqlite = new Database(path);
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');
+  runMigrations(sqlite);
   return drizzle(sqlite, { schema });
 }
 
