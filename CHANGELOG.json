@@ -1,5 +1,15 @@
 [
   {
+    "version": "0.2.3",
+    "date": "2026-07-18",
+    "summary": "Auto-run migrations in DbFactory to heal stale game DBs.",
+    "changes": {
+      "fixed": [
+        "Run migrations in DbFactory so existing/stale game databases are healed on load instead of requiring a manual migrate step."
+      ]
+    }
+  },
+  {
     "version": "0.2.2",
     "date": "2026-07-16",
     "summary": "Pull version from package.json instead of hardcoding.",
