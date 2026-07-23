@@ -168,12 +168,14 @@ function copyUrl() {
           The AI will run directly in your browser. No external application needed — a chat panel will appear in the game.
         </p>
 
-        <NuxtLink
-          :to="playUrl"
-          class="inline-block mt-4 px-4 py-2 border border-cyan-400 text-cyan-300 hover:bg-cyan-900 text-sm"
-        >
-          ENTER GAME →
-        </NuxtLink>
+        <div class="flex justify-end mt-4">
+          <NuxtLink
+            :to="playUrl"
+            class="inline-block px-4 py-2 border border-cyan-400 text-cyan-300 hover:bg-cyan-900 text-sm"
+          >
+            ENTER GAME →
+          </NuxtLink>
+        </div>
       </div>
 
       <div class="flex items-center justify-center gap-4 mt-8">
