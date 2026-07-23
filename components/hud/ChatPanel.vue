@@ -56,6 +56,69 @@ const showModelSelector = computed(() => {
   return !llm.isInitialized.value && props.model;
 });
 
+const errorInfo = computed<{ title: string; detail: string; suggestions: string[] } | null>(() => {
+  const code = chat.errorCode;
+  if (!code || !chat.errorMessage) {
+    return null;
+  }
+  const raw = chat.errorMessage;
+  switch (code) {
+    case 'oom':
+      return {
+        title: 'GPU Out of Memory',
+        detail: raw,
+        suggestions: [
+          'Try the smaller Qwen 3.5 model (most browser-compatible)',
+          'Close other GPU-heavy browser tabs',
+          'Use the External MCP play mode (no local model)',
+        ],
+      };
+    case 'webgpu_unavailable':
+      return {
+        title: 'WebGPU Not Available',
+        detail: raw,
+        suggestions: [
+          'Use Chrome/Edge 113+ or a WebGPU-enabled browser',
+          'Enable "chrome://flags/#enable-unsafe-webgpu" if needed',
+          'Use the External MCP play mode (no WebGPU required)',
+        ],
+      };
+    case 'network':
+      return {
+        title: 'Download Failed',
+        detail: raw,
+        suggestions: [
+          'Check your internet connection',
+          'The model downloads from huggingface.co on first load',
+          'Once cached, subsequent loads work offline',
+        ],
+      };
+    case 'mcp_connection':
+      return {
+        title: 'MCP Server Unreachable',
+        detail: raw,
+        suggestions: [
+          'Ensure the game server is running',
+          'The AI needs the MCP tool server to call game actions',
+        ],
+      };
+    case 'generation':
+      return {
+        title: 'Inference Error',
+        detail: raw,
+        suggestions: ['Try sending your message again', 'If it persists, reload the model'],
+      };
+    case 'worker_crash':
+      return {
+        title: 'Worker Crashed',
+        detail: raw,
+        suggestions: ['Reload the model to restart the worker'],
+      };
+    default:
+      return { title: 'Error', detail: raw, suggestions: [] };
+  }
+});
+
 watch(() => chat.messages.length, async () => {
   await nextTick();
   if (messageListRef.value) {
@@ -150,12 +213,39 @@ function formatResult(result: { status: string; data?: unknown; errorMessage?: s
       </div>
     </div>
 
-    <div v-if="showModelSelector" class="flex-1 flex flex-col items-center justify-center gap-3">
+    <div v-if="errorInfo && chat.status === 'error'" class="flex-1 flex flex-col items-center justify-center gap-2 px-2">
+      <div class="border border-red-900/60 bg-red-950/30 rounded p-3 text-xs space-y-2 w-full max-w-xs">
+        <div class="text-red-400 font-bold tracking-wide">
+          {{ errorInfo.title }}
+        </div>
+        <div class="text-red-300 break-words">
+          {{ errorInfo.detail }}
+        </div>
+        <ul v-if="errorInfo.suggestions.length" class="text-red-500/70 list-disc list-inside space-y-0.5">
+          <li v-for="(s, i) in errorInfo.suggestions" :key="i">
+            {{ s }}
+          </li>
+        </ul>
+        <button
+          v-if="props.model"
+          class="px-4 py-2 border border-cyan-400 bg-cyan-950 text-cyan-300 hover:bg-cyan-900 text-xs tracking-wider mt-1 mx-auto"
+          @click="startModel"
+        >
+          Try Again
+        </button>
+      </div>
+    </div>
+
+    <div v-else-if="showModelSelector" class="flex-1 flex flex-col items-center justify-center gap-3">
       <p class="text-cyan-500 text-xs text-center">
         Model: <span class="text-cyan-300 font-bold">{{ props.model }}</span>
       </p>
       <p class="text-cyan-700 text-xs text-center">
-        {{ props.model === 'E2B' ? '~1.2GB download, ~2GB VRAM' : '~2.5GB download, ~4GB VRAM' }}
+        {{
+          props.model === 'Q3B' ? '~2.4GB download, ~3GB VRAM'
+          : props.model === 'E2B' ? '~1.2GB download, ~2GB VRAM'
+            : '~2.5GB download, ~4GB VRAM'
+        }}
       </p>
       <button
         class="px-4 py-2 border border-cyan-400 bg-cyan-950 text-cyan-300 hover:bg-cyan-900 text-xs tracking-wider"
@@ -248,8 +338,25 @@ function formatResult(result: { status: string; data?: unknown; errorMessage?: s
         </div>
       </div>
 
-      <div v-if="chat.errorMessage" class="text-red-400 text-xs mb-2 px-1">
-        {{ chat.errorMessage }}
+      <div v-if="errorInfo" class="border border-red-900/60 bg-red-950/30 rounded p-2 mb-2 text-xs space-y-1">
+        <div class="text-red-400 font-bold tracking-wide">
+          {{ errorInfo.title }}
+        </div>
+        <div class="text-red-300 break-words">
+          {{ errorInfo.detail }}
+        </div>
+        <ul v-if="errorInfo.suggestions.length" class="text-red-500/70 list-disc list-inside space-y-0.5">
+          <li v-for="(s, i) in errorInfo.suggestions" :key="i">
+            {{ s }}
+          </li>
+        </ul>
+        <button
+          v-if="props.model"
+          class="px-4 py-2 border border-cyan-400 bg-cyan-950 text-cyan-300 hover:bg-cyan-900 text-xs tracking-wider mt-1 mx-auto"
+          @click="startModel"
+        >
+          Try Again
+        </button>
       </div>
 
       <div class="flex gap-1">

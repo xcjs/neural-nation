@@ -22,7 +22,16 @@ export interface ChatMessage {
 
 export type LlmStatus = 'idle' | 'downloading' | 'loading' | 'ready' | 'generating' | 'executingTool' | 'error';
 
-export type ModelChoice = 'E2B' | 'E4B';
+export type LlmErrorCode =
+  | 'oom'
+  | 'webgpu_unavailable'
+  | 'network'
+  | 'mcp_connection'
+  | 'generation'
+  | 'worker_crash'
+  | 'unknown';
+
+export type ModelChoice = 'E2B' | 'E4B' | 'Q3B';
 
 export const useChatStore = defineStore('chat', () => {
   const messages = ref<ChatMessage[]>([]);
@@ -31,6 +40,7 @@ export const useChatStore = defineStore('chat', () => {
   const currentModel = ref<ModelChoice | null>(null);
   const downloadProgress = ref<{ loaded: number; total: number } | null>(null);
   const errorMessage = ref('');
+  const errorCode = ref<LlmErrorCode | null>(null);
   const activeToolCallId = ref<string | null>(null);
 
   function addMessage(msg: ChatMessage): void {
@@ -75,6 +85,7 @@ export const useChatStore = defineStore('chat', () => {
     input.value = '';
     status.value = 'idle';
     errorMessage.value = '';
+    errorCode.value = null;
     activeToolCallId.value = null;
   }
 
@@ -91,6 +102,7 @@ export const useChatStore = defineStore('chat', () => {
     currentModel,
     downloadProgress,
     errorMessage,
+    errorCode,
     activeToolCallId,
     addMessage,
     updateMessageContent,

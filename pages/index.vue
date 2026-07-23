@@ -8,7 +8,7 @@ const loading = ref(false);
 const error = ref('');
 const created = ref<{ token: string; publicToken: string; mcpUrl: string } | null>(null);
 const copied = ref(false);
-const playMode = ref<'external' | 'E2B' | 'E4B'>('external');
+const playMode = ref<'external' | 'Q3B' | 'E2B' | 'E4B'>('external');
 const { version } = useRuntimeConfig().public;
 const changelog = ref<ChangelogEntry[]>([]);
 const changelogOpen = ref(false);
@@ -87,7 +87,7 @@ function copyUrl() {
         <p class="text-cyan-500 text-sm mb-2">
           PLAY MODE
         </p>
-        <div class="flex gap-2 mb-3">
+        <div class="flex gap-2 mb-3 flex-wrap">
           <button
             class="px-3 py-2 text-xs border transition-colors"
             :class="[
@@ -102,13 +102,24 @@ function copyUrl() {
           <button
             class="px-3 py-2 text-xs border transition-colors"
             :class="[
+              playMode === 'Q3B'
+                ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
+                : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
+            ]"
+            @click="playMode = 'Q3B'"
+          >
+            IN-BROWSER (Qwen 3.5)
+          </button>
+          <button
+            class="px-3 py-2 text-xs border transition-colors"
+            :class="[
               playMode === 'E2B'
                 ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
                 : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
             ]"
             @click="playMode = 'E2B'"
           >
-            IN-BROWSER (E2B)
+            IN-BROWSER (Gemma E2B)
           </button>
           <button
             class="px-3 py-2 text-xs border transition-colors"
@@ -119,10 +130,13 @@ function copyUrl() {
             ]"
             @click="playMode = 'E4B'"
           >
-            IN-BROWSER (E4B)
+            IN-BROWSER (Gemma E4B)
           </button>
         </div>
-        <p v-if="playMode === 'E2B'" class="text-cyan-700 text-xs mb-3">
+        <p v-if="playMode === 'Q3B'" class="text-cyan-700 text-xs mb-3">
+          Qwen 3.5 4B runs in your browser via WebGPU. ~2.4GB download (first load), ~3GB VRAM. Most compatible with browser WebGPU buffer limits. Requires Chrome/Edge 113+ or Safari 18+.
+        </p>
+        <p v-else-if="playMode === 'E2B'" class="text-cyan-700 text-xs mb-3">
           Gemma 4 E2B runs in your browser via WebGPU. ~1.2GB download (first load), ~2GB VRAM. Requires Chrome/Edge 113+ or Safari 18+.
         </p>
         <p v-else-if="playMode === 'E4B'" class="text-cyan-700 text-xs mb-3">

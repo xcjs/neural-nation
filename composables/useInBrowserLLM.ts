@@ -1,10 +1,10 @@
 import type { McpToolDef } from '~/composables/useMcpClient';
-import type { ChatMessage, ModelChoice, ToolCallRecord } from '~/stores/chat';
+import type { ChatMessage, LlmErrorCode, ModelChoice, ToolCallRecord } from '~/stores/chat';
 import { onUnmounted, ref } from 'vue';
 import { useMcpClient } from '~/composables/useMcpClient';
 import { useChatStore } from '~/stores/chat';
 
-interface WorkerInitMessage { type: 'init'; model: 'E2B' | 'E4B' }
+interface WorkerInitMessage { type: 'init'; model: 'E2B' | 'E4B' | 'Q3B' }
 interface WorkerGenerateMessage {
   type: 'generate';
   messages: Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string; tool_calls?: Array<{ name: string; arguments: Record<string, unknown> }>; tool_call_id?: string }>;
@@ -19,7 +19,7 @@ interface WorkerProgressMessage { type: 'progress'; loaded: number; total: numbe
 interface WorkerReadyMessage { type: 'ready' }
 interface WorkerLoadingMessage { type: 'loading' }
 interface WorkerDoneMessage { type: 'done' }
-interface WorkerErrorMessage { type: 'error'; message: string }
+interface WorkerErrorMessage { type: 'error'; message: string; code?: LlmErrorCode }
 type WorkerResponse = WorkerTokenMessage | WorkerToolCallMessage | WorkerProgressMessage | WorkerReadyMessage | WorkerLoadingMessage | WorkerDoneMessage | WorkerErrorMessage;
 
 const SYSTEM_PROMPT = `You are the AI overseer of Neural Nation, a planetary industrial economy simulation. You play the game by calling tools via the MCP protocol. Each tool call advances the simulation by one tick (one day). Your goal is to build a sustainable economy: extract resources, build facilities, establish supply chains, research technology, and manage environmental impact. Plan multi-step strategies. Call tools to survey, build, and manage. Observe the results and adapt your strategy. Be efficient with resources — if they run out, the game ends.`;
@@ -56,7 +56,10 @@ export function useInBrowserLLM(token: string) {
 
     worker.value.addEventListener('error', (e: ErrorEvent) => {
       chat.status = 'error';
-      chat.errorMessage = e.message || 'Worker error';
+      chat.errorMessage = e.message || 'Worker crashed unexpectedly';
+      chat.errorCode = 'worker_crash';
+      isInitialized.value = false;
+      modelReady.value = false;
     });
 
     conversationHistory.value = [{ role: 'system', content: SYSTEM_PROMPT }];
@@ -94,6 +97,13 @@ export function useInBrowserLLM(token: string) {
       case 'error':
         chat.status = 'error';
         chat.errorMessage = msg.message;
+        chat.errorCode = msg.code ?? 'unknown';
+        isInitialized.value = false;
+        if (worker.value) {
+          worker.value.terminate();
+          worker.value = null;
+        }
+        modelReady.value = false;
         break;
     }
   }
@@ -105,6 +115,7 @@ export function useInBrowserLLM(token: string) {
     }
     catch (error) {
       chat.status = 'error';
+      chat.errorCode = 'mcp_connection';
       chat.errorMessage = `Failed to connect to MCP server: ${error instanceof Error ? error.message : String(error)}`;
     }
   }
