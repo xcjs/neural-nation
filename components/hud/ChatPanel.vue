@@ -226,13 +226,15 @@ function formatResult(result: { status: string; data?: unknown; errorMessage?: s
             {{ s }}
           </li>
         </ul>
-        <button
-          v-if="props.model"
-          class="px-4 py-2 border border-cyan-400 bg-cyan-950 text-cyan-300 hover:bg-cyan-900 text-xs tracking-wider mt-1 mx-auto"
-          @click="startModel"
-        >
-          Try Again
-        </button>
+        <div class="flex justify-center mt-1">
+          <button
+            v-if="props.model"
+            class="px-4 py-2 border border-cyan-400 bg-cyan-950 text-cyan-300 hover:bg-cyan-900 text-xs tracking-wider"
+            @click="startModel"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     </div>
 
@@ -350,13 +352,15 @@ function formatResult(result: { status: string; data?: unknown; errorMessage?: s
             {{ s }}
           </li>
         </ul>
-        <button
-          v-if="props.model"
-          class="px-4 py-2 border border-cyan-400 bg-cyan-950 text-cyan-300 hover:bg-cyan-900 text-xs tracking-wider mt-1 mx-auto"
-          @click="startModel"
-        >
-          Try Again
-        </button>
+        <div class="flex justify-center mt-1">
+          <button
+            v-if="props.model"
+            class="px-4 py-2 border border-cyan-400 bg-cyan-950 text-cyan-300 hover:bg-cyan-900 text-xs tracking-wider"
+            @click="startModel"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
 
       <div class="flex gap-1">

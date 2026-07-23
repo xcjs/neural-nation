@@ -1,5 +1,5 @@
-import type { PreTrainedModel, PreTrainedTokenizer, TextStreamer } from '@huggingface/transformers';
-import { AutoModelForCausalLM, AutoTokenizer, env } from '@huggingface/transformers';
+import type { PreTrainedModel, PreTrainedTokenizer } from '@huggingface/transformers';
+import { AutoModelForCausalLM, AutoTokenizer, env, TextStreamer } from '@huggingface/transformers';
 import { createStreamingToolCallParser, type ToolCallToken } from './llm-tool-call-parser';
 
 interface GPUAdapterLike {
@@ -216,18 +216,20 @@ async function handleGenerate(
       }
     };
 
-    const streamer = {
-      token_fn: (token: string) => {
-        if (abortController?.signal.aborted)
-          return false;
+    let cancelled = false;
+    const streamer = new TextStreamer(tokenizer, {
+      skip_prompt: true,
+      skip_special_tokens: true,
+      callback_function: (text: string) => {
+        if (cancelled)
+          return;
+        emitTokens(parser.push(text));
+      },
+    });
 
-        emitTokens(parser.push(token));
-        return true;
-      },
-      decode_fn: (tokens: number[]) => {
-        return tokenizer!.decode(tokens, { skip_special_tokens: true });
-      },
-    } as unknown as TextStreamer;
+    abortController.signal.addEventListener('abort', () => {
+      cancelled = true;
+    });
 
     await model.generate({
       ...inputs,
