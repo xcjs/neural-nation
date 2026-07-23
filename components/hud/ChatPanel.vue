@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ModelChoice } from '~/stores/chat';
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Spinner from '~/components/Spinner.vue';
 import { useInBrowserLLM } from '~/composables/useInBrowserLLM';
 import { useChatStore } from '~/stores/chat';
@@ -69,6 +69,12 @@ watch(() => chat.messages.flatMap(m => m.content), async () => {
     messageListRef.value.scrollTop = messageListRef.value.scrollHeight;
   }
 }, { deep: true });
+
+onMounted(() => {
+  if (props.model && !llm.isInitialized.value) {
+    llm.init(props.model);
+  }
+});
 
 function startModel(): void {
   if (props.model) {
