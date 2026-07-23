@@ -232,7 +232,9 @@ watch(() => ui.selectedFacilityId, (id) => {
 
       <!-- Right panel stack -->
       <div class="absolute top-12 right-0 bottom-9 w-80 pointer-events-auto overflow-y-auto p-2 space-y-2">
-        <ChatPanel v-if="ui.panelVisibility.chatPanel && inBrowserMode" :token="token" :model="props.model as ModelChoice" />
+        <ClientOnly>
+          <ChatPanel v-if="ui.panelVisibility.chatPanel && inBrowserMode" :token="token" :model="props.model as ModelChoice" />
+        </ClientOnly>
         <EventFeed v-if="ui.panelVisibility.eventFeed" />
         <ActionConsole v-if="ui.panelVisibility.actionConsole" />
         <TechTreePanel v-if="ui.panelVisibility.techTree" />

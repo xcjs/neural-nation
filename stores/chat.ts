@@ -20,7 +20,7 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-export type LlmStatus = 'idle' | 'downloading' | 'loading' | 'ready' | 'generating' | 'executingTool' | 'error';
+export type LlmStatus = 'idle' | 'downloading' | 'loading' | 'ready' | 'prefilling' | 'generating' | 'executingTool' | 'error';
 
 export type LlmErrorCode =
   | 'oom'
@@ -38,7 +38,7 @@ export const useChatStore = defineStore('chat', () => {
   const input = ref('');
   const status = ref<LlmStatus>('idle');
   const currentModel = ref<ModelChoice | null>(null);
-  const downloadProgress = ref<{ loaded: number; total: number } | null>(null);
+  const downloadProgress = ref<Record<string, { loaded: number; total: number }> | null>(null);
   const errorMessage = ref('');
   const errorCode = ref<LlmErrorCode | null>(null);
   const activeToolCallId = ref<string | null>(null);

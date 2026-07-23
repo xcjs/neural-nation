@@ -1,6 +1,6 @@
 import type { McpToolDef } from '~/composables/useMcpClient';
 import type { ChatMessage, LlmErrorCode, ModelChoice, ToolCallRecord } from '~/stores/chat';
-import { onUnmounted, ref } from 'vue';
+import { onUnmounted, ref, toRaw } from 'vue';
 import { useMcpClient } from '~/composables/useMcpClient';
 import { useChatStore } from '~/stores/chat';
 
@@ -15,12 +15,13 @@ type WorkerRequest = WorkerInitMessage | WorkerGenerateMessage | WorkerCancelMes
 
 interface WorkerTokenMessage { type: 'token'; text: string }
 interface WorkerToolCallMessage { type: 'tool_call'; name: string; args: Record<string, unknown> }
-interface WorkerProgressMessage { type: 'progress'; loaded: number; total: number }
+interface WorkerProgressMessage { type: 'progress'; loaded: number; total: number; file: string }
 interface WorkerReadyMessage { type: 'ready' }
 interface WorkerLoadingMessage { type: 'loading' }
+interface WorkerPrefillMessage { type: 'prefill' }
 interface WorkerDoneMessage { type: 'done' }
 interface WorkerErrorMessage { type: 'error'; message: string; code?: LlmErrorCode }
-type WorkerResponse = WorkerTokenMessage | WorkerToolCallMessage | WorkerProgressMessage | WorkerReadyMessage | WorkerLoadingMessage | WorkerDoneMessage | WorkerErrorMessage;
+type WorkerResponse = WorkerTokenMessage | WorkerToolCallMessage | WorkerProgressMessage | WorkerReadyMessage | WorkerLoadingMessage | WorkerPrefillMessage | WorkerDoneMessage | WorkerErrorMessage;
 
 const SYSTEM_PROMPT = `You are the AI overseer of Neural Nation, a planetary industrial economy simulation. You play the game by calling tools via the MCP protocol. Each tool call advances the simulation by one tick (one day). Your goal is to build a sustainable economy: extract resources, build facilities, establish supply chains, research technology, and manage environmental impact. Plan multi-step strategies. Call tools to survey, build, and manage. Observe the results and adapt your strategy. Be efficient with resources — if they run out, the game ends.`;
 
@@ -76,7 +77,10 @@ export function useInBrowserLLM(token: string) {
         chat.status = 'loading';
         break;
       case 'progress':
-        chat.downloadProgress = { loaded: msg.loaded, total: msg.total };
+        chat.downloadProgress = {
+          ...(chat.downloadProgress ?? {}),
+          [msg.file]: { loaded: msg.loaded, total: msg.total },
+        };
         chat.status = 'downloading';
         break;
       case 'ready':
@@ -85,7 +89,12 @@ export function useInBrowserLLM(token: string) {
         modelReady.value = true;
         loadToolDefs();
         break;
+      case 'prefill':
+        chat.status = 'prefilling';
+        break;
       case 'token':
+        if (chat.status === 'prefilling')
+          chat.status = 'generating';
         chat.appendMessageContent(currentAssistantId, msg.text);
         break;
       case 'tool_call':
@@ -108,10 +117,25 @@ export function useInBrowserLLM(token: string) {
     }
   }
 
+  function sanitizeBigInt(obj: unknown): unknown {
+    if (typeof obj === 'bigint')
+      return String(obj);
+    if (Array.isArray(obj))
+      return obj.map(sanitizeBigInt);
+    if (obj !== null && typeof obj === 'object') {
+      const result: Record<string, unknown> = {};
+      for (const key of Object.keys(obj))
+        result[key] = sanitizeBigInt((obj as Record<string, unknown>)[key]);
+      return result;
+    }
+    return obj;
+  }
+
   async function loadToolDefs(): Promise<void> {
     try {
       await mcpClient.connect();
-      toolDefs.value = await mcpClient.listTools();
+      const tools = await mcpClient.listTools();
+      toolDefs.value = sanitizeBigInt(tools) as McpToolDef[];
     }
     catch (error) {
       chat.status = 'error';
@@ -157,7 +181,7 @@ export function useInBrowserLLM(token: string) {
       timestamp: Date.now(),
     };
     chat.addMessage(assistantMsg);
-    chat.status = 'generating';
+    chat.status = 'prefilling';
 
     postToWorker({
       type: 'generate',
@@ -229,7 +253,7 @@ export function useInBrowserLLM(token: string) {
     }
 
     chat.activeToolCallId = null;
-    chat.status = 'generating';
+    chat.status = 'prefilling';
 
     if (pendingToolCalls.length >= MAX_TOOL_ITERATIONS) {
       chat.errorMessage = `Max tool iterations (${MAX_TOOL_ITERATIONS}) reached. Stopping.`;
@@ -286,9 +310,32 @@ export function useInBrowserLLM(token: string) {
     chat.status = modelReady.value ? 'ready' : 'idle';
   }
 
+  function deepToRaw<T>(obj: T): T {
+    const raw = toRaw(obj as object) as T;
+    if (raw === null || typeof raw !== 'object')
+      return raw;
+    if (Array.isArray(raw))
+      return raw.map(item => deepToRaw(item)) as unknown as T;
+    const result: Record<string, unknown> = {};
+    for (const key of Object.keys(raw as object))
+      result[key] = deepToRaw((raw as Record<string, unknown>)[key]);
+    return result as unknown as T;
+  }
+
   function postToWorker(msg: WorkerRequest): void {
     if (worker.value) {
-      worker.value.postMessage(JSON.parse(JSON.stringify(msg)));
+      try {
+        const raw = deepToRaw(msg);
+        const sanitized = sanitizeBigInt(raw);
+        console.warn('[useInBrowserLLM] postToWorker sanitized, has bigint:', JSON.stringify(sanitized, (_k, v) => typeof v === 'bigint' ? `[BIGINT]` : v).includes('[BIGINT]'));
+        worker.value.postMessage(structuredClone(sanitized));
+      }
+      catch (err) {
+        console.error('[useInBrowserLLM] postToWorker failed:', err);
+        chat.status = 'error';
+        chat.errorCode = 'unknown';
+        chat.errorMessage = `Failed to send to worker: ${err instanceof Error ? err.message : String(err)}`;
+      }
     }
   }
 

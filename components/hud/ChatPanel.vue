@@ -23,6 +23,7 @@ const statusLabel = computed(() => {
     case 'downloading': return 'DOWNLOADING MODEL';
     case 'loading': return 'LOADING MODEL';
     case 'ready': return 'READY';
+    case 'prefilling': return 'PROCESSING PROMPT...';
     case 'generating': return 'GENERATING...';
     case 'executingTool': return 'EXECUTING TOOL...';
     case 'error': return 'ERROR';
@@ -36,16 +37,20 @@ const statusColor = computed(() => {
     case 'generating':
     case 'executingTool':
     case 'downloading':
-    case 'loading': return 'text-yellow-400';
+    case 'loading':
+    case 'prefilling': return 'text-yellow-400';
     case 'error': return 'text-red-400';
     default: return 'text-cyan-500';
   }
 });
 
-const downloadPercent = computed(() => {
-  if (!chat.downloadProgress || !chat.downloadProgress.total)
-    return 0;
-  return Math.round((chat.downloadProgress.loaded / chat.downloadProgress.total) * 100);
+const downloadFiles = computed(() => {
+  if (!chat.downloadProgress)
+    return [];
+  return Object.entries(chat.downloadProgress).map(([file, prog]) => ({
+    file,
+    percent: prog.total ? Math.round((prog.loaded / prog.total) * 100) : 0,
+  }));
 });
 
 const canSend = computed(() => {
@@ -197,7 +202,7 @@ function formatResult(result: { status: string; data?: unknown; errorMessage?: s
           {{ statusLabel }}
         </span>
         <button
-          v-if="chat.status === 'generating'"
+          v-if="chat.status === 'generating' || chat.status === 'prefilling'"
           class="text-red-400 hover:text-red-300 text-xs"
           @click="handleCancel"
         >
@@ -257,21 +262,26 @@ function formatResult(result: { status: string; data?: unknown; errorMessage?: s
       </button>
     </div>
 
-    <div v-else-if="chat.status === 'downloading' || chat.status === 'loading'" class="flex-1 flex flex-col items-center justify-center gap-3">
+    <div v-else-if="chat.status === 'downloading' || chat.status === 'loading'" class="flex-1 flex flex-col items-center justify-center gap-3 overflow-y-auto min-h-0">
       <Spinner size="1.2rem" class="text-cyan-500" />
       <p class="text-cyan-500 text-xs">
         {{ chat.status === 'downloading' ? 'Downloading model weights...' : 'Loading model into WebGPU...' }}
       </p>
-      <div v-if="chat.downloadProgress" class="w-full max-w-xs">
-        <div class="bg-cyan-950 h-2 rounded-full overflow-hidden border border-cyan-900">
-          <div
-            class="bg-cyan-500 h-full transition-all"
-            :style="{ width: `${downloadPercent}%` }"
-          />
+      <div v-if="downloadFiles.length" class="w-full max-w-xs space-y-2">
+        <div v-for="f in downloadFiles" :key="f.file">
+          <p class="text-cyan-700 text-xs truncate">
+            {{ f.file.split('/').pop() }}
+          </p>
+          <div class="bg-cyan-950 h-2 rounded-full overflow-hidden border border-cyan-900">
+            <div
+              class="bg-cyan-500 h-full transition-all"
+              :style="{ width: `${f.percent}%` }"
+            />
+          </div>
+          <p class="text-cyan-700 text-xs text-right">
+            {{ f.percent }}%
+          </p>
         </div>
-        <p class="text-cyan-700 text-xs text-center mt-1">
-          {{ downloadPercent }}%
-        </p>
       </div>
     </div>
 

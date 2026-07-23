@@ -2,6 +2,16 @@ import type { PreTrainedModel, PreTrainedTokenizer } from '@huggingface/transfor
 import { AutoModelForCausalLM, AutoTokenizer, env, TextStreamer } from '@huggingface/transformers';
 import { createStreamingToolCallParser, type ToolCallToken } from './llm-tool-call-parser';
 
+// ORT/Transformers.js internally JSON.stringify BigInt tensor IDs, which throws.
+// Patch JSON.stringify to coerce BigInt to Number (safe for tensor IDs < 2^53).
+const origStringify = JSON.stringify;
+JSON.stringify = function (value: unknown, replacer?: unknown, space?: unknown): string {
+  const bigintReplacer = (_k: string, v: unknown) => typeof v === 'bigint' ? Number(v) : v;
+  const r = replacer ?? bigintReplacer;
+  // @ts-expect-error — patched signature with our default replacer
+  return origStringify(value, r, space);
+} as typeof JSON.stringify;
+
 interface GPUAdapterLike {
   limits: { maxUniformBufferBindingSize: number };
   features: { has: (name: string) => boolean };
@@ -31,8 +41,8 @@ async function configureWebGPU(): Promise<void> {
   const adapterMaxBuffer = (adapter.limits as Record<string, number>).maxBufferSize ?? 1024 * 1024 * 1024;
   const adapterMaxStorage = (adapter.limits as Record<string, number>).maxStorageBufferBindingSize ?? 1024 * 1024 * 1024;
   const RAISED_LIMITS = {
-    maxBufferSize: Math.min(4 * 1024 * 1024 * 1024, adapterMaxBuffer * 2),
-    maxStorageBufferBindingSize: Math.min(4 * 1024 * 1024 * 1024, adapterMaxStorage * 2),
+    maxBufferSize: Math.max(4 * 1024 * 1024 * 1024, adapterMaxBuffer * 2),
+    maxStorageBufferBindingSize: Math.max(4 * 1024 * 1024 * 1024, adapterMaxStorage * 2),
     maxUniformBufferBindingSize: adapter.limits.maxUniformBufferBindingSize,
   };
   (env as unknown as { webgpu: { adapter: GPUAdapterLike } }).webgpu = {
@@ -126,11 +136,14 @@ let abortController: AbortController | null = null;
 
 globalThis.addEventListener('message', async (e: MessageEvent<WorkerRequest>) => {
   const msg = e.data;
+  console.warn('[llm-worker] received message:', msg.type);
 
   if (msg.type === 'init') {
     await handleInit(msg.model);
   }
   else if (msg.type === 'generate') {
+    console.warn('[llm-worker] generate messages:', msg.messages?.length, 'tools:', msg.tools?.length);
+    console.warn('[llm-worker] tools sample:', JSON.stringify(msg.tools?.[0], (_k, v) => typeof v === 'bigint' ? '[BIGINT]' : v, 2)?.slice(0, 300));
     await handleGenerate(msg.messages, msg.tools);
   }
   else if (msg.type === 'cancel') {
@@ -146,6 +159,19 @@ async function handleInit(modelChoice: 'E2B' | 'E4B' | 'Q3B'): Promise<void> {
     return;
   }
 
+  if (!(currentModelId === modelId && model && tokenizer)) {
+    console.warn('[llm-worker] clearing browser cache before model load...');
+    try {
+      if ('caches' in globalThis) {
+        const keys = await globalThis.caches.keys();
+        await Promise.all(keys.map(key => globalThis.caches.delete(key)));
+      }
+    }
+    catch (err) {
+      console.warn('[llm-worker] cache clear failed:', err);
+    }
+  }
+
   try {
     globalThis.postMessage({ type: 'loading' });
 
@@ -157,6 +183,7 @@ async function handleInit(modelChoice: 'E2B' | 'E4B' | 'Q3B'): Promise<void> {
           type: 'progress',
           loaded: data.loaded ?? 0,
           total: data.total ?? 0,
+          file: data.file ?? 'unknown',
         });
       }
       else if (data.status === 'ready') {
@@ -165,7 +192,7 @@ async function handleInit(modelChoice: 'E2B' | 'E4B' | 'Q3B'): Promise<void> {
     };
 
     model = await AutoModelForCausalLM.from_pretrained(modelId, {
-      dtype: 'q4f16',
+      dtype: 'q4',
       device: 'webgpu',
       progress_callback: progressCallback,
     }) as PreTrainedModel;
@@ -194,10 +221,20 @@ async function handleGenerate(
   abortController = new AbortController();
 
   try {
-    const inputs = tokenizer.apply_chat_template(messages, {
-      tools,
-      add_generation_prompt: true,
-    });
+    console.warn('[llm-worker] applying chat template...');
+    console.warn('[llm-worker] tools for template:', JSON.stringify(tools, (_k, v) => typeof v === 'bigint' ? '[BIGINT]' : v)?.slice(0, 200));
+    let inputs;
+    try {
+      inputs = tokenizer.apply_chat_template(messages, {
+        tools,
+        add_generation_prompt: true,
+      });
+    }
+    catch (tplErr) {
+      console.error('[llm-worker] apply_chat_template FAILED:', tplErr);
+      throw tplErr;
+    }
+    console.warn('[llm-worker] chat template applied, input keys:', Object.keys(inputs));
 
     const parser = createStreamingToolCallParser();
 
@@ -231,6 +268,10 @@ async function handleGenerate(
       cancelled = true;
     });
 
+    console.warn('[llm-worker] starting model.generate()...');
+    console.warn('[llm-worker] model type:', model?.constructor?.name, 'device:', (env as unknown as { webgpu?: unknown }).webgpu ? 'webgpu' : 'wasm');
+    globalThis.postMessage({ type: 'prefill' });
+
     await model.generate({
       ...inputs,
       streamer,
@@ -238,6 +279,8 @@ async function handleGenerate(
       max_new_tokens: 2048,
       signal: abortController.signal,
     });
+
+    console.warn('[llm-worker] model.generate() completed');
 
     emitTokens(parser.flush());
 

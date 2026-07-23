@@ -151,13 +151,13 @@ describe('chat store', () => {
     it('preserves currentModel and downloadProgress', () => {
       const chat = useChatStore();
       chat.currentModel = 'E2B';
-      chat.downloadProgress = { loaded: 50, total: 100 };
+      chat.downloadProgress = { 'model.onnx': { loaded: 50, total: 100 } };
       chat.addMessage(makeMsg());
 
       chat.clear();
 
       expect(chat.currentModel).toBe('E2B');
-      expect(chat.downloadProgress).toEqual({ loaded: 50, total: 100 });
+      expect(chat.downloadProgress).toEqual({ 'model.onnx': { loaded: 50, total: 100 } });
     });
   });
 
@@ -165,7 +165,7 @@ describe('chat store', () => {
     it('clears everything including currentModel and downloadProgress', () => {
       const chat = useChatStore();
       chat.currentModel = 'E2B';
-      chat.downloadProgress = { loaded: 50, total: 100 };
+      chat.downloadProgress = { 'model.onnx': { loaded: 50, total: 100 } };
       chat.addMessage(makeMsg());
       chat.status = 'generating';
 
