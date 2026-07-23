@@ -24,7 +24,10 @@ const playUrl = computed(() => {
 
 const showMcpUrl = computed(() => created.value && playMode.value === 'external');
 
+const supportsWebGPU = ref(false);
+
 onMounted(async () => {
+  supportsWebGPU.value = typeof navigator !== 'undefined' && 'gpu' in navigator;
   changelog.value = await $fetch<ChangelogEntry[]>('/api/changelog');
 });
 
@@ -99,53 +102,58 @@ function copyUrl() {
           >
             EXTERNAL MCP
           </button>
-          <button
-            class="px-3 py-2 text-xs border transition-colors"
-            :class="[
-              playMode === 'Q25B'
-                ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
-                : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
-            ]"
-            @click="playMode = 'Q25B'"
-          >
-            IN-BROWSER (Qwen 2.5)
-          </button>
-          <button
-            class="px-3 py-2 text-xs border transition-colors"
-            :class="[
-              playMode === 'Q3B'
-                ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
-                : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
-            ]"
-            @click="playMode = 'Q3B'"
-          >
-            IN-BROWSER (Qwen 3.5)
-          </button>
-          <button
-            class="px-3 py-2 text-xs border transition-colors"
-            :class="[
-              playMode === 'E2B'
-                ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
-                : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
-            ]"
-            @click="playMode = 'E2B'"
-          >
-            IN-BROWSER (Gemma E2B)
-          </button>
-          <button
-            class="px-3 py-2 text-xs border transition-colors"
-            :class="[
-              playMode === 'E4B'
-                ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
-                : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
-            ]"
-            @click="playMode = 'E4B'"
-          >
-            IN-BROWSER (Gemma E4B)
-          </button>
+          <template v-if="supportsWebGPU">
+            <button
+              class="px-3 py-2 text-xs border transition-colors"
+              :class="[
+                playMode === 'Q25B'
+                  ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
+                  : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
+              ]"
+              @click="playMode = 'Q25B'"
+            >
+              IN-BROWSER (Qwen 2.5)
+            </button>
+            <button
+              class="px-3 py-2 text-xs border transition-colors"
+              :class="[
+                playMode === 'Q3B'
+                  ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
+                  : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
+              ]"
+              @click="playMode = 'Q3B'"
+            >
+              IN-BROWSER (Qwen 3.5)
+            </button>
+            <button
+              class="px-3 py-2 text-xs border transition-colors"
+              :class="[
+                playMode === 'E2B'
+                  ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
+                  : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
+              ]"
+              @click="playMode = 'E2B'"
+            >
+              IN-BROWSER (Gemma E2B)
+            </button>
+            <button
+              class="px-3 py-2 text-xs border transition-colors"
+              :class="[
+                playMode === 'E4B'
+                  ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
+                  : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
+              ]"
+              @click="playMode = 'E4B'"
+            >
+              IN-BROWSER (Gemma E4B)
+            </button>
+          </template>
         </div>
+        <p v-if="!supportsWebGPU && created" class="text-cyan-700 text-xs mb-3">
+          In-browser AI models require a WebGPU-capable browser (Chrome, Edge, or Safari 18+). Use External MCP to connect an external AI.
+        </p>
         <p v-if="playMode === 'Q25B'" class="text-cyan-700 text-xs mb-3">
-          Qwen 2.5 1.5B runs in your browser via WebGPU. ~1GB download (first load), ~1.5GB VRAM. Well-tested with ORT WebGPU. Requires Chrome/Edge 113+ or Safari 18+.
+          Qwen 2.5 1.5B runs in your browser via WebGPU. ~1GB download (first load), ~1.5GB VRAM. Requires Chrome.
         </p>
         <p v-else-if="playMode === 'Q3B'" class="text-cyan-700 text-xs mb-3">
           Qwen 3.5 4B runs in your browser via WebGPU. ~2.4GB download (first load), ~3GB VRAM. Requires Chrome/Edge 113+ or Safari 18+.

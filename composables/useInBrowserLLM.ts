@@ -131,11 +131,39 @@ export function useInBrowserLLM(token: string) {
     return obj;
   }
 
+  function compactSchema(schema: Record<string, unknown>): Record<string, unknown> {
+    if (!schema || typeof schema !== 'object')
+      return schema;
+    const { description: _d, title: _t, $schema: _s, ...rest } = schema;
+    if (rest.properties && typeof rest.properties === 'object') {
+      const props: Record<string, unknown> = {};
+      for (const [key, val] of Object.entries(rest.properties as Record<string, unknown>)) {
+        if (val && typeof val === 'object') {
+          const { description: _pd, title: _pt, default: _def, ...pRest } = val as Record<string, unknown>;
+          props[key] = pRest;
+        }
+        else {
+          props[key] = val;
+        }
+      }
+      rest.properties = props;
+    }
+    return rest;
+  }
+
+  function compactToolDefs(tools: McpToolDef[]): McpToolDef[] {
+    return tools.map(t => ({
+      name: t.name,
+      description: t.description.length > 120 ? `${t.description.slice(0, 117)}...` : t.description,
+      inputSchema: compactSchema(t.inputSchema),
+    }));
+  }
+
   async function loadToolDefs(): Promise<void> {
     try {
       await mcpClient.connect();
       const tools = await mcpClient.listTools();
-      toolDefs.value = sanitizeBigInt(tools) as McpToolDef[];
+      toolDefs.value = compactToolDefs(sanitizeBigInt(tools) as McpToolDef[]);
     }
     catch (error) {
       chat.status = 'error';
@@ -327,11 +355,9 @@ export function useInBrowserLLM(token: string) {
       try {
         const raw = deepToRaw(msg);
         const sanitized = sanitizeBigInt(raw);
-        console.warn('[useInBrowserLLM] postToWorker sanitized, has bigint:', JSON.stringify(sanitized, (_k, v) => typeof v === 'bigint' ? `[BIGINT]` : v).includes('[BIGINT]'));
         worker.value.postMessage(structuredClone(sanitized));
       }
       catch (err) {
-        console.error('[useInBrowserLLM] postToWorker failed:', err);
         chat.status = 'error';
         chat.errorCode = 'unknown';
         chat.errorMessage = `Failed to send to worker: ${err instanceof Error ? err.message : String(err)}`;

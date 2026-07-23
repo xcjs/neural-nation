@@ -70,7 +70,9 @@ export default defineNuxtConfig({
         '@modelcontextprotocol/sdk/client/index.js',
         '@modelcontextprotocol/sdk/client/sse.js',
         '@modelcontextprotocol/sdk/types.js',
+        '@huggingface/transformers',
       ],
+      exclude: ['onnxruntime-web'],
     },
     worker: {
       format: 'es',

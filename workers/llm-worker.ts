@@ -2,6 +2,10 @@ import type { PreTrainedModel, PreTrainedTokenizer } from '@huggingface/transfor
 import { AutoModelForCausalLM, AutoTokenizer, env, TextStreamer } from '@huggingface/transformers';
 import { createStreamingToolCallParser, type ToolCallToken } from './llm-tool-call-parser';
 
+// Configure Transformers.js for browser worker environment
+env.allowLocalModels = false;
+env.useBrowserCache = true;
+
 // ORT/Transformers.js internally JSON.stringify BigInt tensor IDs, which throws.
 // Patch JSON.stringify to coerce BigInt to Number (safe for tensor IDs < 2^53).
 const origStringify = JSON.stringify;
@@ -13,8 +17,6 @@ JSON.stringify = function (value: unknown, replacer?: unknown, space?: unknown):
 } as typeof JSON.stringify;
 
 interface GPUAdapterLike {
-  limits: { maxUniformBufferBindingSize: number };
-  features: { has: (name: string) => boolean };
   requestDevice: (descriptor?: Record<string, unknown>) => Promise<unknown>;
 }
 
@@ -33,37 +35,7 @@ async function configureWebGPU(): Promise<void> {
   if (!adapter) {
     return;
   }
-  console.warn('[llm-worker] adapter limits:', {
-    maxBufferSize: (adapter.limits as Record<string, number>).maxBufferSize,
-    maxStorageBufferBindingSize: (adapter.limits as Record<string, number>).maxStorageBufferBindingSize,
-    maxUniformBufferBindingSize: adapter.limits.maxUniformBufferBindingSize,
-  });
-  const adapterMaxBuffer = (adapter.limits as Record<string, number>).maxBufferSize ?? 1024 * 1024 * 1024;
-  const adapterMaxStorage = (adapter.limits as Record<string, number>).maxStorageBufferBindingSize ?? 1024 * 1024 * 1024;
-  const RAISED_LIMITS = {
-    maxBufferSize: Math.max(4 * 1024 * 1024 * 1024, adapterMaxBuffer * 2),
-    maxStorageBufferBindingSize: Math.max(4 * 1024 * 1024 * 1024, adapterMaxStorage * 2),
-    maxUniformBufferBindingSize: adapter.limits.maxUniformBufferBindingSize,
-  };
-  (env as unknown as { webgpu: { adapter: GPUAdapterLike } }).webgpu = {
-    adapter: new Proxy(adapter, {
-      get(target, prop, receiver) {
-        if (prop === 'requestDevice') {
-          return (opts: Record<string, unknown> = {}) => {
-            console.warn('[llm-worker] requestDevice intercepted, requiredLimits:', {
-              ...(opts.requiredLimits as Record<string, unknown>),
-              ...RAISED_LIMITS,
-            });
-            return target.requestDevice({
-              ...opts,
-              requiredLimits: { ...(opts.requiredLimits as Record<string, unknown>), ...RAISED_LIMITS },
-            });
-          };
-        }
-        return Reflect.get(target, prop, receiver);
-      },
-    }),
-  };
+  (env as unknown as { webgpu: { adapter: GPUAdapterLike } }).webgpu = { adapter };
 }
 
 const MODEL_IDS = {
@@ -137,14 +109,11 @@ let abortController: AbortController | null = null;
 
 globalThis.addEventListener('message', async (e: MessageEvent<WorkerRequest>) => {
   const msg = e.data;
-  console.warn('[llm-worker] received message:', msg.type);
 
   if (msg.type === 'init') {
     await handleInit(msg.model);
   }
   else if (msg.type === 'generate') {
-    console.warn('[llm-worker] generate messages:', msg.messages?.length, 'tools:', msg.tools?.length);
-    console.warn('[llm-worker] tools sample:', JSON.stringify(msg.tools?.[0], (_k, v) => typeof v === 'bigint' ? '[BIGINT]' : v, 2)?.slice(0, 300));
     await handleGenerate(msg.messages, msg.tools);
   }
   else if (msg.type === 'cancel') {
@@ -160,17 +129,15 @@ async function handleInit(modelChoice: 'Q25B' | 'E2B' | 'E4B' | 'Q3B'): Promise<
     return;
   }
 
-  if (!(currentModelId === modelId && model && tokenizer)) {
-    console.warn('[llm-worker] clearing browser cache before model load...');
-    try {
-      if ('caches' in globalThis) {
-        const keys = await globalThis.caches.keys();
-        await Promise.all(keys.map(key => globalThis.caches.delete(key)));
-      }
+  // Clear browser cache to prevent stale weights from a different model
+  try {
+    if ('caches' in globalThis) {
+      const keys = await globalThis.caches.keys();
+      await Promise.all(keys.map(key => globalThis.caches.delete(key)));
     }
-    catch (err) {
-      console.warn('[llm-worker] cache clear failed:', err);
-    }
+  }
+  catch {
+    // Cache clearing is best-effort
   }
 
   try {
@@ -193,7 +160,7 @@ async function handleInit(modelChoice: 'Q25B' | 'E2B' | 'E4B' | 'Q3B'): Promise<
     };
 
     model = await AutoModelForCausalLM.from_pretrained(modelId, {
-      dtype: 'q4',
+      dtype: 'q4f16',
       device: 'webgpu',
       progress_callback: progressCallback,
     }) as PreTrainedModel;
@@ -222,20 +189,10 @@ async function handleGenerate(
   abortController = new AbortController();
 
   try {
-    console.warn('[llm-worker] applying chat template...');
-    console.warn('[llm-worker] tools for template:', JSON.stringify(tools, (_k, v) => typeof v === 'bigint' ? '[BIGINT]' : v)?.slice(0, 200));
-    let inputs;
-    try {
-      inputs = tokenizer.apply_chat_template(messages, {
-        tools,
-        add_generation_prompt: true,
-      });
-    }
-    catch (tplErr) {
-      console.error('[llm-worker] apply_chat_template FAILED:', tplErr);
-      throw tplErr;
-    }
-    console.warn('[llm-worker] chat template applied, keys:', Object.keys(inputs), 'input_ids type:', inputs.input_ids?.constructor?.name);
+    const inputs = tokenizer.apply_chat_template(messages, {
+      tools,
+      add_generation_prompt: true,
+    });
 
     const parser = createStreamingToolCallParser();
 
@@ -269,22 +226,7 @@ async function handleGenerate(
       cancelled = true;
     });
 
-    console.warn('[llm-worker] starting model.generate()...');
-    console.warn('[llm-worker] model type:', model?.constructor?.name, 'device:', (env as unknown as { webgpu?: unknown }).webgpu ? 'webgpu' : 'wasm');
-    console.warn('[llm-worker] input_ids type:', inputs.input_ids?.constructor?.name, 'dims:', inputs.input_ids?.dims);
-    console.warn('[llm-worker] attention_mask type:', inputs.attention_mask?.constructor?.name, 'dims:', inputs.attention_mask?.dims);
     globalThis.postMessage({ type: 'prefill' });
-
-    // Diagnostic: try a single forward pass to see if the model executes at all
-    console.warn('[llm-worker] testing single forward pass...');
-    try {
-      const testOutput = await model(inputs);
-      console.warn('[llm-worker] forward pass succeeded, output keys:', Object.keys(testOutput), 'logits type:', testOutput.logits?.constructor?.name, 'dims:', testOutput.logits?.dims);
-    }
-    catch (fwdErr) {
-      console.error('[llm-worker] forward pass FAILED:', fwdErr);
-      throw fwdErr;
-    }
 
     await model.generate({
       ...inputs,
@@ -293,8 +235,6 @@ async function handleGenerate(
       max_new_tokens: 2048,
       signal: abortController.signal,
     });
-
-    console.warn('[llm-worker] model.generate() completed');
 
     emitTokens(parser.flush());
 
