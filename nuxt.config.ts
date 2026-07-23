@@ -67,8 +67,13 @@ export default defineNuxtConfig({
         'topojson-client',
         '@modelcontextprotocol/sdk/server/index.js',
         '@modelcontextprotocol/sdk/server/sse.js',
+        '@modelcontextprotocol/sdk/client/index.js',
+        '@modelcontextprotocol/sdk/client/sse.js',
         '@modelcontextprotocol/sdk/types.js',
       ],
+    },
+    worker: {
+      format: 'es',
     },
   },
 

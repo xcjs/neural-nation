@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import type { ModelChoice } from '~/stores/chat';
 import type { ChangelogEntry } from '~/types/changelog';
 import { $fetch } from 'ofetch';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import EarthGlobe from '~/components/EarthGlobe.vue';
 import ActionConsole from '~/components/hud/ActionConsole.vue';
+import ChatPanel from '~/components/hud/ChatPanel.vue';
 import EnvironmentStatus from '~/components/hud/EnvironmentStatus.vue';
 import EventFeed from '~/components/hud/EventFeed.vue';
 import FacilityDetailPanel from '~/components/hud/FacilityDetailPanel.vue';
@@ -29,7 +31,7 @@ import { useTerrainStore } from '~/stores/terrain';
 import { useTransportsStore } from '~/stores/transports';
 import { type PanelId, useUiStore } from '~/stores/ui';
 
-const props = defineProps<{ spectator?: boolean; token?: string }>();
+const props = defineProps<{ spectator?: boolean; token?: string; mode?: string; model?: ModelChoice }>();
 
 const router = useRouter();
 const token = props.token || '';
@@ -56,6 +58,8 @@ const ui = useUiStore();
 
 const sse = useGameSSE(token);
 
+const inBrowserMode = computed(() => props.mode === 'inbrowser' && props.model);
+
 const panelButtons: Array<{ id: PanelId; label: string }> = [
   { id: 'resourceTracker', label: 'RESOURCES' },
   { id: 'environmentStatus', label: 'ENVIRONMENT' },
@@ -67,6 +71,7 @@ const panelButtons: Array<{ id: PanelId; label: string }> = [
   { id: 'spaceStatus', label: 'SPACE' },
   { id: 'terrainMods', label: 'TERRAIN' },
   { id: 'tokenManagement', label: 'MCP' },
+  ...(inBrowserMode.value ? [{ id: 'chatPanel' as PanelId, label: 'CHAT' }] : []),
 ];
 
 const statusColor = computed(() => {
@@ -103,6 +108,11 @@ onMounted(async () => {
 
   if (props.spectator) {
     ui.spectatorMode = true;
+  }
+
+  if (inBrowserMode.value) {
+    ui.panelVisibility.chatPanel = true;
+    ui.panelVisibility.tokenManagement = false;
   }
 
   if (!props.spectator && import.meta.client) {
@@ -222,6 +232,7 @@ watch(() => ui.selectedFacilityId, (id) => {
 
       <!-- Right panel stack -->
       <div class="absolute top-12 right-0 bottom-9 w-80 pointer-events-auto overflow-y-auto p-2 space-y-2">
+        <ChatPanel v-if="ui.panelVisibility.chatPanel && inBrowserMode" :token="token" :model="props.model as ModelChoice" />
         <EventFeed v-if="ui.panelVisibility.eventFeed" />
         <ActionConsole v-if="ui.panelVisibility.actionConsole" />
         <TechTreePanel v-if="ui.panelVisibility.techTree" />

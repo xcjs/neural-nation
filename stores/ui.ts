@@ -11,7 +11,8 @@ export type PanelId =
   | 'tokenManagement'
   | 'powerGrid'
   | 'spaceStatus'
-  | 'terrainMods';
+  | 'terrainMods'
+  | 'chatPanel';
 
 export const useUiStore = defineStore('ui', () => {
   const selectedFacilityId = ref<number | null>(null);
@@ -28,6 +29,7 @@ export const useUiStore = defineStore('ui', () => {
     powerGrid: false,
     spaceStatus: false,
     terrainMods: false,
+    chatPanel: false,
   });
   const spectatorMode = ref(false);
   const isMobile = ref(false);
@@ -74,6 +76,7 @@ export const useUiStore = defineStore('ui', () => {
       powerGrid: false,
       spaceStatus: false,
       terrainMods: false,
+      chatPanel: false,
     };
     spectatorMode.value = false;
     connectionStatus.value = 'disconnected';

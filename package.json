@@ -38,6 +38,7 @@
     "db:migrate": "tsx scripts/migrate-dbs.ts"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@pinia/nuxt": "^0.11.0",
     "better-sqlite3": "^11.0.0",
