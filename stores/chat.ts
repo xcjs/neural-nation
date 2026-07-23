@@ -31,7 +31,7 @@ export type LlmErrorCode =
   | 'worker_crash'
   | 'unknown';
 
-export type ModelChoice = 'E2B' | 'E4B' | 'Q3B';
+export type ModelChoice = 'Q25B' | 'E2B' | 'E4B' | 'Q3B';
 
 export const useChatStore = defineStore('chat', () => {
   const messages = ref<ChatMessage[]>([]);

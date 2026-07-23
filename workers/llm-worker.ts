@@ -67,6 +67,7 @@ async function configureWebGPU(): Promise<void> {
 }
 
 const MODEL_IDS = {
+  Q25B: 'onnx-community/Qwen2.5-1.5B-Instruct',
   E2B: 'onnx-community/gemma-4-E2B-it-ONNX',
   E4B: 'onnx-community/gemma-4-E4B-it-ONNX',
   Q3B: 'onnx-community/Qwen3.5-4B-ONNX',
@@ -81,7 +82,7 @@ interface ChatMessageForModel {
 
 interface InitMessage {
   type: 'init';
-  model: 'E2B' | 'E4B' | 'Q3B';
+  model: 'Q25B' | 'E2B' | 'E4B' | 'Q3B';
 }
 
 interface GenerateMessage {
@@ -151,7 +152,7 @@ globalThis.addEventListener('message', async (e: MessageEvent<WorkerRequest>) =>
   }
 });
 
-async function handleInit(modelChoice: 'E2B' | 'E4B' | 'Q3B'): Promise<void> {
+async function handleInit(modelChoice: 'Q25B' | 'E2B' | 'E4B' | 'Q3B'): Promise<void> {
   const modelId = MODEL_IDS[modelChoice];
 
   if (currentModelId === modelId && model && tokenizer) {
@@ -234,7 +235,7 @@ async function handleGenerate(
       console.error('[llm-worker] apply_chat_template FAILED:', tplErr);
       throw tplErr;
     }
-    console.warn('[llm-worker] chat template applied, input keys:', Object.keys(inputs));
+    console.warn('[llm-worker] chat template applied, keys:', Object.keys(inputs), 'input_ids type:', inputs.input_ids?.constructor?.name);
 
     const parser = createStreamingToolCallParser();
 
@@ -270,7 +271,20 @@ async function handleGenerate(
 
     console.warn('[llm-worker] starting model.generate()...');
     console.warn('[llm-worker] model type:', model?.constructor?.name, 'device:', (env as unknown as { webgpu?: unknown }).webgpu ? 'webgpu' : 'wasm');
+    console.warn('[llm-worker] input_ids type:', inputs.input_ids?.constructor?.name, 'dims:', inputs.input_ids?.dims);
+    console.warn('[llm-worker] attention_mask type:', inputs.attention_mask?.constructor?.name, 'dims:', inputs.attention_mask?.dims);
     globalThis.postMessage({ type: 'prefill' });
+
+    // Diagnostic: try a single forward pass to see if the model executes at all
+    console.warn('[llm-worker] testing single forward pass...');
+    try {
+      const testOutput = await model(inputs);
+      console.warn('[llm-worker] forward pass succeeded, output keys:', Object.keys(testOutput), 'logits type:', testOutput.logits?.constructor?.name, 'dims:', testOutput.logits?.dims);
+    }
+    catch (fwdErr) {
+      console.error('[llm-worker] forward pass FAILED:', fwdErr);
+      throw fwdErr;
+    }
 
     await model.generate({
       ...inputs,

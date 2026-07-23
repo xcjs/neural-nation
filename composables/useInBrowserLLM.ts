@@ -4,7 +4,7 @@ import { onUnmounted, ref, toRaw } from 'vue';
 import { useMcpClient } from '~/composables/useMcpClient';
 import { useChatStore } from '~/stores/chat';
 
-interface WorkerInitMessage { type: 'init'; model: 'E2B' | 'E4B' | 'Q3B' }
+interface WorkerInitMessage { type: 'init'; model: 'Q25B' | 'E2B' | 'E4B' | 'Q3B' }
 interface WorkerGenerateMessage {
   type: 'generate';
   messages: Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string; tool_calls?: Array<{ name: string; arguments: Record<string, unknown> }>; tool_call_id?: string }>;
