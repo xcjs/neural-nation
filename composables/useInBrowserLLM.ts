@@ -1,6 +1,6 @@
 import type { McpToolDef } from '~/composables/useMcpClient';
 import type { ChatMessage, LlmErrorCode, ModelChoice, ToolCallRecord } from '~/stores/chat';
-import { onUnmounted, ref } from 'vue';
+import { onUnmounted, ref, toRaw } from 'vue';
 import { useMcpClient } from '~/composables/useMcpClient';
 import { useChatStore } from '~/stores/chat';
 
@@ -288,7 +288,7 @@ export function useInBrowserLLM(token: string) {
 
   function postToWorker(msg: WorkerRequest): void {
     if (worker.value) {
-      worker.value.postMessage(msg);
+      worker.value.postMessage(structuredClone(toRaw(msg)));
     }
   }
 
