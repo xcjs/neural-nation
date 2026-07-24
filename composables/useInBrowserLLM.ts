@@ -39,6 +39,7 @@ export function useInBrowserLLM(token: string) {
   const toolDefs = ref<McpToolDef[]>([]);
   const modelReady = ref(false);
   const isInitialized = ref(false);
+  const seeded = ref(false);
   const conversationHistory = ref<Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string; tool_calls?: Array<{ name: string; arguments: Record<string, unknown> }>; tool_call_id?: string }>>([]);
 
   function init(modelChoice: ModelChoice): void {
@@ -87,7 +88,7 @@ export function useInBrowserLLM(token: string) {
         chat.status = 'ready';
         chat.downloadProgress = null;
         modelReady.value = true;
-        loadToolDefs();
+        handleModelReady();
         break;
       case 'prefill':
         chat.status = 'prefilling';
@@ -157,6 +158,14 @@ export function useInBrowserLLM(token: string) {
       description: t.description.length > 120 ? `${t.description.slice(0, 117)}...` : t.description,
       inputSchema: compactSchema(t.inputSchema),
     }));
+  }
+
+  async function handleModelReady(): Promise<void> {
+    await loadToolDefs();
+    if (!seeded.value && modelReady.value && chat.status === 'ready') {
+      seeded.value = true;
+      await send('Let\'s play Neural Nation!');
+    }
   }
 
   async function loadToolDefs(): Promise<void> {
@@ -334,6 +343,7 @@ export function useInBrowserLLM(token: string) {
 
   function clearConversation(): void {
     conversationHistory.value = [{ role: 'system', content: SYSTEM_PROMPT }];
+    seeded.value = false;
     chat.clear();
     chat.status = modelReady.value ? 'ready' : 'idle';
   }

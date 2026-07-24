@@ -10,7 +10,19 @@ export type ToolCallToken =
 const TC_START = String.fromCharCode(91, 84, 79, 79, 76, 95, 67, 65, 76, 76, 93);
 const TC_END = String.fromCharCode(91, 47, 84, 79, 79, 76, 95, 67, 65, 76, 76, 93);
 
+const QWEN_START = String.fromCharCode(60, 116, 111, 111, 108, 95, 99, 97, 108, 108, 62);
+const QWEN_END = String.fromCharCode(60, 47, 116, 111, 111, 108, 95, 99, 97, 108, 108, 62);
+
+const BARE_CALL_PREFIX = String.fromCharCode(99, 97, 108, 108, 58);
+
+const GEMMA_STR_DELIM = String.fromCharCode(60, 124, 34, 62);
+
 export { TC_END, TC_START };
+
+const MARKER_FORMATS: Array<{ start: string; end: string }> = [
+  { start: TC_START, end: TC_END },
+  { start: QWEN_START, end: QWEN_END },
+];
 
 export function parseToolCallJson(jsonStr: string): ParsedToolCall | null {
   try {
@@ -24,63 +36,343 @@ export function parseToolCallJson(jsonStr: string): ParsedToolCall | null {
   }
 }
 
+export function parseGemmaArgs(content: string): Record<string, unknown> {
+  const parser = new GemmaValueParser(content);
+  return parser.parseObject();
+}
+
+class GemmaValueParser {
+  private pos = 0;
+  private readonly input: string;
+
+  constructor(input: string) {
+    this.input = input;
+  }
+
+  private skipWhitespace(): void {
+    while (this.pos < this.input.length && /\s/.test(this.input[this.pos]!))
+      this.pos++;
+  }
+
+  private peek(): string {
+    return this.pos < this.input.length ? this.input[this.pos]! : '';
+  }
+
+  private consume(str: string): boolean {
+    if (this.input.slice(this.pos, this.pos + str.length) === str) {
+      this.pos += str.length;
+      return true;
+    }
+    return false;
+  }
+
+  parseObject(): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    this.skipWhitespace();
+
+    while (this.pos < this.input.length && this.peek() !== '}') {
+      this.skipWhitespace();
+      if (this.peek() === ',' || this.peek() === ';') {
+        this.pos++;
+        continue;
+      }
+      if (this.peek() === '}' || this.peek() === '')
+        break;
+
+      const key = this.parseKey();
+      if (key === '')
+        break;
+
+      this.skipWhitespace();
+      if (this.peek() === ':' || this.peek() === '=') {
+        this.pos++;
+      }
+      else {
+        break;
+      }
+
+      this.skipWhitespace();
+      const value = this.parseValue();
+      result[key] = value;
+
+      this.skipWhitespace();
+      if (this.peek() === ',' || this.peek() === ';')
+        this.pos++;
+    }
+
+    return result;
+  }
+
+  private parseKey(): string {
+    if (this.consume(GEMMA_STR_DELIM)) {
+      const start = this.pos;
+      while (this.pos < this.input.length && !this.consume(GEMMA_STR_DELIM))
+        this.pos++;
+      return this.input.slice(start, this.pos - GEMMA_STR_DELIM.length);
+    }
+    const start = this.pos;
+    while (this.pos < this.input.length && /\w/.test(this.input[this.pos]!))
+      this.pos++;
+    return this.input.slice(start, this.pos);
+  }
+
+  private parseValue(): unknown {
+    this.skipWhitespace();
+
+    if (this.consume(GEMMA_STR_DELIM)) {
+      const start = this.pos;
+      while (this.pos < this.input.length && !this.consume(GEMMA_STR_DELIM))
+        this.pos++;
+      return this.input.slice(start, this.pos - GEMMA_STR_DELIM.length);
+    }
+
+    if (this.peek() === '{') {
+      this.pos++;
+      const obj = this.parseObject();
+      if (this.peek() === '}')
+        this.pos++;
+      return obj;
+    }
+
+    if (this.peek() === '[') {
+      this.pos++;
+      return this.parseArray();
+    }
+
+    if (this.input.slice(this.pos, this.pos + 4) === 'true') {
+      this.pos += 4;
+      return true;
+    }
+    if (this.input.slice(this.pos, this.pos + 5) === 'false') {
+      this.pos += 5;
+      return false;
+    }
+    if (this.input.slice(this.pos, this.pos + 4) === 'null') {
+      this.pos += 4;
+      return null;
+    }
+
+    const numStart = this.pos;
+    if (this.peek() === '-' || this.peek() === '+')
+      this.pos++;
+    while (this.pos < this.input.length && /[0-9.e+\-]/i.test(this.input[this.pos]!))
+      this.pos++;
+    const numStr = this.input.slice(numStart, this.pos);
+    if (numStr !== '' && numStr !== '-' && numStr !== '+' && /\d/.test(numStr)) {
+      const num = Number(numStr);
+      if (!Number.isNaN(num))
+        return num;
+    }
+    this.pos = numStart;
+
+    const strStart = this.pos;
+    while (this.pos < this.input.length) {
+      const ch = this.input[this.pos]!;
+      if (ch === ',' || ch === ';' || ch === '}' || ch === ']' || ch === ')' || /\s/.test(ch))
+        break;
+      this.pos++;
+    }
+    return this.input.slice(strStart, this.pos);
+  }
+
+  private parseArray(): unknown[] {
+    const arr: unknown[] = [];
+    this.skipWhitespace();
+
+    while (this.pos < this.input.length && this.peek() !== ']') {
+      this.skipWhitespace();
+      if (this.peek() === ',' || this.peek() === ';') {
+        this.pos++;
+        continue;
+      }
+      if (this.peek() === ']' || this.peek() === '')
+        break;
+
+      arr.push(this.parseValue());
+
+      this.skipWhitespace();
+      if (this.peek() === ',' || this.peek() === ';')
+        this.pos++;
+    }
+
+    if (this.peek() === ']')
+      this.pos++;
+
+    return arr;
+  }
+}
+
+export function parseBareCall(content: string): ParsedToolCall | null {
+  const nameMatch = content.match(/^([a-z_]\w*)\{([\s\S]*)\}\s*$/i);
+  if (!nameMatch)
+    return null;
+
+  const name = nameMatch[1]!;
+  const argsContent = nameMatch[2]!;
+
+  let arguments_: Record<string, unknown>;
+  if (argsContent.trim() === '') {
+    arguments_ = {};
+  }
+  else {
+    try {
+      arguments_ = parseGemmaArgs(argsContent);
+    }
+    catch {
+      arguments_ = {};
+    }
+  }
+
+  return { name, arguments: arguments_ };
+}
+
 export interface StreamingToolCallParser {
   push: (token: string) => ToolCallToken[];
   flush: () => ToolCallToken[];
 }
 
-function partialMarkerSuffixLen(buf: string): number {
-  const max = Math.min(buf.length, TC_START.length - 1);
-  for (let len = max; len > 0; len--) {
-    if (TC_START.startsWith(buf.slice(-len)))
-      return len;
+const ALL_START_PATTERNS: string[] = [
+  TC_START,
+  QWEN_START,
+  BARE_CALL_PREFIX,
+];
+
+function partialStartSuffixLen(buf: string): number {
+  let maxLen = 0;
+  for (const pattern of ALL_START_PATTERNS) {
+    const max = Math.min(buf.length, pattern.length - 1);
+    for (let len = max; len > maxLen; len--) {
+      if (pattern.startsWith(buf.slice(-len))) {
+        if (pattern === BARE_CALL_PREFIX && len < 2)
+          continue;
+        maxLen = len;
+        break;
+      }
+    }
   }
-  return 0;
+  return maxLen;
 }
+
+type ParserState = 'scan' | 'in_marker_call' | 'in_bare_call';
 
 export function createStreamingToolCallParser(): StreamingToolCallParser {
   let buffer = '';
-  let toolCallDetected = false;
-  let textBeforeToolCall = '';
+  let state: ParserState = 'scan';
+  let textBefore = '';
+  let activeEndMarker = '';
+  let bareCallName = '';
 
   function emitTextBefore(): ToolCallToken[] {
-    const trimmed = textBeforeToolCall.trim();
-    textBeforeToolCall = '';
+    const trimmed = textBefore.trim();
+    textBefore = '';
     return trimmed ? [{ kind: 'text', text: trimmed }] : [];
   }
 
   function processBuffer(): ToolCallToken[] {
     const out: ToolCallToken[] = [];
 
-    if (!toolCallDetected) {
-      const tcStartIdx = buffer.indexOf(TC_START);
-      if (tcStartIdx !== -1) {
-        toolCallDetected = true;
-        textBeforeToolCall = buffer.slice(0, tcStartIdx);
-        buffer = buffer.slice(tcStartIdx + TC_START.length);
-        out.push(...processBuffer());
-      }
-      else {
-        const partialLen = partialMarkerSuffixLen(buffer);
-        const safeEnd = buffer.length - partialLen;
-        if (safeEnd > 0) {
-          out.push({ kind: 'text', text: buffer.slice(0, safeEnd) });
-          buffer = buffer.slice(safeEnd);
+    if (state === 'scan') {
+      let found = false;
+      for (const fmt of MARKER_FORMATS) {
+        const idx = buffer.indexOf(fmt.start);
+        if (idx !== -1) {
+          textBefore = buffer.slice(0, idx);
+          buffer = buffer.slice(idx + fmt.start.length);
+          state = 'in_marker_call';
+          activeEndMarker = fmt.end;
+          found = true;
+          break;
         }
       }
+
+      if (found) {
+        out.push(...processBuffer());
+        return out;
+      }
+
+      const bareIdx = buffer.indexOf(BARE_CALL_PREFIX);
+      if (bareIdx !== -1) {
+        const afterPrefix = buffer.slice(bareIdx + BARE_CALL_PREFIX.length);
+        const nameMatch = afterPrefix.match(/^([a-z_]\w*)\{/i);
+        if (nameMatch) {
+          textBefore = buffer.slice(0, bareIdx);
+          bareCallName = nameMatch[1]!;
+          buffer = afterPrefix.slice(nameMatch[0].length);
+          state = 'in_bare_call';
+          out.push(...processBuffer());
+          return out;
+        }
+        const couldBeForming = afterPrefix === ''
+          || /^[a-z_]*$/i.test(afterPrefix)
+          || /^[a-z_]+\{?$/i.test(afterPrefix);
+        if (couldBeForming) {
+          if (bareIdx > 0) {
+            out.push({ kind: 'text', text: buffer.slice(0, bareIdx) });
+            buffer = buffer.slice(bareIdx);
+          }
+          return out;
+        }
+      }
+
+      const partialLen = partialStartSuffixLen(buffer);
+      const safeEnd = buffer.length - partialLen;
+      if (safeEnd > 0) {
+        out.push({ kind: 'text', text: buffer.slice(0, safeEnd) });
+        buffer = buffer.slice(safeEnd);
+      }
     }
-    else {
-      const tcEndIdx = buffer.indexOf(TC_END);
-      if (tcEndIdx !== -1) {
+    else if (state === 'in_marker_call') {
+      const endIdx = buffer.indexOf(activeEndMarker);
+      if (endIdx !== -1) {
         out.push(...emitTextBefore());
-        const jsonStr = buffer.slice(0, tcEndIdx).trim();
+        const jsonStr = buffer.slice(0, endIdx).trim();
         const parsed = parseToolCallJson(jsonStr);
-        if (parsed)
+        if (parsed) {
           out.push({ kind: 'tool_call', call: parsed });
-        else
-          out.push({ kind: 'text', text: `${TC_START}${jsonStr}${TC_END}` });
-        buffer = buffer.slice(tcEndIdx + TC_END.length);
-        toolCallDetected = false;
+        }
+        else {
+          const bareParsed = parseBareCall(jsonStr);
+          if (bareParsed) {
+            out.push({ kind: 'tool_call', call: bareParsed });
+          }
+          else {
+            out.push({ kind: 'text', text: jsonStr });
+          }
+        }
+        buffer = buffer.slice(endIdx + activeEndMarker.length);
+        state = 'scan';
+        activeEndMarker = '';
+        if (buffer)
+          out.push(...processBuffer());
+      }
+    }
+    else if (state === 'in_bare_call') {
+      let depth = 1;
+      let i = 0;
+      while (i < buffer.length) {
+        const ch = buffer[i]!;
+        if (ch === '{')
+          depth++;
+        else if (ch === '}')
+          depth--;
+        if (depth === 0)
+          break;
+        i++;
+      }
+
+      if (depth === 0 && i < buffer.length) {
+        out.push(...emitTextBefore());
+        const argsContent = buffer.slice(0, i);
+        const parsed = parseBareCall(`${bareCallName}{${argsContent}}`);
+        if (parsed) {
+          out.push({ kind: 'tool_call', call: parsed });
+        }
+        else {
+          out.push({ kind: 'tool_call', call: { name: bareCallName, arguments: {} } });
+        }
+        buffer = buffer.slice(i + 1);
+        state = 'scan';
+        bareCallName = '';
         if (buffer)
           out.push(...processBuffer());
       }
@@ -96,13 +388,30 @@ export function createStreamingToolCallParser(): StreamingToolCallParser {
     },
     flush: (): ToolCallToken[] => {
       const out: ToolCallToken[] = [];
-      if (toolCallDetected)
+      if (state === 'in_marker_call') {
         out.push(...emitTextBefore());
-      else if (buffer)
+      }
+      else if (state === 'in_bare_call') {
+        out.push(...emitTextBefore());
+        if (buffer.trim() || bareCallName) {
+          let args: Record<string, unknown> = {};
+          try {
+            args = parseGemmaArgs(buffer);
+          }
+          catch {
+            args = {};
+          }
+          out.push({ kind: 'tool_call', call: { name: bareCallName, arguments: args } });
+        }
+      }
+      else if (buffer) {
         out.push({ kind: 'text', text: buffer });
+      }
       buffer = '';
-      toolCallDetected = false;
-      textBeforeToolCall = '';
+      state = 'scan';
+      textBefore = '';
+      activeEndMarker = '';
+      bareCallName = '';
       return out;
     },
   };
