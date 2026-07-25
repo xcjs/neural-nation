@@ -172,7 +172,11 @@ class GemmaValueParser {
         break;
       this.pos++;
     }
-    return this.input.slice(strStart, this.pos);
+    let result = this.input.slice(strStart, this.pos);
+    // Strip surrounding double-quotes (model may emit JSON-style strings)
+    if (result.length >= 2 && result.startsWith('"') && result.endsWith('"'))
+      result = result.slice(1, -1);
+    return result;
   }
 
   private parseArray(): unknown[] {
@@ -203,7 +207,7 @@ class GemmaValueParser {
 }
 
 export function parseBareCall(content: string): ParsedToolCall | null {
-  const nameMatch = content.match(/^([a-z_]\w*)\{([\s\S]*)\}\s*$/i);
+  const nameMatch = content.match(/^([a-z_][\w.]*)\{([\s\S]*)\}\s*$/i);
   if (!nameMatch)
     return null;
 
@@ -293,7 +297,7 @@ export function createStreamingToolCallParser(): StreamingToolCallParser {
       const bareIdx = buffer.indexOf(BARE_CALL_PREFIX);
       if (bareIdx !== -1) {
         const afterPrefix = buffer.slice(bareIdx + BARE_CALL_PREFIX.length);
-        const nameMatch = afterPrefix.match(/^([a-z_]\w*)\{/i);
+        const nameMatch = afterPrefix.match(/^([a-z_][\w.]*)\{/i);
         if (nameMatch) {
           textBefore = buffer.slice(0, bareIdx);
           bareCallName = nameMatch[1]!;
@@ -303,8 +307,8 @@ export function createStreamingToolCallParser(): StreamingToolCallParser {
           return out;
         }
         const couldBeForming = afterPrefix === ''
-          || /^[a-z_]*$/i.test(afterPrefix)
-          || /^[a-z_]+\{?$/i.test(afterPrefix);
+          || /^[a-z_.]*$/i.test(afterPrefix)
+          || /^[a-z_.]+\{?$/i.test(afterPrefix);
         if (couldBeForming) {
           if (bareIdx > 0) {
             out.push({ kind: 'text', text: buffer.slice(0, bareIdx) });

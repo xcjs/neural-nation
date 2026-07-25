@@ -108,12 +108,19 @@ export function useInBrowserLLM(token: string) {
         chat.status = 'error';
         chat.errorMessage = msg.message;
         chat.errorCode = msg.code ?? 'unknown';
-        isInitialized.value = false;
-        if (worker.value) {
-          worker.value.terminate();
-          worker.value = null;
+        // Only destroy the worker for fatal errors that require a full reload.
+        // Generation/oom errors leave the model loaded — just reset status for retry.
+        if (msg.code === 'generation' || msg.code === 'oom') {
+          modelReady.value = true;
         }
-        modelReady.value = false;
+        else {
+          isInitialized.value = false;
+          if (worker.value) {
+            worker.value.terminate();
+            worker.value = null;
+          }
+          modelReady.value = false;
+        }
         break;
     }
   }
@@ -244,9 +251,15 @@ export function useInBrowserLLM(token: string) {
 
     try {
       const result = await mcpClient.callTool(name, args);
-      const resultText = result.content
+      let resultText = result.content
         ?.map(c => c.type === 'text' ? c.text : '')
         .join('\n') ?? '';
+
+      // Truncate tool results to avoid overflowing small-model context windows
+      const MAX_TOOL_RESULT_CHARS = 2000;
+      if (resultText.length > MAX_TOOL_RESULT_CHARS) {
+        resultText = `${resultText.slice(0, MAX_TOOL_RESULT_CHARS)}\n...[truncated, ${resultText.length} total chars]`;
+      }
 
       const parsed = result.isError
         ? { status: 'error', errorMessage: resultText }
@@ -257,9 +270,13 @@ export function useInBrowserLLM(token: string) {
         status: result.isError ? 'error' : 'complete',
       });
 
+      // Capture the assistant's streamed text before the tool call (not empty string)
+      const assistantMsg = chat.messages.find(m => m.id === currentAssistantId);
+      const assistantText = assistantMsg?.content ?? '';
+
       conversationHistory.value.push({
         role: 'assistant',
-        content: '',
+        content: assistantText,
         tool_calls: [{ name, arguments: args }],
       });
 
@@ -276,9 +293,12 @@ export function useInBrowserLLM(token: string) {
         status: 'error',
       });
 
+      const assistantMsg = chat.messages.find(m => m.id === currentAssistantId);
+      const assistantText = assistantMsg?.content ?? '';
+
       conversationHistory.value.push({
         role: 'assistant',
-        content: '',
+        content: assistantText,
         tool_calls: [{ name, arguments: args }],
       });
 
@@ -341,6 +361,29 @@ export function useInBrowserLLM(token: string) {
     chat.status = 'ready';
   }
 
+  function retry(): void {
+    // For generation/oom errors where the model is still loaded, just re-trigger
+    // generation from the current conversation context without reloading the model.
+    if (modelReady.value && worker.value) {
+      chat.errorMessage = '';
+      chat.errorCode = null;
+      chat.status = 'ready';
+      // Re-send the last user message to re-trigger generation from current context
+      const lastUser = [...conversationHistory.value].reverse().find(m => m.role === 'user');
+      if (lastUser) {
+        startGeneration();
+      }
+      else {
+        seeded.value = false;
+        handleModelReady();
+      }
+    }
+    else {
+      // Model not loaded — fall back to full init
+      init(chat.currentModel!);
+    }
+  }
+
   function clearConversation(): void {
     conversationHistory.value = [{ role: 'system', content: SYSTEM_PROMPT }];
     seeded.value = false;
@@ -396,6 +439,7 @@ export function useInBrowserLLM(token: string) {
     init,
     send,
     cancel,
+    retry,
     clearConversation,
     modelReady,
     isInitialized,

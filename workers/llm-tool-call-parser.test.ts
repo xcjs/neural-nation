@@ -79,6 +79,22 @@ describe('parseBareCall', () => {
   it('returns null for missing braces', () => {
     expect(parseBareCall('survey_planet')).toBeNull();
   });
+
+  it('parses a bare call with dotted function name', () => {
+    const result = parseBareCall('resource_management.survey{area:starting_region}');
+    expect(result).toEqual({
+      name: 'resource_management.survey',
+      arguments: { area: 'starting_region' },
+    });
+  });
+
+  it('strips surrounding double-quotes from string values', () => {
+    const result = parseBareCall('survey{area:"starting_region"}');
+    expect(result).toEqual({
+      name: 'survey',
+      arguments: { area: 'starting_region' },
+    });
+  });
 });
 
 describe('createStreamingToolCallParser - legacy format', () => {
