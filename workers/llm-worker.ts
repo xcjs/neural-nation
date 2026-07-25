@@ -129,17 +129,6 @@ async function handleInit(modelChoice: 'Q25B' | 'E2B' | 'E4B' | 'Q3B'): Promise<
     return;
   }
 
-  // Clear browser cache to prevent stale weights from a different model
-  try {
-    if ('caches' in globalThis) {
-      const keys = await globalThis.caches.keys();
-      await Promise.all(keys.map(key => globalThis.caches.delete(key)));
-    }
-  }
-  catch {
-    // Cache clearing is best-effort
-  }
-
   try {
     globalThis.postMessage({ type: 'loading' });
 
