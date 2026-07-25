@@ -117,17 +117,6 @@ function copyUrl() {
             <button
               class="px-3 py-2 text-xs border transition-colors"
               :class="[
-                playMode === 'Q3B'
-                  ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
-                  : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
-              ]"
-              @click="playMode = 'Q3B'"
-            >
-              IN-BROWSER (Qwen 3.5)
-            </button>
-            <button
-              class="px-3 py-2 text-xs border transition-colors"
-              :class="[
                 playMode === 'E2B'
                   ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
                   : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
@@ -135,6 +124,17 @@ function copyUrl() {
               @click="playMode = 'E2B'"
             >
               IN-BROWSER (Gemma E2B)
+            </button>
+            <button
+              class="px-3 py-2 text-xs border transition-colors"
+              :class="[
+                playMode === 'Q3B'
+                  ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
+                  : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
+              ]"
+              @click="playMode = 'Q3B'"
+            >
+              IN-BROWSER (Qwen 3.5)
             </button>
             <button
               class="px-3 py-2 text-xs border transition-colors"
