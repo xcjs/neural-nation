@@ -7,7 +7,10 @@
     "better-sqlite3": true,
     "esbuild": true,
     "@parcel/watcher": true,
-    "unrs-resolver": true
+    "unrs-resolver": true,
+    "onnxruntime-node": true,
+    "protobufjs": true,
+    "sharp": true
   },
   "scripts": {
     "dev": "nuxt dev",
