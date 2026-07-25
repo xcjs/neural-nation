@@ -205,15 +205,19 @@ function copyUrl() {
           v{{ version }}
         </p>
         <button
-          v-if="changelog.length"
-          class="text-cyan-600 hover:text-cyan-400 text-xs underline"
-          @click="changelogOpen = true"
+          class="text-cyan-600 hover:text-cyan-400 text-xs"
+          :class="changelog.length ? 'underline' : 'cursor-default'"
+          @click="changelog.length && (changelogOpen = true)"
         >
-          What's new?
+          <span class="inline-flex items-center gap-1">
+            <span>What's new?</span>
+            <Spinner
+              size="0.7rem"
+              class="text-cyan-800"
+              :style="{ visibility: changelog.length ? 'hidden' : 'visible' }"
+            />
+          </span>
         </button>
-        <div v-else class="flex items-center gap-1">
-          <Spinner size="0.7rem" class="text-cyan-800" />
-        </div>
       </div>
     </div>
 
