@@ -5,9 +5,20 @@ import { useMcpClient } from '~/composables/useMcpClient';
 import { useChatStore } from '~/stores/chat';
 
 interface WorkerInitMessage { type: 'init'; model: 'Q25B' | 'E2B' | 'E4B' | 'Q3B' }
+interface ToolCallEntry {
+  id: string;
+  type: 'function';
+  function: { name: string; arguments: Record<string, unknown> };
+}
+interface ChatHistoryMessage {
+  role: 'system' | 'user' | 'assistant' | 'tool';
+  content: string;
+  tool_calls?: ToolCallEntry[];
+  tool_call_id?: string;
+}
 interface WorkerGenerateMessage {
   type: 'generate';
-  messages: Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string; tool_calls?: Array<{ name: string; arguments: Record<string, unknown> }>; tool_call_id?: string }>;
+  messages: ChatHistoryMessage[];
   tools: McpToolDef[];
 }
 interface WorkerCancelMessage { type: 'cancel' }
@@ -40,7 +51,7 @@ export function useInBrowserLLM(token: string) {
   const modelReady = ref(false);
   const isInitialized = ref(false);
   const seeded = ref(false);
-  const conversationHistory = ref<Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string; tool_calls?: Array<{ name: string; arguments: Record<string, unknown> }>; tool_call_id?: string }>>([]);
+  const conversationHistory = ref<ChatHistoryMessage[]>([]);
 
   function init(modelChoice: ModelChoice): void {
     if (isInitialized.value)
@@ -277,7 +288,11 @@ export function useInBrowserLLM(token: string) {
       conversationHistory.value.push({
         role: 'assistant',
         content: assistantText,
-        tool_calls: [{ name, arguments: args }],
+        // OpenAI tool_calls shape — required by the Qwen2.5/Gemma chat templates
+        // which access tool_call['function']['name']. The flat { name, arguments }
+        // form makes tool_call.function undefined and trips Jinja2's
+        // "Cannot perform operation + on undefined values" error.
+        tool_calls: [{ id: callId, type: 'function', function: { name, arguments: args } }],
       });
 
       conversationHistory.value.push({
@@ -299,7 +314,7 @@ export function useInBrowserLLM(token: string) {
       conversationHistory.value.push({
         role: 'assistant',
         content: assistantText,
-        tool_calls: [{ name, arguments: args }],
+        tool_calls: [{ id: callId, type: 'function', function: { name, arguments: args } }],
       });
 
       conversationHistory.value.push({

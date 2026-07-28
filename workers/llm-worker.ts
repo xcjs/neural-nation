@@ -45,10 +45,15 @@ const MODEL_IDS = {
   Q3B: 'onnx-community/Qwen3.5-4B-ONNX',
 } as const;
 
+interface ToolCallEntry {
+  id: string;
+  type: 'function';
+  function: { name: string; arguments: Record<string, unknown> };
+}
 interface ChatMessageForModel {
   role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
-  tool_calls?: Array<{ name: string; arguments: Record<string, unknown> }>;
+  tool_calls?: ToolCallEntry[];
   tool_call_id?: string;
 }
 
