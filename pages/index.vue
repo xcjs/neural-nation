@@ -164,6 +164,9 @@ function copyUrl() {
         <p v-else-if="playMode === 'E4B'" class="text-cyan-700 text-xs mb-3">
           Gemma 4 E4B runs in your browser via WebGPU. ~2.5GB download (first load), ~4GB VRAM. Requires Chrome/Edge 113+ or Safari 18+.
         </p>
+        <p v-if="playMode !== 'external'" class="text-amber-600 text-xs mb-3">
+          Experimental: in-browser models are small (1.5B–4B params) and will not match the strategic capabilities of larger external models like Claude or GPT 5.x or later, or even capable local models such as Gemma 4 or Qwen3.6. Expect simpler plans and occasional errors.
+        </p>
 
         <template v-if="showMcpUrl">
           <p class="text-cyan-500 text-sm mb-2">
