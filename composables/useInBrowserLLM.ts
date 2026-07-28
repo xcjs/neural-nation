@@ -240,6 +240,26 @@ export function useInBrowserLLM(token: string) {
     await startGeneration();
   }
 
+  // Max non-system messages kept when sending history to the worker. The E2B
+  // model has limited VRAM; unbounded history causes GPU buffer download
+  // failures. We keep a sliding window of recent turns and always include the
+  // system prompt. Tool messages must not dangle without their preceding
+  // assistant tool_calls message, so leading tool messages are dropped.
+  const MAX_HISTORY_MESSAGES = 10;
+
+  function trimHistoryForContext(history: ChatHistoryMessage[]): ChatHistoryMessage[] {
+    const system = history.find(m => m.role === 'system');
+    const nonSystem = history.filter(m => m.role !== 'system');
+    const window = nonSystem.slice(-MAX_HISTORY_MESSAGES);
+    while (window.length > 0 && window[0]!.role === 'tool')
+      window.shift();
+    const result: ChatHistoryMessage[] = [];
+    if (system)
+      result.push(system);
+    result.push(...window);
+    return result;
+  }
+
   async function startGeneration(): Promise<void> {
     currentAssistantId = genId();
     pendingToolCalls = [];
@@ -257,7 +277,7 @@ export function useInBrowserLLM(token: string) {
 
     postToWorker({
       type: 'generate',
-      messages: conversationHistory.value,
+      messages: trimHistoryForContext(conversationHistory.value),
       tools: toOpenAiTools(toolDefs.value),
     });
   }
@@ -283,24 +303,19 @@ export function useInBrowserLLM(token: string) {
         ?.map(c => c.type === 'text' ? c.text : '')
         .join('\n') ?? '';
 
-      // UI gets the full, untruncated result.
+      // UI and model both get the collection-capped version; long arrays are
+      // randomly sampled to 20 items so the result stays readable in the chat
+      // panel and manageable for small WebGPU models.
+      const modelText = truncateCollections(fullText);
+
       const parsed = result.isError
         ? { status: 'error', errorMessage: fullText }
-        : { status: 'success', data: safeParse(fullText) };
+        : { status: 'success', data: safeParse(modelText) };
 
       chat.updateToolCall(currentAssistantId, callId, {
         result: parsed,
         status: result.isError ? 'error' : 'complete',
       });
-
-      // The model gets a bounded copy: long collection arrays are capped so the
-      // total stays within small-model context windows. Hard-cap remains a
-      // safety net for non-JSON or pathological payloads.
-      let modelText = truncateCollections(fullText);
-      const MAX_TOOL_RESULT_CHARS = 2000;
-      if (modelText.length > MAX_TOOL_RESULT_CHARS) {
-        modelText = `${modelText.slice(0, MAX_TOOL_RESULT_CHARS)}\n...[truncated, ${modelText.length} total chars]`;
-      }
 
       // Capture the assistant's streamed text before the tool call (not empty string)
       const assistantMsg = chat.messages.find(m => m.id === currentAssistantId);
@@ -370,7 +385,7 @@ export function useInBrowserLLM(token: string) {
 
     postToWorker({
       type: 'generate',
-      messages: conversationHistory.value,
+      messages: trimHistoryForContext(conversationHistory.value),
       tools: toOpenAiTools(toolDefs.value),
     });
   }
@@ -464,18 +479,21 @@ export function useInBrowserLLM(token: string) {
   }
 
   // Max array length kept per collection in tool results sent to the model.
-  // Longer arrays are capped to the first N entries plus a count marker so the
-  // model sees a representative sample and the total size, without the full
-  // payload overflowing small-model context windows on WebGPU.
-  const MAX_COLLECTION_ITEMS = 8;
+  // Longer arrays are randomly sampled to 20 items plus a count marker so the
+  // model sees a representative spread without the full payload.
+  const MAX_COLLECTION_ITEMS = 20;
 
   function capCollections(value: unknown): unknown {
     if (Array.isArray(value)) {
       if (value.length > MAX_COLLECTION_ITEMS) {
-        return [
-          ...value.slice(0, MAX_COLLECTION_ITEMS).map(capCollections),
-          `... ${value.length - MAX_COLLECTION_ITEMS} more omitted`,
-        ];
+        // Random sample without replacement
+        const indices = [...value.keys()];
+        for (let i = indices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [indices[i], indices[j]] = [indices[j]!, indices[i]!];
+        }
+        const picked = indices.slice(0, MAX_COLLECTION_ITEMS).map(i => capCollections(value[i]));
+        return [...picked, `... ${value.length - MAX_COLLECTION_ITEMS} more omitted (of ${value.length} total)`];
       }
       return value.map(capCollections);
     }
