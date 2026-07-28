@@ -34,6 +34,7 @@ decision, its context, and consequences.
 | [0025](0025-spectating-and-public-token.md)                | Spectating & Public Token (read-only shareable watch link)                            | Proposed |
 | [0026](0026-frontend-state-management.md)                  | Frontend State Management (Pinia stores, SSE, 3D scene sync)                          | Proposed |
 | [0027](0027-server-architecture-ioc-and-design-patterns.md) | Server Architecture — IoC, DI & Design Patterns (container, services, repositories) | Proposed |
+| [0028](0028-in-browser-webgpu-llm.md)                     | In-Browser WebGPU LLM Option (Transformers.js, Gemma 4, client-side MCP)            | Proposed |
 
 ## ADR Relationships
 
@@ -63,6 +64,7 @@ decision, its context, and consequences.
                        ├── 0014 (Power) ── 0016 (Space)
                         ├── 0017 (Code Org/DDD) ── applies to all ── 0022 (Testing)
                         ├── 0027 (Server IoC/DI) ── supersedes 0017 ── 0001, 0004, 0005, 0006, 0019, 0022
+                       ├── 0028 (In-Browser LLM) ── 0004, 0006, 0019, 0026
                        ├── 0018 (Tech Tree/Recipes) ── 0003, 0004, 0007, 0011, 0012, 0021, 0023
                        ├── 0023 (Terraforming) ── 0002, 0004, 0007, 0008, 0011, 0013, 0015, 0018
                        ├── 0024 (Deployment) ── 0001, 0005, 0020

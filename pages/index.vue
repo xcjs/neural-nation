@@ -1,18 +1,33 @@
 <script setup lang="ts">
 import type { ChangelogEntry } from '~/types/changelog';
 import { $fetch } from 'ofetch';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import Spinner from '~/components/Spinner.vue';
 
 const loading = ref(false);
 const error = ref('');
 const created = ref<{ token: string; publicToken: string; mcpUrl: string } | null>(null);
 const copied = ref(false);
+const playMode = ref<'external' | 'Q25B' | 'Q3B' | 'E2B' | 'E4B'>('external');
 const { version } = useRuntimeConfig().public;
 const changelog = ref<ChangelogEntry[]>([]);
 const changelogOpen = ref(false);
 
+const playUrl = computed(() => {
+  if (!created.value)
+    return '';
+  const base = `/play?token=${created.value.publicToken}`;
+  if (playMode.value === 'external')
+    return base;
+  return `${base}&mode=inbrowser&model=${playMode.value}`;
+});
+
+const showMcpUrl = computed(() => created.value && playMode.value === 'external');
+
+const supportsWebGPU = ref(false);
+
 onMounted(async () => {
+  supportsWebGPU.value = typeof navigator !== 'undefined' && 'gpu' in navigator;
   changelog.value = await $fetch<ChangelogEntry[]>('/api/changelog');
 });
 
@@ -73,30 +88,119 @@ function copyUrl() {
 
       <div v-if="created" class="mt-8 border border-cyan-900 p-4 bg-cyan-950 bg-opacity-30">
         <p class="text-cyan-500 text-sm mb-2">
-          MCP CONNECTION URL
+          PLAY MODE
         </p>
-        <div class="flex gap-2 items-center">
-          <input
-            :value="created.mcpUrl"
-            readonly
-            class="flex-1 bg-black border border-cyan-900 px-3 py-2 text-cyan-300 text-sm"
-          >
+        <div class="flex gap-2 mb-3 flex-wrap">
           <button
-            class="px-3 py-2 border border-cyan-700 text-cyan-500 hover:bg-cyan-950 text-sm"
-            @click="copyUrl"
+            class="px-3 py-2 text-xs border transition-colors"
+            :class="[
+              playMode === 'external'
+                ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
+                : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
+            ]"
+            @click="playMode = 'external'"
           >
-            {{ copied ? 'COPIED' : 'COPY' }}
+            EXTERNAL MCP
           </button>
+          <template v-if="supportsWebGPU">
+            <button
+              class="px-3 py-2 text-xs border transition-colors"
+              :class="[
+                playMode === 'Q25B'
+                  ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
+                  : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
+              ]"
+              @click="playMode = 'Q25B'"
+            >
+              IN-BROWSER (Qwen 2.5)
+            </button>
+            <button
+              class="px-3 py-2 text-xs border transition-colors"
+              :class="[
+                playMode === 'E2B'
+                  ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
+                  : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
+              ]"
+              @click="playMode = 'E2B'"
+            >
+              IN-BROWSER (Gemma E2B)
+            </button>
+            <button
+              class="px-3 py-2 text-xs border transition-colors"
+              :class="[
+                playMode === 'Q3B'
+                  ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
+                  : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
+              ]"
+              @click="playMode = 'Q3B'"
+            >
+              IN-BROWSER (Qwen 3.5)
+            </button>
+            <button
+              class="px-3 py-2 text-xs border transition-colors"
+              :class="[
+                playMode === 'E4B'
+                  ? 'border-cyan-400 bg-cyan-950 text-cyan-300'
+                  : 'border-cyan-900 text-cyan-700 hover:border-cyan-700',
+              ]"
+              @click="playMode = 'E4B'"
+            >
+              IN-BROWSER (Gemma E4B)
+            </button>
+          </template>
         </div>
-        <p class="text-cyan-700 text-xs mt-2">
-          Configure this URL as an MCP server in your LLM client (Claude Desktop, Cursor, etc.) using its MCP server settings.
+        <p v-if="!supportsWebGPU && created" class="text-cyan-700 text-xs mb-3">
+          In-browser AI models require a WebGPU-capable browser (Chrome, Edge, or Safari 18+). Use External MCP to connect an external AI.
         </p>
-        <NuxtLink
-          :to="`/play?token=${created.publicToken}`"
-          class="inline-block mt-4 px-4 py-2 border border-cyan-400 text-cyan-300 hover:bg-cyan-900 text-sm"
-        >
-          ENTER GAME →
-        </NuxtLink>
+        <p v-if="playMode === 'Q25B'" class="text-cyan-700 text-xs mb-3">
+          Qwen 2.5 1.5B runs in your browser via WebGPU. ~1GB download (first load), ~1.5GB VRAM. Requires Chrome.
+        </p>
+        <p v-else-if="playMode === 'Q3B'" class="text-cyan-700 text-xs mb-3">
+          Qwen 3.5 4B runs in your browser via WebGPU. ~2.4GB download (first load), ~3GB VRAM. Requires Chrome/Edge 113+ or Safari 18+.
+        </p>
+        <p v-else-if="playMode === 'E2B'" class="text-cyan-700 text-xs mb-3">
+          Gemma 4 E2B runs in your browser via WebGPU. ~1.2GB download (first load), ~2GB VRAM. Requires Chrome/Edge 113+ or Safari 18+.
+        </p>
+        <p v-else-if="playMode === 'E4B'" class="text-cyan-700 text-xs mb-3">
+          Gemma 4 E4B runs in your browser via WebGPU. ~2.5GB download (first load), ~4GB VRAM. Requires Chrome/Edge 113+ or Safari 18+.
+        </p>
+        <p v-if="playMode !== 'external'" class="text-amber-600 text-xs mb-3">
+          Experimental: in-browser models are small (1.5B–4B params) and will not match the strategic capabilities of larger external models like Claude or GPT 5.x or later, or even capable local models such as Gemma 4 or Qwen3.6. Expect simpler plans and occasional errors.
+        </p>
+
+        <template v-if="showMcpUrl">
+          <p class="text-cyan-500 text-sm mb-2">
+            MCP CONNECTION URL
+          </p>
+          <div class="flex gap-2 items-center">
+            <input
+              :value="created.mcpUrl"
+              readonly
+              class="flex-1 bg-black border border-cyan-900 px-3 py-2 text-cyan-300 text-sm"
+            >
+            <button
+              class="px-3 py-2 border border-cyan-700 text-cyan-500 hover:bg-cyan-950 text-sm"
+              @click="copyUrl"
+            >
+              {{ copied ? 'COPIED' : 'COPY' }}
+            </button>
+          </div>
+          <p class="text-cyan-700 text-xs mt-2">
+            Configure this URL as an MCP server in your LLM client (Claude Desktop, Cursor, etc.) using its MCP server settings.
+          </p>
+        </template>
+        <p v-else class="text-cyan-700 text-xs mb-3">
+          The AI will run directly in your browser. No external application needed — a chat panel will appear in the game.
+        </p>
+
+        <div class="flex justify-end mt-4">
+          <NuxtLink
+            :to="playUrl"
+            class="inline-block px-4 py-2 border border-cyan-400 text-cyan-300 hover:bg-cyan-900 text-sm"
+          >
+            ENTER GAME →
+          </NuxtLink>
+        </div>
       </div>
 
       <div class="flex items-center justify-center gap-4 mt-8">
@@ -104,15 +208,19 @@ function copyUrl() {
           v{{ version }}
         </p>
         <button
-          v-if="changelog.length"
-          class="text-cyan-600 hover:text-cyan-400 text-xs underline"
-          @click="changelogOpen = true"
+          class="text-cyan-600 hover:text-cyan-400 text-xs"
+          :class="changelog.length ? 'underline' : 'cursor-default'"
+          @click="changelog.length && (changelogOpen = true)"
         >
-          What's new?
+          <span class="inline-flex items-center gap-1">
+            <span>What's new?</span>
+            <Spinner
+              size="0.7rem"
+              class="text-cyan-800"
+              :style="{ visibility: changelog.length ? 'hidden' : 'visible' }"
+            />
+          </span>
         </button>
-        <div v-else class="flex items-center gap-1">
-          <Spinner size="0.7rem" class="text-cyan-800" />
-        </div>
       </div>
     </div>
 

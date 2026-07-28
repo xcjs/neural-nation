@@ -21,7 +21,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'unit',
-          include: ['lib/**/*.test.ts', 'server/**/*.test.ts', 'stores/**/*.test.ts', 'composables/**/*.test.ts'],
+          include: ['lib/**/*.test.ts', 'server/**/*.test.ts', 'stores/**/*.test.ts', 'composables/**/*.test.ts', 'workers/**/*.test.ts'],
         },
       },
       {
