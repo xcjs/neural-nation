@@ -1,5 +1,21 @@
 [
   {
+    "version": "0.2.4",
+    "date": "2026-07-28",
+    "summary": "In-browser WebGPU LLM tool-calling fixes and experimental warning.",
+    "changes": {
+      "added": [
+        "Experimental warning note on the main page for in-browser models, explaining small models (1.5B–4B) won't match the strategic capabilities of larger external models like Claude or GPT 5.x or later, or capable local models such as Gemma 4 or Qwen3.6."
+      ],
+      "fixed": [
+        "Wrap tool_calls in OpenAI function shape ({ id, type, function: { name, arguments } }) so Gemma/Qwen chat templates resolve tool_call['function']['name'] instead of tripping Jinja2's 'Cannot perform operation + on undefined values' error.",
+        "Send tools to the worker in OpenAI format ({ function: { name, description, parameters } }) instead of flat { name, description, inputSchema }; the flat shape rendered empty tool declarations with no names, causing the model to hallucinate tool names like survey_sector.",
+        "Randomly sample collection arrays in tool results to 20 items (with a count marker) so both the chat UI and model payload stay manageable; long arrays previously overflowed ONNX WebGPU attention kernels ('operation does not support unaligned accesses').",
+        "Add sliding history window (last 10 non-system messages) to bound total context size and prevent VRAM exhaustion (GPU buffer download failures) on the E2B model during long tool-call loops."
+      ]
+    }
+  },
+  {
     "version": "0.2.3",
     "date": "2026-07-18",
     "summary": "Auto-run migrations in DbFactory to heal stale game DBs.",
