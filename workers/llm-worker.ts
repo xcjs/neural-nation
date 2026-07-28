@@ -65,7 +65,9 @@ interface InitMessage {
 interface GenerateMessage {
   type: 'generate';
   messages: ChatMessageForModel[];
-  tools: Array<{ name: string; description: string; inputSchema: Record<string, unknown> }>;
+  // OpenAI function-tool shape expected by Gemma/Qwen chat templates
+  // (access tool['function']['name'] and ['function']['parameters']).
+  tools: Array<{ function: { name: string; description: string; parameters: Record<string, unknown> } }>;
 }
 
 interface CancelMessage {
@@ -173,7 +175,7 @@ async function handleInit(modelChoice: 'Q25B' | 'E2B' | 'E4B' | 'Q3B'): Promise<
 
 async function handleGenerate(
   messages: ChatMessageForModel[],
-  tools: Array<{ name: string; description: string; inputSchema: Record<string, unknown> }>,
+  tools: GenerateMessage['tools'],
 ): Promise<void> {
   if (!model || !tokenizer) {
     globalThis.postMessage({ type: 'error', message: 'Model not loaded' });

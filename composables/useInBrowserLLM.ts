@@ -16,10 +16,17 @@ interface ChatHistoryMessage {
   tool_calls?: ToolCallEntry[];
   tool_call_id?: string;
 }
+// OpenAI function-tool shape: { function: { name, description, parameters } }.
+// Gemma/Qwen chat templates access tool_data['function']['name'] and
+// ['function']['parameters'], so the flat { name, description, inputSchema }
+// shape from MCP produces empty declarations and the model hallucinates names.
+interface OpenAiToolDef {
+  function: { name: string; description: string; parameters: Record<string, unknown> };
+}
 interface WorkerGenerateMessage {
   type: 'generate';
   messages: ChatHistoryMessage[];
-  tools: McpToolDef[];
+  tools: OpenAiToolDef[];
 }
 interface WorkerCancelMessage { type: 'cancel' }
 type WorkerRequest = WorkerInitMessage | WorkerGenerateMessage | WorkerCancelMessage;
@@ -178,6 +185,16 @@ export function useInBrowserLLM(token: string) {
     }));
   }
 
+  function toOpenAiTools(tools: McpToolDef[]): OpenAiToolDef[] {
+    return tools.map(t => ({
+      function: {
+        name: t.name,
+        description: t.description,
+        parameters: t.inputSchema,
+      },
+    }));
+  }
+
   async function handleModelReady(): Promise<void> {
     await loadToolDefs();
     if (!seeded.value && modelReady.value && chat.status === 'ready') {
@@ -241,7 +258,7 @@ export function useInBrowserLLM(token: string) {
     postToWorker({
       type: 'generate',
       messages: conversationHistory.value,
-      tools: toolDefs.value,
+      tools: toOpenAiTools(toolDefs.value),
     });
   }
 
@@ -262,24 +279,28 @@ export function useInBrowserLLM(token: string) {
 
     try {
       const result = await mcpClient.callTool(name, args);
-      let resultText = result.content
+      const fullText = result.content
         ?.map(c => c.type === 'text' ? c.text : '')
         .join('\n') ?? '';
 
-      // Truncate tool results to avoid overflowing small-model context windows
-      const MAX_TOOL_RESULT_CHARS = 2000;
-      if (resultText.length > MAX_TOOL_RESULT_CHARS) {
-        resultText = `${resultText.slice(0, MAX_TOOL_RESULT_CHARS)}\n...[truncated, ${resultText.length} total chars]`;
-      }
-
+      // UI gets the full, untruncated result.
       const parsed = result.isError
-        ? { status: 'error', errorMessage: resultText }
-        : { status: 'success', data: safeParse(resultText) };
+        ? { status: 'error', errorMessage: fullText }
+        : { status: 'success', data: safeParse(fullText) };
 
       chat.updateToolCall(currentAssistantId, callId, {
         result: parsed,
         status: result.isError ? 'error' : 'complete',
       });
+
+      // The model gets a bounded copy: long collection arrays are capped so the
+      // total stays within small-model context windows. Hard-cap remains a
+      // safety net for non-JSON or pathological payloads.
+      let modelText = truncateCollections(fullText);
+      const MAX_TOOL_RESULT_CHARS = 2000;
+      if (modelText.length > MAX_TOOL_RESULT_CHARS) {
+        modelText = `${modelText.slice(0, MAX_TOOL_RESULT_CHARS)}\n...[truncated, ${modelText.length} total chars]`;
+      }
 
       // Capture the assistant's streamed text before the tool call (not empty string)
       const assistantMsg = chat.messages.find(m => m.id === currentAssistantId);
@@ -297,7 +318,7 @@ export function useInBrowserLLM(token: string) {
 
       conversationHistory.value.push({
         role: 'tool',
-        content: resultText,
+        content: modelText,
         tool_call_id: callId,
       });
     }
@@ -350,7 +371,7 @@ export function useInBrowserLLM(token: string) {
     postToWorker({
       type: 'generate',
       messages: conversationHistory.value,
-      tools: toolDefs.value,
+      tools: toOpenAiTools(toolDefs.value),
     });
   }
 
@@ -436,6 +457,43 @@ export function useInBrowserLLM(token: string) {
   function safeParse(text: string): unknown {
     try {
       return JSON.parse(text);
+    }
+    catch {
+      return text;
+    }
+  }
+
+  // Max array length kept per collection in tool results sent to the model.
+  // Longer arrays are capped to the first N entries plus a count marker so the
+  // model sees a representative sample and the total size, without the full
+  // payload overflowing small-model context windows on WebGPU.
+  const MAX_COLLECTION_ITEMS = 8;
+
+  function capCollections(value: unknown): unknown {
+    if (Array.isArray(value)) {
+      if (value.length > MAX_COLLECTION_ITEMS) {
+        return [
+          ...value.slice(0, MAX_COLLECTION_ITEMS).map(capCollections),
+          `... ${value.length - MAX_COLLECTION_ITEMS} more omitted`,
+        ];
+      }
+      return value.map(capCollections);
+    }
+    if (value !== null && typeof value === 'object') {
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(value as Record<string, unknown>))
+        out[k] = capCollections(v);
+      return out;
+    }
+    return value;
+  }
+
+  function truncateCollections(text: string): string {
+    const parsed = safeParse(text);
+    if (typeof parsed === 'string')
+      return text;
+    try {
+      return JSON.stringify(capCollections(parsed));
     }
     catch {
       return text;
