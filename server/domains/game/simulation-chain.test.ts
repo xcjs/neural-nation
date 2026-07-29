@@ -53,6 +53,32 @@ describe('simulation: recipe production chain', () => {
     advanceTicks(3);
     expect(getFacilityById(smelterId)?.status).toBe('Active');
 
+    // Build a SolarFarm and PowerLine to power the smelter
+    const solar = executeTool(token, 'build_facility', {
+      type: 'SolarFarm',
+      name: 'Power Solar 1',
+      lat: 37.14,
+      lon: -90.50,
+      footprint: [
+        { lat: 37.14, lon: -90.50 },
+        { lat: 37.15, lon: -90.50 },
+        { lat: 37.15, lon: -90.49 },
+        { lat: 37.14, lon: -90.49 },
+      ],
+    });
+    const solarId = (solar.data as { facilityId: number }).facilityId;
+    executeTool(token, 'build_transport', {
+      type: 'PowerLine',
+      fromFacilityId: solarId,
+      toFacilityId: smelterId,
+    });
+    executeTool(token, 'set_production_target', {
+      facilityId: solarId,
+      recipeId: 'solar_generation',
+      targetRate: 1,
+    });
+    advanceTicks(3); // solar construction + power tick
+
     // Set iron_smelting recipe
     const recipe = executeTool(token, 'set_production_target', { facilityId: smelterId, recipeId: 'iron_smelting', targetRate: 1 });
     expect(recipe.status).toBe('success');
@@ -72,11 +98,36 @@ describe('simulation: recipe production chain', () => {
     advanceTicks(3);
     expect(getFacilityById(smelterId)?.status).toBe('Active');
 
-    // Manually connect power (smelter is a power consumer, not self-powered)
-    db.update(schema.facilities)
-      .set({ powerConnected: 1 })
-      .where(eq(schema.facilities.id, smelterId))
-      .run();
+    // Build a SolarFarm and PowerLine to power the smelter
+    const solar = executeTool(token, 'build_facility', {
+      type: 'SolarFarm',
+      name: 'Test Solar',
+      lat: 37.19,
+      lon: -90.50,
+      footprint: [
+        { lat: 37.19, lon: -90.50 },
+        { lat: 37.20, lon: -90.50 },
+        { lat: 37.20, lon: -90.49 },
+        { lat: 37.19, lon: -90.49 },
+      ],
+    });
+    const solarId = (solar.data as { facilityId: number }).facilityId;
+
+    executeTool(token, 'build_transport', {
+      type: 'PowerLine',
+      fromFacilityId: solarId,
+      toFacilityId: smelterId,
+    });
+
+    // Set solar generation recipe so the solar farm produces
+    executeTool(token, 'set_production_target', {
+      facilityId: solarId,
+      recipeId: 'solar_generation',
+      targetRate: 1,
+    });
+
+    // Complete solar farm construction (3 ticks) + power tick
+    advanceTicks(3);
 
     executeTool(token, 'set_production_target', { facilityId: smelterId, recipeId: 'iron_smelting', targetRate: 1 });
     advanceTicks(1);

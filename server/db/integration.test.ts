@@ -32,7 +32,6 @@ describe('template DB schema integrity', () => {
       'transports',
       'terrain',
       'terrain_modifications',
-      'power_lines',
       'battery_banks',
       'humanity',
       'environment',
@@ -104,6 +103,18 @@ describe('template DB schema integrity', () => {
       WHERE r.tech_required IS NOT NULL AND tn.id IS NULL
     `).all();
     expect(orphans).toHaveLength(0);
+  });
+
+  it('has power_throttle column on facilities with default 1.0', () => {
+    const info = db.prepare('PRAGMA table_info(facilities)').all() as Array<{ name: string; dflt_value: string | null }>;
+    const col = info.find(c => c.name === 'power_throttle');
+    expect(col).toBeDefined();
+    expect(col!.dflt_value).toBe('1');
+  });
+
+  it('does not have power_lines table', () => {
+    const tables = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='power_lines'`).all();
+    expect(tables).toHaveLength(0);
   });
 });
 
