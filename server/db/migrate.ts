@@ -1,9 +1,4 @@
 import type Database from 'better-sqlite3';
-import { readdirSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import process from 'node:process';
-
-const MIGRATIONS_DIR = resolve(process.cwd(), 'server', 'db', 'migrations');
 
 interface MigrationFile {
   id: number;
@@ -11,27 +6,47 @@ interface MigrationFile {
   sql: string;
 }
 
-function loadMigrations(): MigrationFile[] {
-  let files: string[];
-  try {
-    files = readdirSync(MIGRATIONS_DIR).filter(f => f.endsWith('.sql'));
-  }
-  catch {
-    return [];
-  }
-  return files
-    .map((filename) => {
-      const match = filename.match(/^(\d+)_/);
-      if (!match)
-        return null;
-      return {
-        id: Number.parseInt(match[1]!, 10),
-        filename,
-        sql: readFileSync(resolve(MIGRATIONS_DIR, filename), 'utf-8'),
-      };
-    })
-    .filter((m): m is MigrationFile => m !== null)
-    .sort((a, b) => a.id - b.id);
+// Migrations are inlined as string constants so they are bundled into the
+// Nitro production build (the source server/db/migrations directory is not
+// present in .output). Keep these in sync with the .sql files of the same id
+// under server/db/migrations/.
+const MIGRATIONS: MigrationFile[] = [
+  {
+    id: 1,
+    filename: '001_pollution_grid.sql',
+    sql: [
+      'CREATE TABLE IF NOT EXISTS pollution_grid (',
+      '  id INTEGER PRIMARY KEY AUTOINCREMENT,',
+      '  lat_index INTEGER NOT NULL,',
+      '  lon_index INTEGER NOT NULL,',
+      '  pollution REAL DEFAULT 0',
+      ');',
+      'CREATE INDEX IF NOT EXISTS idx_pollution_grid_lat_lon ON pollution_grid(lat_index, lon_index);',
+    ].join('\n'),
+  },
+];
+
+// The 001 seed inserts 360x720 rows via a recursive CTE. Some SQLite builds
+// throw "circular reference" when parsing the CTE inside a subquery even if
+// the WHERE NOT EXISTS guard makes the insert a no-op. So we seed in TS:
+// only when the table is empty, avoiding the CTE parse issue entirely.
+function seedPollutionGridIfEmpty(sqlite: Database.Database): void {
+  const row = sqlite.prepare('SELECT COUNT(*) as n FROM pollution_grid').get() as { n: number };
+  if (row.n > 0)
+    return;
+
+  sqlite.exec(`
+    WITH RECURSIVE lat_seq(x) AS (
+      SELECT 0 UNION ALL SELECT x + 1 FROM lat_seq WHERE x < 359
+    ),
+    lon_seq(y) AS (
+      SELECT 0 UNION ALL SELECT y + 1 FROM lon_seq WHERE y < 719
+    )
+    INSERT INTO pollution_grid (lat_index, lon_index, pollution)
+    SELECT x, y, 0 FROM lat_seq CROSS JOIN lon_seq;
+  `);
+
+  sqlite.prepare("UPDATE environment SET pollution_level = 0 WHERE key = 'global'").run();
 }
 
 function ensureMigrationsTable(sqlite: Database.Database): void {
@@ -51,14 +66,16 @@ function getAppliedMigrations(sqlite: Database.Database): Set<number> {
 
 export function runMigrations(sqlite: Database.Database): { applied: string[]; skipped: number } {
   ensureMigrationsTable(sqlite);
-  const migrations = loadMigrations();
   const applied = getAppliedMigrations(sqlite);
   const newlyApplied: string[] = [];
 
-  for (const migration of migrations) {
+  for (const migration of MIGRATIONS) {
     if (applied.has(migration.id))
       continue;
     sqlite.exec(migration.sql);
+    if (migration.id === 1) {
+      seedPollutionGridIfEmpty(sqlite);
+    }
     sqlite.prepare('INSERT INTO _migrations (id, filename, applied_at) VALUES (?, ?, ?)').run(
       migration.id,
       migration.filename,
@@ -67,5 +84,5 @@ export function runMigrations(sqlite: Database.Database): { applied: string[]; s
     newlyApplied.push(migration.filename);
   }
 
-  return { applied: newlyApplied, skipped: migrations.length - newlyApplied.length };
+  return { applied: newlyApplied, skipped: MIGRATIONS.length - newlyApplied.length };
 }
