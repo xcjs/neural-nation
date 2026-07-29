@@ -88,6 +88,7 @@ async function main() {
       target_output_rate REAL DEFAULT 0,
       power_consumption REAL DEFAULT 0,
       power_connected INTEGER DEFAULT 0,
+      power_throttle REAL DEFAULT 1,
       throughput REAL DEFAULT 0,
       construction_progress REAL DEFAULT 0,
       elevation REAL,
@@ -142,16 +143,6 @@ async function main() {
       modified_at_tick INTEGER,
       operation_id TEXT,
       reason TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS power_lines (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      from_facility_id INTEGER,
-      to_facility_id INTEGER,
-      capacity REAL,
-      load REAL DEFAULT 0,
-      transmission_loss REAL DEFAULT 0,
-      created_at_tick INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS battery_banks (

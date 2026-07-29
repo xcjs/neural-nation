@@ -3,7 +3,7 @@ import { events } from './event';
 import { facilities, facilityBuffers } from './facility';
 import { environment, forestGrid, humanity, incidents, pollutionGrid } from './humanity';
 import { meta } from './meta';
-import { batteryBanks, powerLines } from './power';
+import { batteryBanks } from './power';
 import { resources, stockpiles, surveyLog } from './resource';
 import { spaceFacilities, spaceMissions } from './space';
 import {
@@ -29,7 +29,6 @@ export const schema = {
   transports,
   terrain,
   terrainModifications,
-  powerLines,
   batteryBanks,
   humanity,
   environment,
@@ -63,7 +62,6 @@ export {
   incidents,
   meta,
   pollutionGrid,
-  powerLines,
   recipeInputs,
   recipeOutputs,
   recipes,

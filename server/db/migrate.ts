@@ -24,6 +24,14 @@ const MIGRATIONS: MigrationFile[] = [
       'CREATE INDEX IF NOT EXISTS idx_pollution_grid_lat_lon ON pollution_grid(lat_index, lon_index);',
     ].join('\n'),
   },
+  {
+    id: 2,
+    filename: '002_power_throttle.sql',
+    sql: [
+      'ALTER TABLE facilities ADD COLUMN power_throttle REAL DEFAULT 1 NOT NULL;',
+      'DROP TABLE IF EXISTS power_lines;',
+    ].join('\n'),
+  },
 ];
 
 // The 001 seed inserts 360x720 rows via a recursive CTE. Some SQLite builds

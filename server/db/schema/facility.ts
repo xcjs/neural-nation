@@ -12,6 +12,7 @@ export const facilities = sqliteTable('facilities', {
   targetOutputRate: real('target_output_rate').default(0).notNull(),
   powerConsumption: real('power_consumption').default(0).notNull(),
   powerConnected: integer('power_connected').default(0).notNull(),
+  powerThrottle: real('power_throttle').default(1).notNull(),
   throughput: real('throughput').default(0).notNull(),
   constructionProgress: real('construction_progress').default(0).notNull(),
   elevation: real('elevation').notNull(),
