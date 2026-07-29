@@ -25,8 +25,6 @@ export class PowerRepository implements IPowerRepository {
       toFacilityId: schema.transports.toFacilityId,
       type: schema.transports.type,
       capacity: schema.transports.capacity,
-    }).from(schema.transports)
-      .where(eq(schema.transports.type, 'PowerLine'))
-      .all() as PowerLineTransportRow[];
+    }).from(schema.transports).where(eq(schema.transports.type, 'PowerLine')).all() as PowerLineTransportRow[];
   }
 }
