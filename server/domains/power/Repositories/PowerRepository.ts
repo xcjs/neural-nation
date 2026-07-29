@@ -1,5 +1,6 @@
 import type { GameDb } from '../../../db/client';
-import type { IPowerRepository, PowerFacilityRow, PowerLineRow } from './IPowerRepository';
+import type { IPowerRepository, PowerFacilityRow, PowerLineTransportRow } from './IPowerRepository';
+import { eq } from 'drizzle-orm';
 import { schema } from '../../../db/schema';
 
 export class PowerRepository implements IPowerRepository {
@@ -13,10 +14,19 @@ export class PowerRepository implements IPowerRepository {
       lon: schema.facilities.lon,
       targetOutputRate: schema.facilities.targetOutputRate,
       powerConsumption: schema.facilities.powerConsumption,
+      powerThrottle: schema.facilities.powerThrottle,
     }).from(schema.facilities).all() as PowerFacilityRow[];
   }
 
-  getAllPowerLines(): PowerLineRow[] {
-    return this.db.select().from(schema.powerLines).all() as PowerLineRow[];
+  getAllPowerLineTransports(): PowerLineTransportRow[] {
+    return this.db.select({
+      id: schema.transports.id,
+      fromFacilityId: schema.transports.fromFacilityId,
+      toFacilityId: schema.transports.toFacilityId,
+      type: schema.transports.type,
+      capacity: schema.transports.capacity,
+    }).from(schema.transports)
+      .where(eq(schema.transports.type, 'PowerLine'))
+      .all() as PowerLineTransportRow[];
   }
 }

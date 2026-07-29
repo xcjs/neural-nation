@@ -7,20 +7,20 @@ export interface PowerFacilityRow {
   lon: number;
   targetOutputRate: number;
   powerConsumption: number;
+  powerThrottle: number;
 }
 
-export interface PowerLineRow {
+export interface PowerLineTransportRow {
   id: number;
   fromFacilityId: number;
   toFacilityId: number;
+  type: string;
   capacity: number;
-  load: number;
-  transmissionLoss: number;
 }
 
 export interface IPowerRepository {
   getAllFacilities: () => PowerFacilityRow[];
-  getAllPowerLines: () => PowerLineRow[];
+  getAllPowerLineTransports: () => PowerLineTransportRow[];
 }
 
 export const IPowerRepository = new Token<IPowerRepository>('IPowerRepository');
