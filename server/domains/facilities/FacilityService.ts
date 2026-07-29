@@ -6,23 +6,8 @@ import type { FacilityBufferEntry } from './Models/FacilityBuffer';
 import type { FacilityRow, IFacilityRepository, SearchFacilitiesParams } from './Repositories/IFacilityRepository';
 import { FacilityStatus } from '../../../lib/types/facility';
 import { greatCircleDistance } from '../../shared/geo/distance';
-
-const POWER_GENERATING_TYPES = new Set([
-  'PowerPlant',
-  'SolarFarm',
-  'WindFarm',
-  'HydroPlant',
-  'NuclearReactor',
-  'BreederReactor',
-  'FusionReactor',
-  'BiomassPlant',
-  'BiogasPlant',
-  'DieselGenerator',
-  'CoalPlant',
-  'GasPlant',
-  'OilPlant',
-  'GeothermalPlant',
-]);
+import { BASE_POWER_CONSUMPTION, POWER_GENERATING_TYPES } from '../shared/constants/facilityTypes';
+import { footprintAreaDeg2 } from '../power/gridTopology';
 
 const FACILITY_TECH_REQUIREMENTS: Record<string, string> = {
   AdvancedFactory: 'precision_manufacturing',
@@ -257,6 +242,11 @@ export class FacilityService {
 
     const footprint = JSON.stringify(params.footprint);
 
+    const basePower = BASE_POWER_CONSUMPTION[facilityType] ?? 0;
+    const areaDeg2 = footprintAreaDeg2(params.footprint);
+    const multiplier = Math.max(1.0, areaDeg2 / 0.0001);
+    const powerConsumption = isPowerGenerating ? 0 : basePower * multiplier;
+
     const facility = this.facilityRepo.insertFacility({
       type: facilityType,
       name: params.name,
@@ -266,6 +256,7 @@ export class FacilityService {
       status: FacilityStatus.UnderConstruction,
       techRequired: requiredTech ?? null,
       powerConnected: isPowerGenerating ? 1 : 0,
+      powerConsumption,
       createdAtTick: tick,
     });
 
@@ -359,7 +350,7 @@ export class FacilityService {
       elevation: facility.elevation,
       terrainClass: facility.terrainClass,
       constructionProgress: facility.constructionProgress,
-      throughput: facility.targetOutputRate,
+      throughput: facility.throughput,
       footprint: facility.footprint ? safeParseFootprint(facility.footprint) : null,
     };
   }

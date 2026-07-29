@@ -14,6 +14,7 @@ export interface FacilityRow {
   targetOutputRate: number;
   powerConsumption: number;
   powerConnected: number;
+  powerThrottle: number;
   throughput: number;
   constructionProgress: number;
   elevation: number;
@@ -58,6 +59,7 @@ export interface BuildFacilityParams {
   status: FacilityStatus;
   techRequired: string | null;
   powerConnected: number;
+  powerConsumption: number;
   createdAtTick: number;
 }
 
