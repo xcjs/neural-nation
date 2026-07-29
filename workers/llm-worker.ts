@@ -39,10 +39,8 @@ async function configureWebGPU(): Promise<void> {
 }
 
 const MODEL_IDS = {
-  Q25B: 'onnx-community/Qwen2.5-1.5B-Instruct',
   E2B: 'onnx-community/gemma-4-E2B-it-ONNX',
   E4B: 'onnx-community/gemma-4-E4B-it-ONNX',
-  Q3B: 'onnx-community/Qwen3.5-4B-ONNX',
 } as const;
 
 interface ToolCallEntry {
@@ -59,13 +57,13 @@ interface ChatMessageForModel {
 
 interface InitMessage {
   type: 'init';
-  model: 'Q25B' | 'E2B' | 'E4B' | 'Q3B';
+  model: 'E2B' | 'E4B';
 }
 
 interface GenerateMessage {
   type: 'generate';
   messages: ChatMessageForModel[];
-  // OpenAI function-tool shape expected by Gemma/Qwen chat templates
+  // OpenAI function-tool shape expected by the Gemma chat templates
   // (access tool['function']['name'] and ['function']['parameters']).
   tools: Array<{ function: { name: string; description: string; parameters: Record<string, unknown> } }>;
 }
@@ -128,7 +126,7 @@ globalThis.addEventListener('message', async (e: MessageEvent<WorkerRequest>) =>
   }
 });
 
-async function handleInit(modelChoice: 'Q25B' | 'E2B' | 'E4B' | 'Q3B'): Promise<void> {
+async function handleInit(modelChoice: 'E2B' | 'E4B'): Promise<void> {
   const modelId = MODEL_IDS[modelChoice];
 
   if (currentModelId === modelId && model && tokenizer) {

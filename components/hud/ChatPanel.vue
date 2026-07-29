@@ -73,7 +73,7 @@ const errorInfo = computed<{ title: string; detail: string; suggestions: string[
         title: 'GPU Out of Memory',
         detail: raw,
         suggestions: [
-          'Try the smaller Qwen 3.5 model (most browser-compatible)',
+          'Try the smaller Gemma E2B model (lower VRAM)',
           'Close other GPU-heavy browser tabs',
           'Use the External MCP play mode (no local model)',
         ],
@@ -258,10 +258,8 @@ function formatResult(result: { status: string; data?: unknown; errorMessage?: s
       </p>
       <p class="text-cyan-700 text-xs text-center">
         {{
-          props.model === 'Q25B' ? '~1GB download, ~1.5GB VRAM'
-          : props.model === 'Q3B' ? '~2.4GB download, ~3GB VRAM'
-            : props.model === 'E2B' ? '~1.2GB download, ~2GB VRAM'
-              : '~2.5GB download, ~4GB VRAM'
+          props.model === 'E2B' ? '~1.2GB download, ~2GB VRAM'
+            : '~2.5GB download, ~4GB VRAM'
         }}
       </p>
       <button
