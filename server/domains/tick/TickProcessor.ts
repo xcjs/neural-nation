@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { GameStatus } from '../../../lib/types/game';
 import { schema } from '../../db/schema';
 import { ConstructionTick } from '../facilities/Ticks/ConstructionTick';
+import { PowerTick } from '../power/Ticks/PowerTick';
 import { ProductionTick } from '../facilities/Ticks/ProductionTick';
 import { LoseConditionTick } from '../game/Ticks/LoseConditionTick';
 import { EnvironmentTick } from '../humanity/Ticks/EnvironmentTick';
@@ -55,6 +56,7 @@ export class TickProcessor {
       new ForestGridTick(tx).process(newTick);
       new PollutionGridTick(tx).process(newTick);
       new ConstructionTick(tx).process(newTick);
+      new PowerTick(tx).process(newTick);
       new ProductionTick(tx).process(newTick);
       new TransportFlowTick(tx).process(newTick);
       new ResearchTick(tx).process(newTick);
