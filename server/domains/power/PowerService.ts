@@ -8,7 +8,7 @@ export class PowerService {
 
   getPowerGridStatus(): PowerGridSummary {
     const facilities = this.powerRepo.getAllFacilities();
-    const powerLines = this.powerRepo.getAllPowerLines();
+    const powerLines = this.powerRepo.getAllPowerLineTransports();
 
     const generators = facilities.filter(f =>
       f.type.includes('plant')
@@ -33,8 +33,8 @@ export class PowerService {
       const from = facilities.find(f => f.id === line.fromFacilityId);
       const to = facilities.find(f => f.id === line.toFacilityId);
 
-      let loss = line.transmissionLoss;
-      if (from && to && loss === 0) {
+      let loss = 0;
+      if (from && to) {
         const dist = greatCircleDistance(from.lat, from.lon, to.lat, to.lon);
         loss = transmissionLossPercent(dist);
       }
@@ -44,7 +44,7 @@ export class PowerService {
         fromFacilityId: line.fromFacilityId,
         toFacilityId: line.toFacilityId,
         capacity: line.capacity,
-        load: line.load,
+        load: 0,
         transmissionLoss: loss,
       };
     });

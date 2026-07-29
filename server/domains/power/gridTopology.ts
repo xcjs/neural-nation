@@ -2,7 +2,7 @@ import { GridStatus } from '../../../lib/types/power';
 import { transmissionLossPercent } from '../../shared/geo/distance';
 
 export function solarOutputFactor(lat: number): number {
-  return 0.5 * Math.max(0.1, Math.cos((lat * Math.PI) / 180));
+  return Math.max(0.1, Math.cos((lat * Math.PI) / 180));
 }
 
 export function footprintAreaDeg2(footprint: Array<{ lat: number; lon: number }>): number {

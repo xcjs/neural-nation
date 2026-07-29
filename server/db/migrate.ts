@@ -28,11 +28,21 @@ const MIGRATIONS: MigrationFile[] = [
     id: 2,
     filename: '002_power_throttle.sql',
     sql: [
-      'ALTER TABLE facilities ADD COLUMN power_throttle REAL DEFAULT 1 NOT NULL;',
       'DROP TABLE IF EXISTS power_lines;',
     ].join('\n'),
   },
 ];
+
+// SQLite ALTER TABLE ADD COLUMN has no IF NOT EXISTS form, so guard the
+// power_throttle column addition in TS. The template DB may already contain
+// the column (built from a schema that includes it), which would otherwise
+// raise "duplicate column name".
+function addPowerThrottleColumnIfMissing(sqlite: Database.Database): void {
+  const cols = sqlite.prepare('PRAGMA table_info(facilities)').all() as Array<{ name: string }>;
+  if (cols.some(c => c.name === 'power_throttle'))
+    return;
+  sqlite.exec('ALTER TABLE facilities ADD COLUMN power_throttle REAL DEFAULT 1 NOT NULL;');
+}
 
 // The 001 seed inserts 360x720 rows via a recursive CTE. Some SQLite builds
 // throw "circular reference" when parsing the CTE inside a subquery even if
@@ -54,7 +64,7 @@ function seedPollutionGridIfEmpty(sqlite: Database.Database): void {
     SELECT x, y, 0 FROM lat_seq CROSS JOIN lon_seq;
   `);
 
-  sqlite.prepare("UPDATE environment SET pollution_level = 0 WHERE key = 'global'").run();
+  sqlite.prepare('UPDATE environment SET pollution_level = 0 WHERE key = \'global\'').run();
 }
 
 function ensureMigrationsTable(sqlite: Database.Database): void {
@@ -83,6 +93,9 @@ export function runMigrations(sqlite: Database.Database): { applied: string[]; s
     sqlite.exec(migration.sql);
     if (migration.id === 1) {
       seedPollutionGridIfEmpty(sqlite);
+    }
+    if (migration.id === 2) {
+      addPowerThrottleColumnIfMissing(sqlite);
     }
     sqlite.prepare('INSERT INTO _migrations (id, filename, applied_at) VALUES (?, ?, ?)').run(
       migration.id,
