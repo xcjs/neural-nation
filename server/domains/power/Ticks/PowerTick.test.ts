@@ -67,7 +67,7 @@ describe('powerTick', () => {
     executeTool(token, 'set_production_target', {
       facilityId: solarId,
       recipeId: 'solar_generation',
-      targetRate: 10,
+      targetRate: 20,
     });
 
     buildPowerLine(solarId, smelterId);
@@ -97,8 +97,8 @@ describe('powerTick', () => {
     const smelterB = buildFacility('Smelter', 'Smelter B', 40.01, -90.0);
     advanceTicks(3);
 
-    executeTool(token, 'set_production_target', { facilityId: solarA, recipeId: 'solar_generation', targetRate: 10 });
-    executeTool(token, 'set_production_target', { facilityId: solarB, recipeId: 'solar_generation', targetRate: 10 });
+    executeTool(token, 'set_production_target', { facilityId: solarA, recipeId: 'solar_generation', targetRate: 20 });
+    executeTool(token, 'set_production_target', { facilityId: solarB, recipeId: 'solar_generation', targetRate: 20 });
 
     buildPowerLine(solarA, smelterA);
     buildPowerLine(solarB, smelterB);
@@ -115,7 +115,7 @@ describe('powerTick', () => {
     const smelterId = buildFacility('Smelter', 'Trans Smelter', 41.02, -90.0);
     advanceTicks(3);
 
-    executeTool(token, 'set_production_target', { facilityId: solarId, recipeId: 'solar_generation', targetRate: 10 });
+    executeTool(token, 'set_production_target', { facilityId: solarId, recipeId: 'solar_generation', targetRate: 20 });
 
     buildPowerLine(solarId, storageId);
     buildPowerLine(storageId, smelterId);
