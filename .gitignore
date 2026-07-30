@@ -47,6 +47,7 @@ coverage/
 tmp/
 temp/
 .opencode/
+.superpowers/
 
 # Local TODO
 TODO.md
