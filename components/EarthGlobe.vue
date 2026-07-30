@@ -601,6 +601,12 @@ function updateMarkers() {
   // Transport arcs + flow particles
   const arcData: { points: THREE.Vector3[]; color: number; active: boolean }[] = [];
   for (const t of props.transports) {
+    if (
+      !Number.isFinite(t.fromLat) || !Number.isFinite(t.fromLon)
+      || !Number.isFinite(t.toLat) || !Number.isFinite(t.toLon)
+    ) {
+      continue;
+    }
     const fromPos = latLonToVec3(t.fromLat, t.fromLon, EARTH_RADIUS * 1.02);
     const toPos = latLonToVec3(t.toLat, t.toLon, EARTH_RADIUS * 1.02);
     const midPoint = new THREE.Vector3().addVectors(fromPos, toPos).multiplyScalar(0.5);

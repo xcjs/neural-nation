@@ -4,6 +4,7 @@ import type { FacilityService } from '../facilities/FacilityService';
 import type { IGameRepository } from '../game/Repositories/IGameRepository';
 import type { PowerService } from '../power/PowerService';
 import type { TickProcessor } from '../tick/TickProcessor';
+import type { TransportService } from '../transport/TransportService';
 import type { GameTools } from './GameTools';
 import type { IToolRegistry } from './IToolRegistry';
 import type { ToolCallResult } from './Models/ToolCallResult';
@@ -48,6 +49,7 @@ export class McpDispatcher {
     private readonly gameTools: GameTools,
     private readonly facilityService: FacilityService,
     private readonly powerService: PowerService,
+    private readonly transportService: TransportService,
   ) {}
 
   executeTool(token: string, toolName: string, args: Record<string, unknown>): ToolCallResult {
@@ -153,8 +155,11 @@ export class McpDispatcher {
       case 'build_transport': {
         const data = result as { transportId?: number; id?: number };
         const transportId = data?.transportId ?? data?.id;
-        if (transportId)
-          events.push({ type: 'transport_built', transport: { id: transportId, ...args } });
+        if (transportId) {
+          const summary = this.transportService.getTransportSummary(transportId);
+          if (summary)
+            events.push({ type: 'transport_built', transport: summary });
+        }
         break;
       }
       case 'demolish_transport': {
@@ -162,7 +167,9 @@ export class McpDispatcher {
         break;
       }
       case 'assign_route': {
-        events.push({ type: 'transport_built', transport: { id: args.transportId, resourceKey: args.resourceKey, flowRate: args.flowRate } });
+        const summary = this.transportService.getTransportSummary(args.transportId as number);
+        if (summary)
+          events.push({ type: 'transport_built', transport: summary });
         break;
       }
       case 'survey_region': {

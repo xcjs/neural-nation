@@ -12,6 +12,7 @@ export interface ITransportRepository {
   getMetaTickCount: () => number;
   insertTransport: (values: TransportInsertValues) => TransportRow;
   deleteTransport: (id: number) => void;
+  getTransportById: (id: number) => TransportRow | undefined;
   getTransports: (limit: number, offset: number) => TransportRow[];
   countTransports: () => number;
   updateTransportRoute: (id: number, resourceKey: string, flowRate: number) => void;

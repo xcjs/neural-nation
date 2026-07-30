@@ -64,6 +64,7 @@ export function registerMcpModule(container: Container): void {
     c.resolve(IGameTools),
     c.resolve(IFacilityService),
     c.resolve(IPowerService),
+    c.resolve(ITransportService),
   ), Lifecycle.Scoped);
 
   container.bind(IMcpServer, c => new McpServer(

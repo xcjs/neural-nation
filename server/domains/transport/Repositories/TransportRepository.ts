@@ -32,6 +32,10 @@ export class TransportRepository implements ITransportRepository {
     this.db.delete(schema.transports).where(eq(schema.transports.id, id)).run();
   }
 
+  getTransportById(id: number): TransportRow | undefined {
+    return this.db.select().from(schema.transports).where(eq(schema.transports.id, id)).get();
+  }
+
   getTransports(limit: number, offset: number): TransportRow[] {
     return this.db.select().from(schema.transports).limit(limit).offset(offset).all();
   }
