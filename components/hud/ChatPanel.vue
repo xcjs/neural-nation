@@ -259,7 +259,7 @@ function formatResult(result: { status: string; data?: unknown; errorMessage?: s
       <p class="text-cyan-700 text-xs text-center">
         {{
           props.model === 'E2B' ? '~1.2GB download, ~2GB VRAM'
-            : '~2.5GB download, ~4GB VRAM'
+          : '~2.5GB download, ~4GB VRAM'
         }}
       </p>
       <button
