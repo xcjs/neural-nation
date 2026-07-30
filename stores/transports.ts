@@ -27,7 +27,10 @@ export const useTransportsStore = defineStore('transports', () => {
   function applyUpdate(patch: { type: string; transport?: TransportSummary }) {
     if (patch.type === 'transport_built' && patch.transport) {
       const t = patch.transport;
-      if (!list.value.find(x => x.id === t.id))
+      const idx = list.value.findIndex(x => x.id === t.id);
+      if (idx >= 0)
+        list.value[idx] = t;
+      else
         list.value.push(t);
     }
     else if (patch.type === 'transport_demolished') {

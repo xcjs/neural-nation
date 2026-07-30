@@ -1,5 +1,40 @@
 [
   {
+    "version": "0.3.0",
+    "date": "2026-07-29",
+    "summary": "Power transmission system: grid connectivity, brownout/blackout throttling, transmission loss.",
+    "changes": {
+      "added": [
+        "PowerTick running between ConstructionTick and ProductionTick: computes connected power grids via BFS over PowerLine transports, derives per-facility powerConnected and powerThrottle, and writes them to the DB each tick.",
+        "Grid topology utilities (computeConnectedComponents, computeGridThrottle, applyTransmissionLoss, solarOutputFactor, footprintAreaDeg2) in a shared server/domains/power/gridTopology.ts module.",
+        "Shared facility type constants (EXTRACTOR_TYPES, POWER_GENERATING_TYPES, BASE_POWER_CONSUMPTION) in server/domains/shared/constants/facilityTypes.ts, replacing duplicated local sets across FacilityService, ProductionTick, and PowerService.",
+        "powerThrottle column on the facilities table (REAL DEFAULT 1.0) so ProductionTick can scale recipe cycles by the grid's throttle factor.",
+        "Per-facility powerConsumption computed at build time as BASE_POWER_CONSUMPTION[type] * footprint area multiplier (shoelace formula, normalized to 0.0001 sq deg = 1x, min 1x).",
+        "Solar output latitude factor (0.5 * max(0.1, cos(lat))) averaging day/night at the equator and scaling toward the poles.",
+        "Distance-based transmission loss (2% per 100km, capped at 50%) applied to generator capacity per connected grid.",
+        "Brownout (demand > 90% capacity, warning only, throttle 1.0) and blackout (demand > capacity, proportional throttle = capacity/demand) grid states.",
+        "6 unit tests for PowerTick covering connectivity, isolated facilities, multiple grids, transitive power, generator self-power, and extractor exemption.",
+        "getTransportById on ITransportRepository/TransportRepository and getTransportSummary on TransportService."
+      ],
+      "changed": [
+        "PowerService now reads PowerLines from the transports table (type='PowerLine') via getAllPowerLineTransports instead of the removed power_lines table, and uses the shared computeConnectedComponents utility.",
+        "ProductionTick now scales recipe cycles by facility.powerThrottle (cycles = rate * throttle) and short-circuits when throttle <= 0; extractors remain exempt from the power gate.",
+        "McpDispatcher now emits the full TransportSummary (with fromLat/fromLon/toLat/toLon) for build_transport and assign_route SSE events instead of spreading raw tool args that lacked coordinates.",
+        "transports store applyUpdate replaces an existing transport on update (assign_route) instead of only pushing new ones.",
+        "FacilityService.getFacilityDetails now returns the actual throughput column instead of targetOutputRate.",
+        "Migration 002 adds the power_throttle column and drops the unused power_lines table (idempotent via addPowerThrottleColumnIfMissing)."
+      ],
+      "fixed": [
+        "Three.js 'Computed radius is NaN' console errors caused by transport_built SSE events spreading raw MCP tool args (missing fromLat/fromLon/toLat/toLon) into the transports store, which then produced NaN BufferGeometry positions in EarthGlobe.vue transport arcs.",
+        "FacilityService.getFacilityDetails returned targetOutputRate as 'throughput' (API display bug) instead of the real per-tick throughput column.",
+        "pointInPolygon vertex false-positive in FacilityService that rejected adjacent 0.01° grid tiles sharing an edge as overlapping, via an added onSegment boundary check.",
+        "PowerService.getPowerGridStatus() runtime crash on every tool execution caused by reading from the empty getAllPowerLines() instead of getAllPowerLineTransports().",
+        "simulation-chain test raw SQL powerConnected=1 workaround replaced with building a real SolarFarm + PowerLine + set_production_target flow.",
+        "Pre-existing lint errors in ChatPanel.vue and pages/index.vue."
+      ]
+    }
+  },
+  {
     "version": "0.2.4",
     "date": "2026-07-28",
     "summary": "In-browser WebGPU LLM tool-calling fixes and experimental warning.",

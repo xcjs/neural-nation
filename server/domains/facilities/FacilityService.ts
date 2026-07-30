@@ -6,23 +6,8 @@ import type { FacilityBufferEntry } from './Models/FacilityBuffer';
 import type { FacilityRow, IFacilityRepository, SearchFacilitiesParams } from './Repositories/IFacilityRepository';
 import { FacilityStatus } from '../../../lib/types/facility';
 import { greatCircleDistance } from '../../shared/geo/distance';
-
-const POWER_GENERATING_TYPES = new Set([
-  'PowerPlant',
-  'SolarFarm',
-  'WindFarm',
-  'HydroPlant',
-  'NuclearReactor',
-  'BreederReactor',
-  'FusionReactor',
-  'BiomassPlant',
-  'BiogasPlant',
-  'DieselGenerator',
-  'CoalPlant',
-  'GasPlant',
-  'OilPlant',
-  'GeothermalPlant',
-]);
+import { footprintAreaDeg2 } from '../power/gridTopology';
+import { BASE_POWER_CONSUMPTION, POWER_GENERATING_TYPES } from '../shared/constants/facilityTypes';
 
 const FACILITY_TECH_REQUIREMENTS: Record<string, string> = {
   AdvancedFactory: 'precision_manufacturing',
@@ -127,6 +112,14 @@ function cross(a: GeoPoint, b: GeoPoint, c: GeoPoint): number {
 }
 
 function pointInPolygon(point: GeoPoint, polygon: GeoPoint[]): boolean {
+  // Boundary points are not interior — adjacent tiles sharing an edge must
+  // not be treated as overlapping. Check edge coincidence first.
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const pi = polygon[i]!;
+    const pj = polygon[j]!;
+    if (onSegment(pi, pj, point))
+      return false;
+  }
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
     const pi = polygon[i]!;
@@ -137,6 +130,15 @@ function pointInPolygon(point: GeoPoint, polygon: GeoPoint[]): boolean {
     }
   }
   return inside;
+}
+
+function onSegment(a: GeoPoint, b: GeoPoint, p: GeoPoint): boolean {
+  const crossVal = (b.lon - a.lon) * (p.lat - a.lat) - (b.lat - a.lat) * (p.lon - a.lon);
+  if (Math.abs(crossVal) > 1e-12)
+    return false;
+  const withinLat = p.lat >= Math.min(a.lat, b.lat) - 1e-12 && p.lat <= Math.max(a.lat, b.lat) + 1e-12;
+  const withinLon = p.lon >= Math.min(a.lon, b.lon) - 1e-12 && p.lon <= Math.max(a.lon, b.lon) + 1e-12;
+  return withinLat && withinLon;
 }
 
 function polygonsIntersect(a: GeoPoint[], b: GeoPoint[]): boolean {
@@ -257,6 +259,11 @@ export class FacilityService {
 
     const footprint = JSON.stringify(params.footprint);
 
+    const basePower = BASE_POWER_CONSUMPTION[facilityType] ?? 0;
+    const areaDeg2 = footprintAreaDeg2(params.footprint);
+    const multiplier = Math.max(1.0, areaDeg2 / 0.0001);
+    const powerConsumption = isPowerGenerating ? 0 : basePower * multiplier;
+
     const facility = this.facilityRepo.insertFacility({
       type: facilityType,
       name: params.name,
@@ -266,6 +273,7 @@ export class FacilityService {
       status: FacilityStatus.UnderConstruction,
       techRequired: requiredTech ?? null,
       powerConnected: isPowerGenerating ? 1 : 0,
+      powerConsumption,
       createdAtTick: tick,
     });
 
@@ -359,7 +367,7 @@ export class FacilityService {
       elevation: facility.elevation,
       terrainClass: facility.terrainClass,
       constructionProgress: facility.constructionProgress,
-      throughput: facility.targetOutputRate,
+      throughput: facility.throughput,
       footprint: facility.footprint ? safeParseFootprint(facility.footprint) : null,
     };
   }

@@ -11,6 +11,7 @@ import { EnvironmentTick } from '../humanity/Ticks/EnvironmentTick';
 import { ForestGridTick } from '../humanity/Ticks/ForestGridTick';
 import { PollutionGridTick } from '../humanity/Ticks/PollutionGridTick';
 import { PopulationTick } from '../humanity/Ticks/PopulationTick';
+import { PowerTick } from '../power/Ticks/PowerTick';
 import { RegenTick } from '../resources/Ticks/RegenTick';
 import { ResearchTick } from '../tech/Ticks/ResearchTick';
 import { TransportFlowTick } from '../transport/Ticks/TransportFlowTick';
@@ -55,6 +56,7 @@ export class TickProcessor {
       new ForestGridTick(tx).process(newTick);
       new PollutionGridTick(tx).process(newTick);
       new ConstructionTick(tx).process(newTick);
+      new PowerTick(tx).process(newTick);
       new ProductionTick(tx).process(newTick);
       new TransportFlowTick(tx).process(newTick);
       new ResearchTick(tx).process(newTick);

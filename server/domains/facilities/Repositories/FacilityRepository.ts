@@ -61,7 +61,7 @@ export class FacilityRepository implements IFacilityRepository {
       techRequired: params.techRequired,
       activeRecipeId: null,
       targetOutputRate: 0,
-      powerConsumption: 0,
+      powerConsumption: params.powerConsumption,
       powerConnected: params.powerConnected,
       throughput: 0,
       constructionProgress: 0,

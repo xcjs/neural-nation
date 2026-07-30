@@ -77,6 +77,11 @@ export class TransportService {
     return { success: true };
   }
 
+  getTransportSummary(id: number): TransportSummary | undefined {
+    const t = this.transportRepo.getTransportById(id);
+    return t ? this.mapToSummary(t) : undefined;
+  }
+
   getSupplyChainStatus() {
     const facilities = this.transportRepo.getAllFacilities();
     const transports = this.transportRepo.getAllTransports();

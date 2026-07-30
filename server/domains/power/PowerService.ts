@@ -2,22 +2,17 @@ import type { PowerGridSummary, PowerLineSummary } from './Models/PowerModels';
 import type { IPowerRepository } from './Repositories/IPowerRepository';
 import { GridStatus } from '../../../lib/types/power';
 import { greatCircleDistance, transmissionLossPercent } from '../../shared/geo/distance';
+import { POWER_GENERATING_TYPES } from '../shared/constants/facilityTypes';
+import { computeConnectedComponents } from './gridTopology';
 
 export class PowerService {
   constructor(private readonly powerRepo: IPowerRepository) {}
 
   getPowerGridStatus(): PowerGridSummary {
     const facilities = this.powerRepo.getAllFacilities();
-    const powerLines = this.powerRepo.getAllPowerLines();
+    const powerLineTransports = this.powerRepo.getAllPowerLineTransports();
 
-    const generators = facilities.filter(f =>
-      f.type.includes('plant')
-      || f.type.includes('reactor')
-      || f.type.includes('generator')
-      || f.type.includes('farm')
-      || f.type === 'solar_farm'
-      || f.type === 'wind_farm',
-    );
+    const generators = facilities.filter(f => POWER_GENERATING_TYPES.has(f.type));
     const consumers = facilities.filter(f => f.powerConsumption > 0);
 
     const totalCapacity = generators.reduce((sum, g) => sum + (g.targetOutputRate || 0), 0);
@@ -29,12 +24,12 @@ export class PowerService {
     if (totalDemand > totalCapacity)
       status = GridStatus.Blackout;
 
-    const lines: PowerLineSummary[] = powerLines.map((line) => {
+    const lines: PowerLineSummary[] = powerLineTransports.map((line) => {
       const from = facilities.find(f => f.id === line.fromFacilityId);
       const to = facilities.find(f => f.id === line.toFacilityId);
 
-      let loss = line.transmissionLoss;
-      if (from && to && loss === 0) {
+      let loss = 0;
+      if (from && to) {
         const dist = greatCircleDistance(from.lat, from.lon, to.lat, to.lon);
         loss = transmissionLossPercent(dist);
       }
@@ -44,12 +39,15 @@ export class PowerService {
         fromFacilityId: line.fromFacilityId,
         toFacilityId: line.toFacilityId,
         capacity: line.capacity,
-        load: line.load,
+        load: 0,
         transmissionLoss: loss,
       };
     });
 
-    const connectedComponents = this.computeConnectedComponents(facilities.map(f => f.id), powerLines);
+    const connectedComponents = computeConnectedComponents(
+      facilities.map(f => f.id),
+      powerLineTransports.map(t => ({ fromFacilityId: t.fromFacilityId, toFacilityId: t.toFacilityId })),
+    );
 
     return {
       totalCapacity,
@@ -58,43 +56,5 @@ export class PowerService {
       lines,
       connectedGrids: connectedComponents,
     };
-  }
-
-  private computeConnectedComponents(
-    facilityIds: number[],
-    powerLines: Array<{ fromFacilityId: number; toFacilityId: number }>,
-  ): number[][] {
-    const adj = new Map<number, Set<number>>();
-    for (const id of facilityIds) {
-      adj.set(id, new Set());
-    }
-    for (const line of powerLines) {
-      adj.get(line.fromFacilityId)?.add(line.toFacilityId);
-      adj.get(line.toFacilityId)?.add(line.fromFacilityId);
-    }
-
-    const visited = new Set<number>();
-    const components: number[][] = [];
-
-    for (const id of facilityIds) {
-      if (visited.has(id))
-        continue;
-      const component: number[] = [];
-      const queue = [id];
-      while (queue.length > 0) {
-        const current = queue.shift()!;
-        if (visited.has(current))
-          continue;
-        visited.add(current);
-        component.push(current);
-        for (const neighbor of adj.get(current) || new Set()) {
-          if (!visited.has(neighbor))
-            queue.push(neighbor);
-        }
-      }
-      components.push(component);
-    }
-
-    return components;
   }
 }

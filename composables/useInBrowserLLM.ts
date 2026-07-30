@@ -4,7 +4,7 @@ import { onUnmounted, ref, toRaw } from 'vue';
 import { useMcpClient } from '~/composables/useMcpClient';
 import { useChatStore } from '~/stores/chat';
 
-interface WorkerInitMessage { type: 'init'; model: 'Q25B' | 'E2B' | 'E4B' | 'Q3B' }
+interface WorkerInitMessage { type: 'init'; model: 'E2B' | 'E4B' }
 interface ToolCallEntry {
   id: string;
   type: 'function';
@@ -17,7 +17,7 @@ interface ChatHistoryMessage {
   tool_call_id?: string;
 }
 // OpenAI function-tool shape: { function: { name, description, parameters } }.
-// Gemma/Qwen chat templates access tool_data['function']['name'] and
+// Gemma chat templates access tool_data['function']['name'] and
 // ['function']['parameters'], so the flat { name, description, inputSchema }
 // shape from MCP produces empty declarations and the model hallucinates names.
 interface OpenAiToolDef {
@@ -324,7 +324,7 @@ export function useInBrowserLLM(token: string) {
       conversationHistory.value.push({
         role: 'assistant',
         content: assistantText,
-        // OpenAI tool_calls shape — required by the Qwen2.5/Gemma chat templates
+        // OpenAI tool_calls shape — required by the Gemma chat templates
         // which access tool_call['function']['name']. The flat { name, arguments }
         // form makes tool_call.function undefined and trips Jinja2's
         // "Cannot perform operation + on undefined values" error.

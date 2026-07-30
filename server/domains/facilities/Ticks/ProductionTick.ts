@@ -2,24 +2,8 @@ import type { GameDb } from '../../../db/client';
 import type { ITick } from '../../tick/ITick';
 import { and, eq, sql } from 'drizzle-orm';
 import { schema } from '../../../db/schema';
+import { EXTRACTOR_TYPES, POWER_GENERATING_TYPES } from '../../shared/constants/facilityTypes';
 
-const EXTRACTOR_TYPES = new Set(['Extractor', 'Farm', 'Forestry', 'WaterPump', 'Excavator', 'Dredger']);
-const POWER_GENERATING_TYPES = new Set([
-  'PowerPlant',
-  'SolarFarm',
-  'WindFarm',
-  'HydroPlant',
-  'NuclearReactor',
-  'BreederReactor',
-  'FusionReactor',
-  'BiomassPlant',
-  'BiogasPlant',
-  'DieselGenerator',
-  'CoalPlant',
-  'GasPlant',
-  'OilPlant',
-  'GeothermalPlant',
-]);
 const DEFAULT_BUFFER_CAPACITY = 100;
 const STORAGE_BUFFER_CAPACITY = 1000;
 const EXTRACTOR_RANGE_DEG = 2;
@@ -48,7 +32,15 @@ export class ProductionTick implements ITick {
         this.processExtractorProduction(facility);
       }
       else if (facility.activeRecipeId) {
-        this.processRecipeProduction(facility);
+        const throttle = facility.powerThrottle ?? 1.0;
+        if (throttle <= 0) {
+          this.db.update(schema.facilities)
+            .set({ throughput: 0 })
+            .where(eq(schema.facilities.id, facility.id))
+            .run();
+          continue;
+        }
+        this.processRecipeProduction(facility, throttle);
       }
       else {
         this.db.update(schema.facilities)
@@ -115,7 +107,10 @@ export class ProductionTick implements ITick {
       .run();
   }
 
-  private processRecipeProduction(facility: typeof schema.facilities.$inferSelect): void {
+  private processRecipeProduction(
+    facility: typeof schema.facilities.$inferSelect,
+    throttle: number = 1.0,
+  ): void {
     const recipeId = facility.activeRecipeId!;
 
     const inputs = this.db.select().from(schema.recipeInputs).where(eq(schema.recipeInputs.recipeId, recipeId)).all();
@@ -125,7 +120,7 @@ export class ProductionTick implements ITick {
       return;
 
     const rate = facility.targetOutputRate || 1;
-    const cycles = rate;
+    const cycles = rate * throttle;
 
     let canProduce = true;
     const inputConsumption: Array<{ buffer: typeof schema.facilityBuffers.$inferSelect; amount: number }> = [];
