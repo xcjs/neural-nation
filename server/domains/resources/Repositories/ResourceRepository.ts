@@ -1,7 +1,9 @@
 import type { PaginatedResult } from '../../../../lib/types/mcp';
 import type { GameDb } from '../../../db/client';
 import type { IResourceRepository } from './IResourceRepository';
-import { and, eq, like, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
+import { ELEMENT_BY_SYMBOL } from '../../../../lib/constants/elements';
+import { NON_ELEMENT_NAMES } from '../../../../lib/constants/resource-names';
 import { schema } from '../../../db/schema';
 
 type DepositRow = typeof schema.resources.$inferSelect;
@@ -103,39 +105,53 @@ export class ResourceRepository implements IResourceRepository {
     const limit = Math.min(params.limit || 50, 200);
     const offset = Math.max(params.offset || 0, 0);
 
-    let queryBuilder = this.db.select({
+    const depositItems = this.db.select({
       resourceKey: schema.resources.resourceKey,
       name: schema.resources.name,
       category: schema.resources.category,
-    }).from(schema.resources).groupBy(schema.resources.resourceKey).$dynamic();
+    }).from(schema.resources).groupBy(schema.resources.resourceKey).all();
 
-    const conditions = [];
+    const recipeOutputKeys = this.db.select({
+      resourceKey: schema.recipeOutputs.resourceKey,
+    }).from(schema.recipeOutputs).groupBy(schema.recipeOutputs.resourceKey).all();
+
+    const stockpileKeys = this.db.select({
+      resourceKey: schema.stockpiles.resourceKey,
+    }).from(schema.stockpiles).groupBy(schema.stockpiles.resourceKey).all();
+
+    const extraKeys = new Set<string>();
+    for (const r of recipeOutputKeys)
+      extraKeys.add(r.resourceKey);
+    for (const s of stockpileKeys)
+      extraKeys.add(s.resourceKey);
+    for (const d of depositItems)
+      extraKeys.delete(d.resourceKey);
+
+    const extraItems: Array<{ resourceKey: string; name: string; category: string }> = [];
+    for (const key of extraKeys) {
+      extraItems.push({
+        resourceKey: key,
+        name: this.getResourceDisplayName(key),
+        category: this.categorizeResourceKey(key),
+      });
+    }
+
+    let allItems = [...depositItems, ...extraItems];
 
     if (params.query) {
-      conditions.push(like(schema.resources.name, `%${params.query}%`));
+      const q = params.query.toLowerCase();
+      allItems = allItems.filter(item => item.name.toLowerCase().includes(q) || item.resourceKey.toLowerCase().includes(q));
     }
-
     if (params.category) {
-      conditions.push(eq(schema.resources.category, params.category));
+      allItems = allItems.filter(item => item.category === params.category);
     }
-
     if (params.resourceKeys && params.resourceKeys.length > 0) {
-      conditions.push(sql`${schema.resources.resourceKey} IN (${sql.join(params.resourceKeys.map(k => sql`${k}`), sql`,`)})`);
+      const keySet = new Set(params.resourceKeys);
+      allItems = allItems.filter(item => keySet.has(item.resourceKey));
     }
 
-    if (conditions.length > 0) {
-      queryBuilder = queryBuilder.where(and(...conditions));
-    }
-
-    const items = queryBuilder.limit(limit).offset(offset).all();
-
-    const countQuery = this.db.select({ count: sql<number>`count(distinct ${schema.resources.resourceKey})` })
-      .from(schema.resources)
-      .$dynamic();
-    if (conditions.length > 0) {
-      countQuery.where(and(...conditions));
-    }
-    const totalCount = countQuery.get()?.count || 0;
+    const totalCount = allItems.length;
+    const items = allItems.slice(offset, offset + limit);
 
     return {
       items,
@@ -144,5 +160,24 @@ export class ResourceRepository implements IResourceRepository {
       offset,
       hasMore: offset + items.length < totalCount,
     };
+  }
+
+  private getResourceDisplayName(resourceKey: string): string {
+    const element = ELEMENT_BY_SYMBOL.get(resourceKey);
+    if (element)
+      return `${element.symbol} (${element.name})`;
+    return NON_ELEMENT_NAMES[resourceKey] ?? resourceKey;
+  }
+
+  private categorizeResourceKey(resourceKey: string): string {
+    const renewableKeys = ['wood', 'water', 'arableland', 'biomass', 'population', 'solar', 'wind', 'hydro'];
+    const nonRenewableKeys = ['coal', 'naturalgas', 'oil', 'peat', 'geothermal', 'stone', 'sand', 'gravel', 'clay', 'limestone', 'gypsum', 'salt', 'mica', 'asbestos', 'talc', 'graphite', 'diamond', 'gemstone', 'ree'];
+    if (renewableKeys.includes(resourceKey))
+      return 'Renewable';
+    if (nonRenewableKeys.includes(resourceKey))
+      return 'NonRenewable';
+    if (ELEMENT_BY_SYMBOL.has(resourceKey))
+      return 'Element';
+    return 'Manufactured';
   }
 }

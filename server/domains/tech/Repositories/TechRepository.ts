@@ -68,6 +68,30 @@ export class TechRepository implements ITechRepository {
     return this.db.select().from(schema.gameResearch).where(eq(schema.gameResearch.techId, techId)).get();
   }
 
+  getInProgressResearchByLabId(labFacilityId: number): Array<typeof schema.gameResearch.$inferSelect> {
+    return this.db.select().from(schema.gameResearch).where(
+      and(
+        eq(schema.gameResearch.labFacilityId, labFacilityId),
+        eq(schema.gameResearch.status, 'InProgress'),
+      ),
+    ).all();
+  }
+
+  getTechCostsByTechId(techId: string): Array<typeof schema.techCosts.$inferSelect> {
+    return this.db.select().from(schema.techCosts).where(eq(schema.techCosts.techId, techId)).all();
+  }
+
+  getStockpile(resourceKey: string): typeof schema.stockpiles.$inferSelect | undefined {
+    return this.db.select().from(schema.stockpiles).where(eq(schema.stockpiles.resourceKey, resourceKey)).get();
+  }
+
+  decrementStockpile(stockpileId: number, quantity: number): void {
+    this.db.update(schema.stockpiles)
+      .set({ quantity })
+      .where(eq(schema.stockpiles.id, stockpileId))
+      .run();
+  }
+
   getPrerequisitesForTech(techId: string): Array<typeof schema.techPrerequisites.$inferSelect> {
     return this.db.select().from(schema.techPrerequisites).where(eq(schema.techPrerequisites.techId, techId)).all();
   }

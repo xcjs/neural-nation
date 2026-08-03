@@ -73,6 +73,28 @@ export class TransportService {
   }
 
   assignRoute(transportId: number, resourceKey: string, flowRate: number): { success: boolean } {
+    const transport = this.transportRepo.getTransportById(transportId);
+    if (!transport) {
+      throw new Error(`Transport not found: ${transportId}`);
+    }
+
+    if (flowRate <= 0) {
+      throw new Error(`flowRate must be positive, got ${flowRate}`);
+    }
+    if (flowRate > transport.capacity) {
+      throw new Error(`flowRate ${flowRate} exceeds transport capacity ${transport.capacity}`);
+    }
+
+    if (transport.type === 'PowerLine' && resourceKey !== 'energy') {
+      throw new Error(`PowerLine can only transport energy, got ${resourceKey}`);
+    }
+
+    const sourceBuffers = this.transportRepo.getFacilityBuffers(transport.fromFacilityId);
+    const hasOutputBuffer = sourceBuffers.some(b => b.resourceKey === resourceKey && b.direction === 'output');
+    if (!hasOutputBuffer) {
+      throw new Error(`Source facility ${transport.fromFacilityId} has no output buffer for ${resourceKey}`);
+    }
+
     this.transportRepo.updateTransportRoute(transportId, resourceKey, flowRate);
     return { success: true };
   }

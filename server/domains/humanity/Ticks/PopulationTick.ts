@@ -2,6 +2,7 @@ import type { GameDb } from '../../../db/client';
 import type { ITick } from '../../tick/ITick';
 import { eq } from 'drizzle-orm';
 import { schema } from '../../../db/schema';
+import { logGameEvent } from '../../events/logGameEvent';
 
 export class PopulationTick implements ITick {
   constructor(private readonly db: GameDb) {}
@@ -19,12 +20,14 @@ export class PopulationTick implements ITick {
     const foodAvailable = foodStockpile.reduce((sum, s) => sum + s.quantity, 0);
     if (foodAvailable <= 0) {
       effectiveGrowthRate = -Math.abs(human.growthRate);
+      logGameEvent(this.db, _tick, 'famine', `Famine: food stockpile depleted, population declining`, 'critical');
     }
 
     const energyStockpile = this.db.select().from(schema.stockpiles).where(eq(schema.stockpiles.resourceKey, 'energy')).all();
     const energyAvailable = energyStockpile.reduce((sum, s) => sum + s.quantity, 0);
     if (energyAvailable <= 0) {
       effectiveGrowthRate = Math.min(effectiveGrowthRate, 0);
+      logGameEvent(this.db, _tick, 'energy_shortage', `Energy shortage: energy stockpile depleted, population stagnating`, 'warning');
     }
 
     if (env) {
@@ -34,11 +37,19 @@ export class PopulationTick implements ITick {
         effectiveGrowthRate *= 0.8;
 
       const habitatHealth = (env.forestCoverage + env.biodiversity) * 0.5;
-      if (habitatHealth < 30)
+      if (habitatHealth < 10) {
+        effectiveGrowthRate = -Math.abs(human.growthRate) * (1 - habitatHealth / 30);
+      }
+      else if (habitatHealth < 30) {
         effectiveGrowthRate *= 0.7;
+      }
 
-      if (env.waterQuality < 30)
+      if (env.waterQuality < 10) {
+        effectiveGrowthRate = -Math.abs(human.growthRate) * (1 - env.waterQuality / 30);
+      }
+      else if (env.waterQuality < 30) {
         effectiveGrowthRate *= 0.6;
+      }
 
       if (env.pollutionLevel > 80 && human.population < 100) {
         effectiveGrowthRate = -Math.abs(human.growthRate) * 2;

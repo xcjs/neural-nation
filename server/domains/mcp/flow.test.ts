@@ -1,6 +1,7 @@
 import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { createGame, createScopedContainer, executeTool, findRegistryEntry, getGameState } from '../../../test/helpers';
 import { createGameDb, getDataDir } from '../../db/client';
 import { schema } from '../../db/schema';
@@ -163,10 +164,10 @@ describe('mCP end-to-end flow', () => {
   it('logs actions and events to the database on every tool call', () => {
     const db = createGameDb(token);
     const actions = db.select().from(schema.actions).all();
-    const events = db.select().from(schema.events).all();
+    const mcpCallEvents = db.select().from(schema.events).where(eq(schema.events.type, 'mcp_call')).all();
     expect(actions.length).toBeGreaterThan(0);
-    expect(events.length).toBeGreaterThan(0);
-    expect(events.length).toBe(actions.length);
+    expect(mcpCallEvents.length).toBeGreaterThan(0);
+    expect(mcpCallEvents.length).toBe(actions.length);
   });
 
   it('returns an error for an unknown tool', () => {

@@ -65,8 +65,8 @@ export class FacilityRepository implements IFacilityRepository {
       powerConnected: params.powerConnected,
       throughput: 0,
       constructionProgress: 0,
-      elevation: 0,
-      terrainClass: 'Plain',
+      elevation: params.elevation,
+      terrainClass: params.terrainClass,
       footprint: params.footprint,
       createdAtTick: params.createdAtTick,
     }).returning().get() as FacilityRow;

@@ -135,6 +135,26 @@ export class TechService {
       throw new Error(`Research lab ${labFacilityId} is ${lab.status}, must be Active`);
     }
 
+    const labBusy = this.techRepo.getInProgressResearchByLabId(labFacilityId);
+    if (labBusy.length > 0) {
+      throw new Error(`Research lab ${labFacilityId} is already running ${labBusy.length} research project(s): ${labBusy.map(r => r.techId).join(', ')}`);
+    }
+
+    const costs = this.techRepo.getTechCostsByTechId(techNodeId);
+    for (const cost of costs) {
+      const stockpile = this.techRepo.getStockpile(cost.resourceKey);
+      if (!stockpile || stockpile.quantity < cost.quantity) {
+        const have = stockpile?.quantity ?? 0;
+        throw new Error(`Insufficient resources to research ${techNodeId}: need ${cost.quantity}${cost.unit} ${cost.resourceKey}, have ${have}${cost.unit}`);
+      }
+    }
+    for (const cost of costs) {
+      const stockpile = this.techRepo.getStockpile(cost.resourceKey);
+      if (stockpile) {
+        this.techRepo.decrementStockpile(stockpile.id, stockpile.quantity - cost.quantity);
+      }
+    }
+
     const research = this.techRepo.insertGameResearch(techNodeId, labFacilityId, tick);
     return { success: true, researchId: research.id };
   }

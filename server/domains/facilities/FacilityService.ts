@@ -240,6 +240,8 @@ export class FacilityService {
     }
 
     // Cannot build on ocean — must terraform to land first
+    let facilityElevation = 0;
+    let facilityTerrainClass = 'Plain';
     if (this.terrainRepo) {
       const cell = this.terrainRepo.getTerrainCellNear(params.lat, params.lon);
       if (cell) {
@@ -252,6 +254,8 @@ export class FacilityService {
             + `Use terraform with action 'ocean_to_land' or 'raise_land' to create land first.`,
           );
         }
+        facilityElevation = effElev;
+        facilityTerrainClass = this.classifyByElevation(effElev);
       }
     }
 
@@ -274,6 +278,8 @@ export class FacilityService {
       techRequired: requiredTech ?? null,
       powerConnected: isPowerGenerating ? 1 : 0,
       powerConsumption,
+      elevation: facilityElevation,
+      terrainClass: facilityTerrainClass,
       createdAtTick: tick,
     });
 
@@ -423,5 +429,19 @@ export class FacilityService {
       offset,
       hasMore: offset + filteredItems.length < totalCount,
     };
+  }
+
+  private classifyByElevation(elevation: number): string {
+    if (elevation < 0)
+      return 'Ocean';
+    if (elevation < 200)
+      return 'Coastal';
+    if (elevation < 800)
+      return 'Plain';
+    if (elevation < 1500)
+      return 'Hill';
+    if (elevation < 3000)
+      return 'Mountain';
+    return 'HighMountain';
   }
 }

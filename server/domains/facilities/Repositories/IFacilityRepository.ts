@@ -60,6 +60,8 @@ export interface BuildFacilityParams {
   techRequired: string | null;
   powerConnected: number;
   powerConsumption: number;
+  elevation: number;
+  terrainClass: string;
   createdAtTick: number;
 }
 
