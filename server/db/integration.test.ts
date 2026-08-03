@@ -176,6 +176,18 @@ describe('template DB seed data', () => {
     expect(count.n).toBeGreaterThan(100000);
   });
 
+  it('seeds carbon (c) byproduct deposits from coal', () => {
+    const rows = db.prepare('SELECT COUNT(*) as n, COALESCE(SUM(remaining),0) as total FROM resources WHERE resource_key = ?').get('c') as { n: number; total: number };
+    expect(rows.n).toBeGreaterThan(0);
+    expect(rows.total).toBeGreaterThan(0);
+  });
+
+  it('seeds silicon (si) deposits from Quartz/Silica mapping', () => {
+    const rows = db.prepare('SELECT COUNT(*) as n, COALESCE(SUM(remaining),0) as total FROM resources WHERE resource_key = ?').get('si') as { n: number; total: number };
+    expect(rows.n).toBeGreaterThan(0);
+    expect(rows.total).toBeGreaterThan(0);
+  });
+
   it('seeds at least iron recipe I/O pairs', () => {
     const ironInputs = db.prepare(`SELECT * FROM recipe_inputs WHERE recipe_id = 'iron_smelting'`).all();
     const ironOutputs = db.prepare(`SELECT * FROM recipe_outputs WHERE recipe_id = 'iron_smelting'`).all();

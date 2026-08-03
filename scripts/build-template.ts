@@ -54,7 +54,8 @@ async function main() {
       discovered INTEGER DEFAULT 0,
       surface INTEGER DEFAULT 0,
       depth REAL,
-      unit TEXT DEFAULT 't'
+      unit TEXT DEFAULT 't',
+      mcsAdjusted INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS stockpiles (
@@ -533,20 +534,12 @@ async function main() {
   insertInput.run('fusion_generation', 'fusioncore', 0.01, 't', 0);
   insertOutput.run('fusion_generation', 'energy', 200, 'MW');
 
-  // Seed renewable resources (not from MRDS — these are global availability)
-  const insertRenewable = db.prepare(`INSERT OR IGNORE INTO resources (resource_key, name, category, lat, lon, quantity, remaining, grade, discovered, surface, depth, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-  const renewables: Array<[string, string, number, string]> = [
-    ['wood', 'Wood', 1e9, 't'],
-    ['water', 'Water', 1e10, 't'],
-    ['arableland', 'Arable Land', 5e8, 't'],
-    ['biomass', 'Biomass', 1e8, 't'],
-    ['solar', 'Solar Energy', 1e9, 'MW'],
-    ['wind', 'Wind Energy', 1e8, 'MW'],
-    ['hydro', 'Hydro Power', 5e7, 'MW'],
-  ];
-  for (const [key, name, qty, unit] of renewables) {
-    insertRenewable.run(key, name, 'Renewable', null, null, qty, qty, 1.0, 0, 1, null, unit);
-  }
+  // Seed renewable resources with real lat/lon (climate-distributed).
+  // Idempotent — no-ops if geolocated renewables already seeded.
+  console.log('Seeding renewable deposits...');
+  const { seedRenewableDeposits } = await import('./lib/renewables-seed');
+  const renewableResult = seedRenewableDeposits(db, join(root, 'data', 'geological'));
+  console.log(`Renewables: ${renewableResult.insertedRows} deposits inserted`);
 
   // Seed terrain grid (deterministic value-noise, 1° resolution).
   // Idempotent — no-ops if terrain table already populated.
@@ -565,6 +558,14 @@ async function main() {
   if (mrdsResult.unmappedCommodities.size > 0) {
     console.log(`MRDS unmapped commodities: ${[...mrdsResult.unmappedCommodities].sort().join(', ')}`);
   }
+
+  // Scale deposit tonnage to match real-world USGS MCS global production figures.
+  // Idempotent — no-ops if MCS already applied.
+  console.log('Scaling deposits to USGS MCS global production...');
+  const { seedMcsProduction } = await import('./lib/mcs-seed');
+  const mcsCsvPath = join(root, 'data', 'geological', 'raw', 'mcs.csv');
+  const mcsResult = seedMcsProduction(db, mcsCsvPath);
+  console.log(`MCS: ${mcsResult.commoditiesAdjusted} commodities, ${mcsResult.totalDepositsAdjusted} deposits adjusted`);
 
   // Seed forest grid from Köppen-Geiger climate data.
   // Idempotent — no-ops if forest_grid already populated.

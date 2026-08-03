@@ -14,6 +14,7 @@ import type Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
 import { ELEMENTS } from '../../lib/constants/elements';
 import { parseCsvString } from './csv-parser';
+import { resolveProfile, sampleProfile } from './deposit-profiles';
 import { readZipEntryAsString } from './zip';
 
 /** Path to the downloaded MRDS zip (relative to repo root). */
@@ -210,8 +211,8 @@ export function seedMrdsDeposits(
     unmappedCommodities: new Set(),
   };
 
-  // Idempotency: check if real deposits already seeded
-  const existing = db.prepare(`SELECT COUNT(*) AS n FROM resources WHERE lat IS NOT NULL AND lon IS NOT NULL AND remaining > 0`).get() as { n: number };
+  // Idempotency: check if real MRDS deposits already seeded (exclude renewables)
+  const existing = db.prepare(`SELECT COUNT(*) AS n FROM resources WHERE lat IS NOT NULL AND lon IS NOT NULL AND remaining > 0 AND category != 'Renewable'`).get() as { n: number };
   if (existing.n > 0) {
     console.log(`MRDS deposits already seeded (${existing.n} rows), skipping.`);
     return result;
@@ -300,10 +301,21 @@ export function seedMrdsDeposits(
       name = el?.name ?? resourceKey;
     }
 
-    // Scale size & grade from abundance
-    const abundance = isElement ? (ABUNDANCE_BY_KEY[resourceKey] ?? 1) : 1000;
-    const quantity = scaleDepositSize(abundance);
-    const grade = heuristicGrade(abundance);
+    // Prefer a real-world deposit profile when available; fall back to the
+    // crustal-abundance heuristic for unmapped commodities.
+    const profile = resolveProfile(tokens[0] ?? '');
+    let quantity: number;
+    let grade: number;
+    if (profile) {
+      const sample = sampleProfile(profile, lat, lon);
+      quantity = Math.round(sample.tonnage);
+      grade = sample.grade;
+    }
+    else {
+      const abundance = isElement ? (ABUNDANCE_BY_KEY[resourceKey] ?? 1) : 1000;
+      quantity = scaleDepositSize(abundance);
+      grade = heuristicGrade(abundance);
+    }
 
     // Surface/depth heuristic from work_type/dev_stat
     const workType = (row.work_type ?? '').toLowerCase();
@@ -313,6 +325,14 @@ export function seedMrdsDeposits(
     const depth = surface ? 0 : 50 + depthSeed;
 
     batch.push([resourceKey, name, category, lat, lon, quantity, quantity, grade, surface, depth]);
+
+    // Carbon byproduct: coal is ~60-80% elemental carbon by mass.
+    // Emit a `c` deposit at the same location so the carbon resource is
+    // available for any recipe that needs elemental carbon.
+    if (resourceKey === 'coal') {
+      const carbonQty = Math.round(quantity * 0.7);
+      batch.push(['c', 'Carbon', 'Element', lat, lon, carbonQty, carbonQty, 0.7, surface, depth]);
+    }
 
     if (batch.length >= BATCH_SIZE) {
       insertMany(batch);
