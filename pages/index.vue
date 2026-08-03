@@ -40,7 +40,7 @@ async function createGame() {
     });
     created.value = res;
 
-    sessionStorage.setItem(`nn-private-${res.publicToken}`, res.token);
+    localStorage.setItem(`nn-private-${res.publicToken}`, res.token);
   }
   catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to create game';

@@ -116,22 +116,9 @@ onMounted(async () => {
   }
 
   if (!props.spectator && import.meta.client) {
-    const stored = sessionStorage.getItem(`nn-private-${token}`);
+    const stored = localStorage.getItem(`nn-private-${token}`);
     if (stored) {
       game.privateToken = stored;
-    }
-    else {
-      try {
-        const res = await $fetch<{ privateToken: string; mcpUrl: string }>('/api/game/recover-token', {
-          method: 'POST',
-          body: { publicToken: token },
-        });
-        game.privateToken = res.privateToken;
-        sessionStorage.setItem(`nn-private-${token}`, res.privateToken);
-      }
-      catch {
-        // new tab with stale/unknown token — MCP URL stays blank, spectator link still works
-      }
     }
   }
 

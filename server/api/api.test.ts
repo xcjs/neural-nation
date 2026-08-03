@@ -5,18 +5,12 @@ import { createGame, executeTool, getDataDir, removeFromRegistry } from '../../t
 import gameStateHandler from './game-state.get';
 import actionsHandler from './game/actions.get';
 import createGameHandler from './game/create.post';
-import recoverTokenHandler from './game/recover-token.post';
 import healthHandler from './health.get';
 
-function mockEvent(method: string, query: Record<string, string> = {}, body?: unknown) {
+function mockEvent(method: string, query: Record<string, string> = {}) {
   const params = new URLSearchParams(query).toString();
   const url = `/?${params}`;
-  const headers: Record<string, string> = body !== undefined ? { 'content-type': 'application/json' } : {};
-  const parsedSymbol = Symbol.for('h3ParsedBody');
-  const req: any = { url, method, headers };
-  if (body !== undefined) {
-    req[parsedSymbol] = body;
-  }
+  const req: any = { url, method, headers: {} };
   return {
     method,
     path: url,
@@ -25,7 +19,6 @@ function mockEvent(method: string, query: Record<string, string> = {}, body?: un
       res: { setHeader: () => {}, end: () => {} },
     },
     context: {},
-    body,
   } as never;
 }
 
@@ -135,25 +128,6 @@ describe('aPI route handlers', () => {
       expect(result.limit).toBe(1);
       expect(result.offset).toBe(0);
       expect(result.items.length).toBeLessThanOrEqual(1);
-    });
-  });
-
-  describe('pOST /api/game/recover-token', () => {
-    it('returns privateToken and mcpUrl for a valid publicToken', async () => {
-      const event = mockEvent('POST', {}, { publicToken });
-      const result: any = await recoverTokenHandler(event);
-      expect(result.privateToken).toBe(token);
-      expect(result.mcpUrl).toContain(token);
-    });
-
-    it('throws 404 for unknown publicToken', async () => {
-      const event = mockEvent('POST', {}, { publicToken: 'unknown-token-xyz' });
-      await expect(recoverTokenHandler(event)).rejects.toThrow();
-    });
-
-    it('throws 400 for missing publicToken', async () => {
-      const event = mockEvent('POST', {}, {});
-      await expect(recoverTokenHandler(event)).rejects.toThrow();
     });
   });
 });
