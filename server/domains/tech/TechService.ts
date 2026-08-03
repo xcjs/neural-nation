@@ -74,7 +74,6 @@ export class TechService {
     const offset = params.offset || 0;
 
     const recipeRows = this.techRepo.getRecipesWithFilters(params.facilityType, params.techRequired);
-    const totalCount = this.techRepo.countRecipes();
 
     const allInputs = this.techRepo.getAllRecipeInputs();
     const allOutputs = this.techRepo.getAllRecipeOutputs();
@@ -95,10 +94,10 @@ export class TechService {
 
     return {
       items: recipes,
-      totalCount,
+      totalCount: recipes.length,
       limit,
       offset,
-      hasMore: offset + recipes.length < totalCount,
+      hasMore: offset + recipes.length < recipes.length,
     };
   }
 

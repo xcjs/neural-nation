@@ -22,5 +22,5 @@ export function greatCircleDistance(
 }
 
 export function transmissionLossPercent(distanceKm: number): number {
-  return (distanceKm / 100) * 2;
+  return Math.min(1, (distanceKm / 100) * 2);
 }

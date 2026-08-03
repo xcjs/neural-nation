@@ -290,15 +290,19 @@ export class FacilityService {
 
     for (const cost of costs) {
       const needed = cost.quantity * scale;
+      if (needed <= 0)
+        continue;
       const stockpile = this.facilityRepo.getStockpile(cost.resourceKey);
       if (!stockpile || stockpile.quantity < needed) {
         const have = stockpile?.quantity ?? 0;
-        throw new Error(`Insufficient resources to build ${type}: need ${needed.toFixed(1)}${cost.unit} ${cost.resourceKey} (footprint ${areaKm2.toFixed(2)} km² × ${cost.quantity}${cost.unit}), have ${have}${cost.unit}`);
+        throw new Error(`Insufficient resources to build ${type}: need ${needed.toFixed(4)}${cost.unit} ${cost.resourceKey} (footprint ${areaKm2.toFixed(2)} km² × ${cost.quantity}${cost.unit}), have ${have}${cost.unit}`);
       }
     }
 
     for (const cost of costs) {
       const needed = cost.quantity * scale;
+      if (needed <= 0)
+        continue;
       const stockpile = this.facilityRepo.getStockpile(cost.resourceKey);
       this.facilityRepo.decrementStockpile(stockpile!.id, stockpile!.quantity - needed);
     }

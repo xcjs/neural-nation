@@ -1,11 +1,15 @@
 import type { PaginatedResult, PaginationParams } from '../../../lib/types/mcp';
 import type { TerrainCell, TerrainModification } from '../../../lib/types/terrain';
 import type { schema } from '../../db/schema';
+import type { IFacilityRepository } from '../facilities/Repositories/IFacilityRepository';
 import type { ITerrainRepository } from './Repositories/ITerrainRepository';
 import { TerraformAction } from '../../../lib/types/terrain';
 
 export class TerrainService {
-  constructor(private readonly terrainRepo: ITerrainRepository) {}
+  constructor(
+    private readonly terrainRepo: ITerrainRepository,
+    private readonly facilityRepo: IFacilityRepository,
+  ) {}
 
   getEffectiveTerrain(lat: number, lon: number): {
     lat: number;
@@ -89,6 +93,14 @@ export class TerrainService {
       targetCells: Array<{ latIndex: number; lonIndex: number }>;
     },
   ): { modificationsApplied: number; operationId: string } {
+    const facility = this.facilityRepo.getFacilityById(params.facilityId);
+    if (!facility) {
+      throw new Error(`Facility not found: ${params.facilityId}`);
+    }
+    if (facility.type !== 'TerraformingFacility') {
+      throw new Error(`Facility ${params.facilityId} is a ${facility.type}, not a TerraformingFacility`);
+    }
+
     const tick = this.terrainRepo.getMetaTickCount();
 
     const operationId = `terraform-${tick}-${params.facilityId}`;

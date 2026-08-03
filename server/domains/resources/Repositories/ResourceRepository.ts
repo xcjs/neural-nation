@@ -107,7 +107,7 @@ export class ResourceRepository implements IResourceRepository {
       resourceKey: schema.resources.resourceKey,
       name: schema.resources.name,
       category: schema.resources.category,
-    }).from(schema.resources).$dynamic();
+    }).from(schema.resources).groupBy(schema.resources.resourceKey).$dynamic();
 
     const conditions = [];
 

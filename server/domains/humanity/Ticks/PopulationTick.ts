@@ -15,6 +15,18 @@ export class PopulationTick implements ITick {
 
     let effectiveGrowthRate = human.growthRate;
 
+    const foodStockpile = this.db.select().from(schema.stockpiles).where(eq(schema.stockpiles.resourceKey, 'food')).all();
+    const foodAvailable = foodStockpile.reduce((sum, s) => sum + s.quantity, 0);
+    if (foodAvailable <= 0) {
+      effectiveGrowthRate = -Math.abs(human.growthRate);
+    }
+
+    const energyStockpile = this.db.select().from(schema.stockpiles).where(eq(schema.stockpiles.resourceKey, 'energy')).all();
+    const energyAvailable = energyStockpile.reduce((sum, s) => sum + s.quantity, 0);
+    if (energyAvailable <= 0) {
+      effectiveGrowthRate = Math.min(effectiveGrowthRate, 0);
+    }
+
     if (env) {
       if (env.pollutionLevel > 60)
         effectiveGrowthRate *= 0.5;
