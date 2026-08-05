@@ -322,4 +322,91 @@ describe('simulation: storage-bridge to global stockpile', () => {
     expect(stockpileAfter).toBeDefined();
     expect(stockpileAfter!.quantity).toBeGreaterThan(beforeQty);
   });
+
+  it('routes resources FROM a Storage facility input buffer to a downstream facility', () => {
+    // Use the Storage facility built in the previous test (search for it by type)
+    const storageFacility = db.select().from(schema.facilities).where(eq(schema.facilities.type, 'Storage')).all().pop();
+    expect(storageFacility).toBeDefined();
+    const storageId = storageFacility!.id;
+
+    // Build a downstream facility (another Storage as a sink)
+    const r = executeTool(token, 'build_facility', {
+      type: 'Storage',
+      name: 'Downstream Storage',
+      lat: 37.24,
+      lon: -90.50,
+      footprint: [
+        { lat: 37.24, lon: -90.50 },
+        { lat: 37.25, lon: -90.50 },
+        { lat: 37.25, lon: -90.49 },
+        { lat: 37.24, lon: -90.49 },
+      ],
+    });
+    expect(r.status).toBe('success');
+    const downstreamId = (r.data as { facilityId: number }).facilityId;
+    advanceTicks(3);
+    expect(getFacilityById(downstreamId)?.status).toBe('Active');
+
+    // Build a Conveyor from the upstream Storage to the downstream facility
+    const t = executeTool(token, 'build_transport', {
+      type: 'Conveyor',
+      fromFacilityId: storageId,
+      toFacilityId: downstreamId,
+    });
+    expect(t.status).toBe('success');
+    const transportId = (t.data as { transportId: number }).transportId;
+
+    // Seed the upstream Storage's fe input buffer
+    const existing = db.select().from(schema.facilityBuffers).where(and(
+      eq(schema.facilityBuffers.facilityId, storageId),
+      eq(schema.facilityBuffers.resourceKey, 'fe'),
+      eq(schema.facilityBuffers.direction, 'input'),
+    )).get();
+    if (existing) {
+      db.update(schema.facilityBuffers)
+        .set({ quantity: 20 })
+        .where(eq(schema.facilityBuffers.id, existing.id))
+        .run();
+    }
+    else {
+      db.insert(schema.facilityBuffers).values({
+        facilityId: storageId,
+        resourceKey: 'fe',
+        quantity: 20,
+        capacity: 1000,
+        unit: 't',
+        direction: 'input',
+      }).run();
+    }
+
+    // Assigning a route from a Storage (input-buffer source) should now succeed (was: error 'no output buffer')
+    const assign = executeTool(token, 'assign_route', { transportId, resourceKey: 'fe', flowRate: 10 });
+    expect(assign.status).toBe('success');
+
+    // Re-seed the upstream Storage input buffer after the assign_route tick.
+    const seeded = db.select().from(schema.facilityBuffers).where(and(
+      eq(schema.facilityBuffers.facilityId, storageId),
+      eq(schema.facilityBuffers.resourceKey, 'fe'),
+      eq(schema.facilityBuffers.direction, 'input'),
+    )).get();
+    if (seeded) {
+      db.update(schema.facilityBuffers)
+        .set({ quantity: 20 })
+        .where(eq(schema.facilityBuffers.id, seeded.id))
+        .run();
+    }
+
+    advanceTicks(1);
+
+    // TransportFlowTick runs before StorageBridgeTick. With 20t seeded and transport flowRate=10:
+    // transport pulls 10 (source 20→10), then bridge drains 10 (source 10→0). Source should be 0.
+    // This proves the onward transport pulled from the Storage's input buffer (Bug #6 fix).
+    const sourceInputAfter = db.select().from(schema.facilityBuffers).where(and(
+      eq(schema.facilityBuffers.facilityId, storageId),
+      eq(schema.facilityBuffers.resourceKey, 'fe'),
+      eq(schema.facilityBuffers.direction, 'input'),
+    )).get();
+    expect(sourceInputAfter).toBeDefined();
+    expect(sourceInputAfter!.quantity).toBe(0);
+  });
 });

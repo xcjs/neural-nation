@@ -23,20 +23,34 @@ export class TransportFlowTick implements ITick {
         ),
       ).get();
 
-      if (!sourceBuffer || sourceBuffer.quantity <= 0)
+      // Storage facilities hold collected resources in input buffers; fall back to input if no output buffer or it's empty
+      let source = sourceBuffer;
+      if (!source || source.quantity <= 0) {
+        const inputBuffer = this.db.select().from(schema.facilityBuffers).where(
+          and(
+            eq(schema.facilityBuffers.facilityId, transport.fromFacilityId),
+            eq(schema.facilityBuffers.resourceKey, transport.resourceKey),
+            eq(schema.facilityBuffers.direction, 'input'),
+          ),
+        ).get();
+        if (inputBuffer)
+          source = inputBuffer;
+      }
+
+      if (!source || source.quantity <= 0)
         continue;
 
-      const destBuffer = this.getOrCreateBuffer(transport.toFacilityId, transport.resourceKey, 'input', DEFAULT_BUFFER_CAPACITY, sourceBuffer.unit);
+      const destBuffer = this.getOrCreateBuffer(transport.toFacilityId, transport.resourceKey, 'input', DEFAULT_BUFFER_CAPACITY, source.unit);
 
       const destSpace = destBuffer.capacity - destBuffer.quantity;
-      const flowAmount = Math.min(transport.flowRate, sourceBuffer.quantity, destSpace);
+      const flowAmount = Math.min(transport.flowRate, source.quantity, destSpace);
 
       if (flowAmount <= 0)
         continue;
 
       this.db.update(schema.facilityBuffers)
-        .set({ quantity: sourceBuffer.quantity - flowAmount })
-        .where(eq(schema.facilityBuffers.id, sourceBuffer.id))
+        .set({ quantity: source.quantity - flowAmount })
+        .where(eq(schema.facilityBuffers.id, source.id))
         .run();
 
       this.db.update(schema.facilityBuffers)

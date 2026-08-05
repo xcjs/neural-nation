@@ -90,9 +90,9 @@ export class TransportService {
     }
 
     const sourceBuffers = this.transportRepo.getFacilityBuffers(transport.fromFacilityId);
-    const hasOutputBuffer = sourceBuffers.some(b => b.resourceKey === resourceKey && b.direction === 'output');
-    if (!hasOutputBuffer) {
-      throw new Error(`Source facility ${transport.fromFacilityId} has no output buffer for ${resourceKey}`);
+    const hasSourceBuffer = sourceBuffers.some(b => b.resourceKey === resourceKey);
+    if (!hasSourceBuffer) {
+      throw new Error(`Source facility ${transport.fromFacilityId} has no buffer for ${resourceKey}`);
     }
 
     this.transportRepo.updateTransportRoute(transportId, resourceKey, flowRate);
