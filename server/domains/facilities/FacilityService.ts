@@ -7,7 +7,7 @@ import type { FacilityRow, IFacilityRepository, SearchFacilitiesParams } from '.
 import { FacilityStatus } from '../../../lib/types/facility';
 import { greatCircleDistance } from '../../shared/geo/distance';
 import { footprintAreaDeg2 } from '../power/gridTopology';
-import { BASE_POWER_CONSUMPTION, POWER_GENERATING_TYPES } from '../shared/constants/facilityTypes';
+import { BASE_POWER_CONSUMPTION, EXTRACTOR_TYPES, POWER_GENERATING_TYPES } from '../shared/constants/facilityTypes';
 
 const FACILITY_TECH_REQUIREMENTS: Record<string, string> = {
   AdvancedFactory: 'precision_manufacturing',
@@ -386,6 +386,17 @@ export class FacilityService {
     const facility = this.facilityRepo.getFacilityById(facilityId);
     if (!facility) {
       throw new Error(`Facility not found: ${facilityId}`);
+    }
+
+    // Extractor-type facilities (Extractor, Farm, Forestry, WaterPump, Excavator, Dredger)
+    // don't use recipes — they pull directly from resource deposits. Reject any recipeId
+    // (extractors can't run recipes) but allow setting the target output rate.
+    if (EXTRACTOR_TYPES.has(facility.type)) {
+      if (recipeId) {
+        throw new Error(`Facility ${facilityId} is a ${facility.type} (extractor-type) and does not use recipes; omit recipeId to set the extraction rate`);
+      }
+      this.facilityRepo.updateProductionTarget(facilityId, '', targetRate);
+      return { success: true };
     }
 
     const recipe = this.facilityRepo.getRecipe(recipeId);

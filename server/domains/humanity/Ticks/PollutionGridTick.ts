@@ -104,9 +104,40 @@ export class PollutionGridTick implements ITick {
     ).get() as { avgPollution: number | null };
     const avgPollution = avgRow.avgPollution ?? 0;
     const globalPollution = Math.max(0, Math.min(100, avgPollution));
+
+    const envRow = this.db.select()
+      .from(schema.environment)
+      .where(eq(schema.environment.key, 'global'))
+      .get();
+    const oldPollution = envRow?.pollutionLevel ?? 0;
+
     this.db.update(schema.environment)
       .set({ pollutionLevel: globalPollution })
       .where(eq(schema.environment.key, 'global'))
       .run();
+
+    if (oldPollution < 80 && globalPollution >= 80) {
+      this.logIncident(_tick, 'climate_shift', 'Pollution has reached critical levels — climate shift imminent', 'critical');
+    }
+  }
+
+  private logIncident(tick: number, type: string, message: string, severity: string, facilityId: number | null = null): void {
+    this.db.insert(schema.incidents).values({
+      type,
+      severity,
+      description: message,
+      tickTriggered: tick,
+      tickResolved: null,
+    }).run();
+
+    this.db.insert(schema.events).values({
+      tick,
+      timestamp: new Date().toISOString(),
+      type,
+      message,
+      severity,
+      facilityId,
+      data: null,
+    }).run();
   }
 }

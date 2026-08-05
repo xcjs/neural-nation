@@ -261,3 +261,65 @@ describe('simulation: lose condition', () => {
     expect(state.status).not.toBe('GameOver');
   });
 });
+
+describe('simulation: storage-bridge to global stockpile', () => {
+  it('flows resources from a Storage facility input buffer to the global stockpile', () => {
+    const r = executeTool(token, 'build_facility', {
+      type: 'Storage',
+      name: 'Bridge Storage',
+      lat: 37.22,
+      lon: -90.50,
+      footprint: [
+        { lat: 37.22, lon: -90.50 },
+        { lat: 37.23, lon: -90.50 },
+        { lat: 37.23, lon: -90.49 },
+        { lat: 37.22, lon: -90.49 },
+      ],
+    });
+    expect(r.status).toBe('success');
+    const storageId = (r.data as { facilityId: number }).facilityId;
+
+    advanceTicks(3);
+    expect(getFacilityById(storageId)?.status).toBe('Active');
+
+    const existing = db.select().from(schema.facilityBuffers).where(and(
+      eq(schema.facilityBuffers.facilityId, storageId),
+      eq(schema.facilityBuffers.resourceKey, 'fe'),
+      eq(schema.facilityBuffers.direction, 'input'),
+    )).get();
+
+    if (existing) {
+      db.update(schema.facilityBuffers)
+        .set({ quantity: 25 })
+        .where(eq(schema.facilityBuffers.id, existing.id))
+        .run();
+    }
+    else {
+      db.insert(schema.facilityBuffers).values({
+        facilityId: storageId,
+        resourceKey: 'fe',
+        quantity: 25,
+        capacity: 1000,
+        unit: 't',
+        direction: 'input',
+      }).run();
+    }
+
+    const stockpileBefore = db.select().from(schema.stockpiles).where(eq(schema.stockpiles.resourceKey, 'fe')).get();
+    const beforeQty = stockpileBefore?.quantity ?? 0;
+
+    advanceTicks(3);
+
+    const inputBuffer = db.select().from(schema.facilityBuffers).where(and(
+      eq(schema.facilityBuffers.facilityId, storageId),
+      eq(schema.facilityBuffers.resourceKey, 'fe'),
+      eq(schema.facilityBuffers.direction, 'input'),
+    )).get();
+    expect(inputBuffer).toBeDefined();
+    expect(inputBuffer!.quantity).toBeLessThan(25);
+
+    const stockpileAfter = db.select().from(schema.stockpiles).where(eq(schema.stockpiles.resourceKey, 'fe')).get();
+    expect(stockpileAfter).toBeDefined();
+    expect(stockpileAfter!.quantity).toBeGreaterThan(beforeQty);
+  });
+});

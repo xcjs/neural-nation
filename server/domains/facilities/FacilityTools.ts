@@ -76,18 +76,18 @@ export class FacilityTools {
 
     registry.register('set_production_target', {
       name: 'set_production_target',
-      description: 'Set the active recipe and target output rate for a facility.',
+      description: 'Set the active recipe and target output rate for a facility. For extractor-type facilities (Extractor, Farm, Forestry, WaterPump, Excavator, Dredger), recipeId may be omitted.',
       inputSchema: {
         type: 'object',
         properties: {
           facilityId: { type: 'number' },
-          recipeId: { type: 'string', description: 'Recipe ID to activate' },
+          recipeId: { type: 'string', description: 'Recipe ID to activate (omit for extractor-type facilities)' },
           targetRate: { type: 'number', description: 'Target output rate in tonnes/tick' },
         },
-        required: ['facilityId', 'recipeId', 'targetRate'],
+        required: ['facilityId', 'targetRate'],
       },
     }, (args) => {
-      return this.facilityService.setProductionTarget(args.facilityId as number, args.recipeId as string, args.targetRate as number);
+      return this.facilityService.setProductionTarget(args.facilityId as number, (args.recipeId as string) || '', args.targetRate as number);
     });
 
     registry.register('search_facilities', {

@@ -118,7 +118,7 @@ describe('mCP end-to-end flow', () => {
     const facilityId = (build.data as { items: Array<{ id: number }> }).items[0]!.id;
     const r = executeTool(token, 'set_production_target', { facilityId, recipeId: 'iron_smelting', targetRate: 1 });
     expect(r.status).toBe('error');
-    expect(r.errorMessage).toContain('requires a Smelter');
+    expect(r.errorMessage).toContain('does not use recipes');
   });
 
   it('returns a tech tree with >=13 nodes', () => {

@@ -63,13 +63,15 @@ export class ProductionTick implements ITick {
         sql`abs(${schema.resources.lon} - ${facility.lon}) <= ${EXTRACTOR_RANGE_DEG}`,
       ),
     ).all().sort((a, b) => {
+      const da = Math.sqrt((a.lat - facility.lat) ** 2 + (a.lon - facility.lon) ** 2);
+      const db2 = Math.sqrt((b.lat - facility.lat) ** 2 + (b.lon - facility.lon) ** 2);
+      if (da !== db2)
+        return da - db2;
       if (b.grade !== a.grade)
         return b.grade - a.grade;
       if (b.remaining !== a.remaining)
         return b.remaining - a.remaining;
-      const da = Math.sqrt((a.lat - facility.lat) ** 2 + (a.lon - facility.lon) ** 2);
-      const db2 = Math.sqrt((b.lat - facility.lat) ** 2 + (b.lon - facility.lon) ** 2);
-      return da - db2;
+      return 0;
     })[0];
 
     if (!deposit) {

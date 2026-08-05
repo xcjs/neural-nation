@@ -106,10 +106,6 @@ export class EnvironmentTick implements ITick {
     if (env.waterQuality > 30 && newWater <= 30) {
       this.logIncident(tick, 'water_contamination', 'Water quality has dropped below 30% — contamination spreading', 'warning');
     }
-
-    if (env.pollutionLevel < 80 && env.pollutionLevel >= 80) {
-      this.logIncident(tick, 'climate_shift', 'Pollution has reached critical levels — climate shift imminent', 'critical');
-    }
   }
 
   private logIncident(tick: number, type: string, message: string, severity: string, facilityId: number | null = null): void {
