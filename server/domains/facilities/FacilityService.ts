@@ -8,6 +8,7 @@ import { FacilityStatus } from '../../../lib/types/facility';
 import { greatCircleDistance } from '../../shared/geo/distance';
 import { footprintAreaDeg2 } from '../power/gridTopology';
 import { BASE_POWER_CONSUMPTION, EXTRACTOR_TYPES, POWER_GENERATING_TYPES } from '../shared/constants/facilityTypes';
+import { CONSTRUCTION_TIMES, DEFAULT_CONSTRUCTION_TIME } from './Ticks/ConstructionTick';
 
 const FACILITY_TECH_REQUIREMENTS: Record<string, string> = {
   AdvancedFactory: 'precision_manufacturing',
@@ -377,6 +378,7 @@ export class FacilityService {
       elevation: facility.elevation,
       terrainClass: facility.terrainClass,
       constructionProgress: facility.constructionProgress,
+      constructionTotal: CONSTRUCTION_TIMES[facility.type] ?? DEFAULT_CONSTRUCTION_TIME,
       throughput: facility.throughput,
       footprint: facility.footprint ? safeParseFootprint(facility.footprint) : null,
     };

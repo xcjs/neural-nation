@@ -81,6 +81,7 @@ export interface FacilityDetail {
   elevation: number;
   terrainClass: string;
   constructionProgress: number;
+  constructionTotal: number;
   throughput: number;
   footprint: Array<{ lat: number; lon: number }> | null;
 }

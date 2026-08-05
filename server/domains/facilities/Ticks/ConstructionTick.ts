@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { schema } from '../../../db/schema';
 import { logGameEvent } from '../../events/logGameEvent';
 
-const CONSTRUCTION_TIMES: Record<string, number> = {
+export const CONSTRUCTION_TIMES: Record<string, number> = {
   Extractor: 2,
   Farm: 2,
   Forestry: 2,
@@ -47,7 +47,7 @@ const CONSTRUCTION_TIMES: Record<string, number> = {
   PlanetaryEngine: 20,
 };
 
-const DEFAULT_CONSTRUCTION_TIME = 3;
+export const DEFAULT_CONSTRUCTION_TIME = 3;
 
 export class ConstructionTick implements ITick {
   constructor(private readonly db: GameDb) {}

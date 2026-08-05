@@ -127,10 +127,10 @@ const footprintSvg = computed(() => {
       </div>
       <div v-if="facilities.selected.status === 'UnderConstruction'" class="mt-1">
         <div class="text-cyan-700 mb-0.5">
-          Construction: {{ (facilities.selected.constructionProgress * 100).toFixed(0) }}%
+          Construction: {{ (facilities.selected.constructionProgress / facilities.selected.constructionTotal * 100).toFixed(0) }}%
         </div>
         <div class="w-full h-1 bg-cyan-950">
-          <div class="h-1 bg-cyan-400" :style="{ width: `${facilities.selected.constructionProgress * 100}%` }" />
+          <div class="h-1 bg-cyan-400" :style="{ width: `${Math.min(facilities.selected.constructionProgress / facilities.selected.constructionTotal * 100, 100)}%` }" />
         </div>
       </div>
       <div v-if="facilities.selected.inputs.length > 0" class="mt-2">
