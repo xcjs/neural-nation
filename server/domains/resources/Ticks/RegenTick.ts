@@ -9,10 +9,10 @@ export class RegenTick implements ITick {
   process(_tick: number): void {
     this.db.update(schema.resources)
       .set({
-        remaining: sql`${schema.resources.remaining} + ${schema.resources.remaining} * 0.0001`,
+        remaining: sql`min(${schema.resources.quantity}, ${schema.resources.remaining} + ${schema.resources.remaining} * 0.0001)`,
       })
       .where(
-        sql`${schema.resources.surface} = 1 AND ${schema.resources.remaining} < ${schema.resources.quantity}`,
+        sql`${schema.resources.surface} = 1 AND ${schema.resources.category} = 'Renewable' AND ${schema.resources.remaining} < ${schema.resources.quantity}`,
       )
       .run();
   }

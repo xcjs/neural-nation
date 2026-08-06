@@ -83,21 +83,23 @@ export class TechService {
     if (params.unlockedOnly) {
       const completedTech = this.techRepo.getCompletedResearchTechIds();
       const filtered = recipes.filter(r => !r.techRequired || completedTech.includes(r.techRequired));
+      const paged = filtered.slice(offset, offset + limit);
       return {
-        items: filtered,
+        items: paged,
         totalCount: filtered.length,
         limit,
         offset,
-        hasMore: false,
+        hasMore: offset + paged.length < filtered.length,
       };
     }
 
+    const paged = recipes.slice(offset, offset + limit);
     return {
-      items: recipes,
+      items: paged,
       totalCount: recipes.length,
       limit,
       offset,
-      hasMore: offset + recipes.length < recipes.length,
+      hasMore: offset + paged.length < recipes.length,
     };
   }
 

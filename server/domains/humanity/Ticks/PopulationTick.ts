@@ -38,21 +38,21 @@ export class PopulationTick implements ITick {
 
       const habitatHealth = (env.forestCoverage + env.biodiversity) * 0.5;
       if (habitatHealth < 10) {
-        effectiveGrowthRate = -Math.abs(human.growthRate) * (1 - habitatHealth / 30);
+        effectiveGrowthRate = Math.min(effectiveGrowthRate, -Math.abs(human.growthRate) * (1 - habitatHealth / 30));
       }
       else if (habitatHealth < 30) {
         effectiveGrowthRate *= 0.7;
       }
 
       if (env.waterQuality < 10) {
-        effectiveGrowthRate = -Math.abs(human.growthRate) * (1 - env.waterQuality / 30);
+        effectiveGrowthRate = Math.min(effectiveGrowthRate, -Math.abs(human.growthRate) * (1 - env.waterQuality / 30));
       }
       else if (env.waterQuality < 30) {
         effectiveGrowthRate *= 0.6;
       }
 
       if (env.pollutionLevel > 80 && human.population < 100) {
-        effectiveGrowthRate = -Math.abs(human.growthRate) * 2;
+        effectiveGrowthRate = Math.min(effectiveGrowthRate, -Math.abs(human.growthRate) * 2);
       }
     }
 
