@@ -316,6 +316,7 @@ export class FacilityService {
   }
 
   demolishFacility(facilityId: number): { success: boolean } {
+    this.facilityRepo.deleteTransportsForFacility(facilityId);
     this.facilityRepo.deleteFacility(facilityId);
     this.facilityRepo.deleteFacilityBuffers(facilityId);
     return { success: true };

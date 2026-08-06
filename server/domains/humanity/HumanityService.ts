@@ -82,8 +82,8 @@ export class HumanityService {
   }
 
   getIncidents(params: PaginationParams = {}): PaginatedResult<EnvironmentalIncident> {
-    const limit = params.limit || 25;
-    const offset = params.offset || 0;
+    const limit = Math.max(Math.min(params.limit || 25, 200), 1);
+    const offset = Math.max(params.offset || 0, 0);
 
     const items = this.humanityRepo.getIncidents(limit, offset);
     const totalCount = this.humanityRepo.countIncidents();

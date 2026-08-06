@@ -9,6 +9,7 @@ const metrics = computed(() => [
     label: 'Pollution',
     value: `${env.state.pollutionLevel.toFixed(0)}%`,
     trend: env.state.pollutionLevel > 50 ? 'up' : 'down',
+    trendColor: env.state.pollutionLevel > 50 ? 'text-red-400' : 'text-green-400',
     color: env.state.pollutionLevel > 70 ? 'text-red-400' : env.state.pollutionLevel > 30 ? 'text-amber-400' : 'text-green-400',
   },
   {
@@ -42,8 +43,8 @@ const metrics = computed(() => [
         <span class="text-cyan-500">{{ m.label }}</span>
         <div class="flex items-center gap-1">
           <span :class="m.color">{{ m.value }}</span>
-          <span v-if="m.trend === 'up'" class="text-green-400">▲</span>
-          <span v-else-if="m.trend === 'down'" class="text-red-400">▼</span>
+          <span v-if="m.trend === 'up'" :class="m.trendColor || 'text-green-400'">▲</span>
+          <span v-else-if="m.trend === 'down'" :class="m.trendColor || 'text-red-400'">▼</span>
         </div>
       </div>
     </div>

@@ -268,15 +268,15 @@ function buildEnvironmentOverlay(): void {
       forestMesh = new THREE.Mesh(forestGeo, forestMaterial);
       forestMesh.rotation.y = earthMesh.rotation.y;
       scene.add(forestMesh);
+
+      // Now that forestTexture exists, fetch the per-game depletion grid
+      if (props.token) {
+        updateForestGrid();
+      }
     })
     .catch(() => {
       // Forest density data not available — skip forest overlay
     });
-
-  // Fetch per-game forest grid (location-specific depletion)
-  if (props.token) {
-    updateForestGrid();
-  }
 
   // --- Pollution: per-cell brown DataTexture grid overlay (same as forest) ---
   if (pollutionMesh) {
@@ -803,7 +803,7 @@ function buildTransportParticles(arcs: { points: THREE.Vector3[]; color: number;
       texData[a * maxPoints * 3 + p * 3 + 2] = pt.z;
     }
   }
-  const arcTexture = new THREE.DataTexture(texData, maxPoints, arcs.length, THREE.RGBAFormat, THREE.FloatType);
+  const arcTexture = new THREE.DataTexture(texData, maxPoints, arcs.length, THREE.RGBFormat, THREE.FloatType);
   arcTexture.needsUpdate = true;
 
   const geo = new THREE.BufferGeometry();

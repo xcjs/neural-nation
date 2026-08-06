@@ -88,6 +88,7 @@ export interface IFacilityRepository {
   insertFacility: (params: BuildFacilityParams) => FacilityRow;
   deleteFacility: (id: number) => void;
   deleteFacilityBuffers: (id: number) => void;
+  deleteTransportsForFacility: (facilityId: number) => void;
   updateProductionTarget: (facilityId: number, recipeId: string, targetRate: number) => void;
   listFacilities: (limit: number, offset: number) => { items: FacilityRow[]; totalCount: number };
   searchFacilities: (params: SearchFacilitiesParams) => { items: FacilityRow[]; totalCount: number };

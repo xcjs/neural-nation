@@ -1,6 +1,6 @@
 import type { GameDb } from '../../../db/client';
 import type { BuildFacilityParams, FacilityBufferRow, FacilityRow, IFacilityRepository, RecipeRow, SearchFacilitiesParams, StockpileRow } from './IFacilityRepository';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 import { schema } from '../../../db/schema';
 
 export class FacilityRepository implements IFacilityRepository {
@@ -78,6 +78,15 @@ export class FacilityRepository implements IFacilityRepository {
 
   deleteFacilityBuffers(id: number): void {
     this.db.delete(schema.facilityBuffers).where(eq(schema.facilityBuffers.facilityId, id)).run();
+  }
+
+  deleteTransportsForFacility(facilityId: number): void {
+    this.db.delete(schema.transports).where(
+      or(
+        eq(schema.transports.fromFacilityId, facilityId),
+        eq(schema.transports.toFacilityId, facilityId),
+      ),
+    ).run();
   }
 
   updateProductionTarget(facilityId: number, recipeId: string, targetRate: number): void {

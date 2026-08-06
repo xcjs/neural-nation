@@ -25,8 +25,10 @@ export default defineEventHandler(async (event) => {
   const gameService = scope.resolve(IGameService);
   const stateService = scope.resolve(IGameStateService);
 
-  gameService.updateLastActive();
-  gameService.updateLastActiveInRegistry(gameToken);
+  if (!isSpectator) {
+    gameService.updateLastActive();
+    gameService.updateLastActiveInRegistry(gameToken);
+  }
 
   const fullState = stateService.buildFullGameState(entry, isSpectator);
   if (!fullState) {
