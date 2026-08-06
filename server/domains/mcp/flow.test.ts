@@ -1,7 +1,7 @@
 import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
+import { afterAll, describe, expect, it } from 'vitest';
 import { createGame, createScopedContainer, executeTool, findRegistryEntry, getGameState } from '../../../test/helpers';
 import { createGameDb, getDataDir } from '../../db/client';
 import { schema } from '../../db/schema';
