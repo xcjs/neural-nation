@@ -4,7 +4,7 @@ import { ELEMENTS } from './elements';
  * Display names for non-element resources keyed by their lowercase
  * resource key. Element names are resolved from the periodic table.
  */
-const NON_ELEMENT_NAMES: Record<string, string> = {
+export const NON_ELEMENT_NAMES: Record<string, string> = {
   // Renewables
   wood: 'Wood',
   water: 'Water',

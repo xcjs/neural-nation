@@ -47,10 +47,13 @@ export default defineEventHandler(async (event) => {
     .offset(offset)
     .all();
 
-  const countRow = db.select({ count: sql<number>`count(*)` })
+  const countQuery = db.select({ count: sql<number>`count(*)` })
     .from(schema.actions)
-    .get();
-  const totalCount = countRow?.count ?? items.length;
+    .$dynamic();
+  if (conditions.length > 0) {
+    countQuery.where(conditions[0]!);
+  }
+  const totalCount = countQuery.get()?.count ?? items.length;
 
   return { items, totalCount, limit, offset };
 });

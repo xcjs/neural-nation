@@ -3,6 +3,7 @@ import type { GameDb } from '../../../db/client';
 import type { ITick } from '../../tick/ITick';
 import { eq } from 'drizzle-orm';
 import { schema } from '../../../db/schema';
+import { logGameEvent } from '../../events/logGameEvent';
 
 const FACILITY_IMPACT: Record<string, { pollution: number; forest: number; water: number; biodiversity: number }> = {
   CoalPlant: { pollution: 0.1, forest: 0, water: 0, biodiversity: 0 },
@@ -107,12 +108,37 @@ export class ForestGridTick implements ITick {
     ).get() as { avgDensity: number | null; avgMax: number | null };
     const avgDensity = ratioRow.avgDensity ?? 0;
     const avgMax = ratioRow.avgMax ?? 0;
-    const forestPct = avgMax > 0
+    let forestPct = avgMax > 0
       ? Math.max(0, Math.min(100, (avgDensity / avgMax) * 100))
       : Math.max(0, Math.min(100, avgDensity * 100));
+
+    // Apply pollution-conditional forest deltas (moved from EnvironmentTick,
+    // whose forestCoverage write was overwritten here).
+    const env = this.db.select().from(schema.environment).where(eq(schema.environment.key, 'global')).get();
+    const oldForest = env?.forestCoverage ?? 0;
+    if (env) {
+      if (env.pollutionLevel < 30) {
+        forestPct = Math.min(100, forestPct + 0.005);
+      }
+      else if (env.pollutionLevel > 60) {
+        forestPct = Math.max(0, forestPct - 0.01);
+      }
+    }
+
     this.db.update(schema.environment)
       .set({ forestCoverage: forestPct })
       .where(eq(schema.environment.key, 'global'))
       .run();
+
+    if (oldForest > 20 && forestPct <= 20) {
+      logGameEvent(this.db, _tick, 'deforestation_collapse', 'Forest coverage has collapsed below 20% — biome degradation accelerating', 'warning');
+      this.db.insert(schema.incidents).values({
+        type: 'deforestation_collapse',
+        severity: 'warning',
+        description: 'Forest coverage has collapsed below 20% — biome degradation accelerating',
+        tickTriggered: _tick,
+        tickResolved: null,
+      }).run();
+    }
   }
 }

@@ -6,6 +6,7 @@ import { GameStatus } from '../../../lib/types/game';
 import { schema } from '../../db/schema';
 import { ConstructionTick } from '../facilities/Ticks/ConstructionTick';
 import { ProductionTick } from '../facilities/Ticks/ProductionTick';
+import { StorageBridgeTick } from '../facilities/Ticks/StorageBridgeTick';
 import { LoseConditionTick } from '../game/Ticks/LoseConditionTick';
 import { EnvironmentTick } from '../humanity/Ticks/EnvironmentTick';
 import { ForestGridTick } from '../humanity/Ticks/ForestGridTick';
@@ -59,6 +60,7 @@ export class TickProcessor {
       new PowerTick(tx).process(newTick);
       new ProductionTick(tx).process(newTick);
       new TransportFlowTick(tx).process(newTick);
+      new StorageBridgeTick(tx).process(newTick);
       new ResearchTick(tx).process(newTick);
       new LoseConditionTick(tx).process(newTick);
     });

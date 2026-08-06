@@ -2,6 +2,7 @@ import type { GameDb } from '../../../db/client';
 import type { ITick } from '../../tick/ITick';
 import { eq } from 'drizzle-orm';
 import { schema } from '../../../db/schema';
+import { logGameEvent } from '../../events/logGameEvent';
 
 export class ResearchTick implements ITick {
   constructor(private readonly db: GameDb) {}
@@ -28,6 +29,7 @@ export class ResearchTick implements ITick {
           })
           .where(eq(schema.gameResearch.id, research.id))
           .run();
+        logGameEvent(this.db, tick, 'research_completed', `Research completed: ${techNode.name} (${research.techId})`, 'info', research.labFacilityId);
       }
       else {
         this.db.update(schema.gameResearch)

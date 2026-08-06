@@ -11,7 +11,7 @@ const props = defineProps<{ token: string; model?: ModelChoice }>();
 const chat = useChatStore();
 const game = useGameStore();
 
-const privateToken = game.privateToken || props.token;
+const privateToken = () => game.privateToken;
 const llm = useInBrowserLLM(privateToken);
 
 const messageListRef = ref<HTMLElement | null>(null);

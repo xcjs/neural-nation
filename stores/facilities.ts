@@ -7,6 +7,7 @@ export const useFacilitiesStore = defineStore('facilities', () => {
   const list = ref<FacilitySummary[]>([]);
   const selected = ref<FacilityDetail | null>(null);
   const loading = ref(false);
+  let detailRequestId = 0;
 
   async function fetchList(token: string) {
     loading.value = true;
@@ -26,11 +27,13 @@ export const useFacilitiesStore = defineStore('facilities', () => {
   }
 
   async function fetchDetail(token: string, id: number) {
+    const requestId = ++detailRequestId;
     try {
       const res = await $fetch<FacilityDetail>(`/api/game/facility`, {
         query: { token, facilityId: id },
       });
-      selected.value = res;
+      if (requestId === detailRequestId)
+        selected.value = res;
     }
     catch {
       // ignore

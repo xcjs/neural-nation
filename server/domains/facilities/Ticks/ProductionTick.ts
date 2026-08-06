@@ -2,6 +2,7 @@ import type { GameDb } from '../../../db/client';
 import type { ITick } from '../../tick/ITick';
 import { and, eq, sql } from 'drizzle-orm';
 import { schema } from '../../../db/schema';
+import { logGameEvent } from '../../events/logGameEvent';
 import { EXTRACTOR_TYPES, POWER_GENERATING_TYPES } from '../../shared/constants/facilityTypes';
 
 const DEFAULT_BUFFER_CAPACITY = 100;
@@ -29,7 +30,7 @@ export class ProductionTick implements ITick {
       }
 
       if (isExtractor) {
-        this.processExtractorProduction(facility);
+        this.processExtractorProduction(facility, _tick);
       }
       else if (facility.activeRecipeId) {
         const throttle = facility.powerThrottle ?? 1.0;
@@ -51,7 +52,7 @@ export class ProductionTick implements ITick {
     }
   }
 
-  private processExtractorProduction(facility: typeof schema.facilities.$inferSelect): void {
+  private processExtractorProduction(facility: typeof schema.facilities.$inferSelect, tick: number): void {
     const rate = facility.targetOutputRate || 1;
 
     const deposit = this.db.select().from(schema.resources).where(
@@ -64,7 +65,13 @@ export class ProductionTick implements ITick {
     ).all().sort((a, b) => {
       const da = Math.sqrt((a.lat - facility.lat) ** 2 + (a.lon - facility.lon) ** 2);
       const db2 = Math.sqrt((b.lat - facility.lat) ** 2 + (b.lon - facility.lon) ** 2);
-      return da - db2;
+      if (da !== db2)
+        return da - db2;
+      if (b.grade !== a.grade)
+        return b.grade - a.grade;
+      if (b.remaining !== a.remaining)
+        return b.remaining - a.remaining;
+      return 0;
     })[0];
 
     if (!deposit) {
@@ -95,6 +102,10 @@ export class ProductionTick implements ITick {
       .set({ remaining: deposit.remaining - actualExtract })
       .where(eq(schema.resources.id, deposit.id))
       .run();
+
+    if (deposit.remaining - actualExtract <= 0) {
+      logGameEvent(this.db, tick, 'resource_depleted', `Resource deposit depleted: ${deposit.resourceKey} at (${deposit.lat.toFixed(2)}, ${deposit.lon.toFixed(2)})`, 'warning', facility.id);
+    }
 
     this.db.update(schema.facilityBuffers)
       .set({ quantity: outputBuffer.quantity + actualExtract })

@@ -1,5 +1,6 @@
 import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { eq } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { createGame, createScopedContainer, executeTool, findRegistryEntry, getGameState } from '../../../test/helpers';
 import { createGameDb, getDataDir } from '../../db/client';
@@ -104,10 +105,11 @@ describe('mCP end-to-end flow', () => {
     const facilityId = (build.data as { items: Array<{ id: number }> }).items[0]!.id;
     const r = executeTool(token, 'get_facility_details', { facilityId });
     expect(r.status).toBe('success');
-    const details = r.data as { id: number; status: string; constructionProgress: number; inputs: unknown[]; outputs: unknown[] };
+    const details = r.data as { id: number; status: string; constructionProgress: number; constructionTotal: number; inputs: unknown[]; outputs: unknown[] };
     expect(details.id).toBe(facilityId);
     expect(details.status).toBe('Active');
     expect(details.constructionProgress).toBe(2);
+    expect(details.constructionTotal).toBe(2);
     expect(Array.isArray(details.inputs)).toBe(true);
     expect(Array.isArray(details.outputs)).toBe(true);
   });
@@ -117,7 +119,7 @@ describe('mCP end-to-end flow', () => {
     const facilityId = (build.data as { items: Array<{ id: number }> }).items[0]!.id;
     const r = executeTool(token, 'set_production_target', { facilityId, recipeId: 'iron_smelting', targetRate: 1 });
     expect(r.status).toBe('error');
-    expect(r.errorMessage).toContain('requires a Smelter');
+    expect(r.errorMessage).toContain('does not use recipes');
   });
 
   it('returns a tech tree with >=13 nodes', () => {
@@ -163,10 +165,10 @@ describe('mCP end-to-end flow', () => {
   it('logs actions and events to the database on every tool call', () => {
     const db = createGameDb(token);
     const actions = db.select().from(schema.actions).all();
-    const events = db.select().from(schema.events).all();
+    const mcpCallEvents = db.select().from(schema.events).where(eq(schema.events.type, 'mcp_call')).all();
     expect(actions.length).toBeGreaterThan(0);
-    expect(events.length).toBeGreaterThan(0);
-    expect(events.length).toBe(actions.length);
+    expect(mcpCallEvents.length).toBeGreaterThan(0);
+    expect(mcpCallEvents.length).toBe(actions.length);
   });
 
   it('returns an error for an unknown tool', () => {

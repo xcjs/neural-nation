@@ -1,5 +1,5 @@
 import type { GameDb } from '../../../db/client';
-import type { FacilityRow, ITransportRepository, TerrainRow, TransportInsertValues, TransportRow } from './ITransportRepository';
+import type { FacilityBufferRow, FacilityRow, ITransportRepository, TerrainRow, TransportInsertValues, TransportRow } from './ITransportRepository';
 import { and, eq, sql } from 'drizzle-orm';
 import { schema } from '../../../db/schema';
 
@@ -8,6 +8,10 @@ export class TransportRepository implements ITransportRepository {
 
   getFacilityById(id: number): FacilityRow | undefined {
     return this.db.select().from(schema.facilities).where(eq(schema.facilities.id, id)).get();
+  }
+
+  getFacilityBuffers(facilityId: number): FacilityBufferRow[] {
+    return this.db.select().from(schema.facilityBuffers).where(eq(schema.facilityBuffers.facilityId, facilityId)).all();
   }
 
   getTerrainInBoundingBox(latMin: number, latMax: number, lonMin: number, lonMax: number): TerrainRow[] {

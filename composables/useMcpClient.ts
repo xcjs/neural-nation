@@ -14,16 +14,23 @@ export interface McpCallToolResult {
   isError?: boolean;
 }
 
-export function useMcpClient(token: string) {
+export function useMcpClient(token: string | (() => string)) {
   let client: Client | null = null;
   let transport: SSEClientTransport | null = null;
   let connected = false;
+
+  function resolveToken(): string {
+    return typeof token === 'function' ? token() : token;
+  }
 
   async function connect(): Promise<void> {
     if (connected)
       return;
 
-    const sseUrl = new URL(`/api/mcp/sse?token=${encodeURIComponent(token)}`, window.location.origin);
+    const resolved = resolveToken();
+    if (!resolved)
+      throw new Error('No token available');
+    const sseUrl = new URL(`/api/mcp/sse?token=${encodeURIComponent(resolved)}`, window.location.origin);
     transport = new SSEClientTransport(sseUrl);
 
     client = new Client(

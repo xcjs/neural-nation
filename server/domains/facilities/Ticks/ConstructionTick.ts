@@ -2,8 +2,9 @@ import type { GameDb } from '../../../db/client';
 import type { ITick } from '../../tick/ITick';
 import { eq } from 'drizzle-orm';
 import { schema } from '../../../db/schema';
+import { logGameEvent } from '../../events/logGameEvent';
 
-const CONSTRUCTION_TIMES: Record<string, number> = {
+export const CONSTRUCTION_TIMES: Record<string, number> = {
   Extractor: 2,
   Farm: 2,
   Forestry: 2,
@@ -46,7 +47,7 @@ const CONSTRUCTION_TIMES: Record<string, number> = {
   PlanetaryEngine: 20,
 };
 
-const DEFAULT_CONSTRUCTION_TIME = 3;
+export const DEFAULT_CONSTRUCTION_TIME = 3;
 
 export class ConstructionTick implements ITick {
   constructor(private readonly db: GameDb) {}
@@ -66,6 +67,7 @@ export class ConstructionTick implements ITick {
           .set({ constructionProgress: totalTime, status: 'Active' })
           .where(eq(schema.facilities.id, facility.id))
           .run();
+        logGameEvent(this.db, _tick, 'facility_completed', `${facility.name} (${facility.type}, id=${facility.id}) construction complete`, 'info', facility.id);
       }
       else {
         this.db.update(schema.facilities)

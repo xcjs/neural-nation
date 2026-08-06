@@ -48,7 +48,6 @@ export class EnvironmentTick implements ITick {
       .where(eq(schema.facilities.status, 'Active'))
       .all();
 
-    let forestDelta = 0;
     let waterDelta = 0;
     let biodiversityDelta = 0;
 
@@ -57,7 +56,6 @@ export class EnvironmentTick implements ITick {
       if (!impact)
         continue;
 
-      forestDelta += impact.forest;
       waterDelta += impact.water;
       biodiversityDelta += impact.biodiversity;
 
@@ -71,12 +69,10 @@ export class EnvironmentTick implements ITick {
     }
 
     if (env.pollutionLevel < 30) {
-      forestDelta += 0.005;
       biodiversityDelta += 0.003;
     }
 
     if (env.pollutionLevel > 60) {
-      forestDelta -= 0.01;
       biodiversityDelta -= 0.005;
     }
 
@@ -85,30 +81,21 @@ export class EnvironmentTick implements ITick {
     }
 
     // Pollution is now managed per-cell by PollutionGridTick; only apply
-    // forest/water/biodiversity deltas here.
-    const newForest = Math.max(0, Math.min(100, env.forestCoverage + forestDelta));
+    // water/biodiversity deltas here. Forest coverage is managed entirely
+    // by ForestGridTick (grid-based rollup + pollution-conditional delta).
     const newWater = Math.max(0, Math.min(100, env.waterQuality + waterDelta));
     const newBiodiversity = Math.max(0, Math.min(100, env.biodiversity + biodiversityDelta));
 
     this.db.update(schema.environment)
       .set({
-        forestCoverage: newForest,
         waterQuality: newWater,
         biodiversity: newBiodiversity,
       })
       .where(eq(schema.environment.key, 'global'))
       .run();
 
-    if (env.forestCoverage > 20 && newForest <= 20) {
-      this.logIncident(tick, 'deforestation_collapse', 'Forest coverage has collapsed below 20% — biome degradation accelerating', 'warning');
-    }
-
     if (env.waterQuality > 30 && newWater <= 30) {
       this.logIncident(tick, 'water_contamination', 'Water quality has dropped below 30% — contamination spreading', 'warning');
-    }
-
-    if (env.pollutionLevel < 80 && env.pollutionLevel >= 80) {
-      this.logIncident(tick, 'climate_shift', 'Pollution has reached critical levels — climate shift imminent', 'critical');
     }
   }
 

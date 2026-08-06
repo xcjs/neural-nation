@@ -14,6 +14,10 @@ export interface ITechRepository {
   countRecipes: () => number;
   getCompletedResearchTechIds: () => string[];
   getResearchByTechId: (techId: string) => typeof schema.gameResearch.$inferSelect | undefined;
+  getInProgressResearchByLabId: (labFacilityId: number) => Array<typeof schema.gameResearch.$inferSelect>;
+  getTechCostsByTechId: (techId: string) => Array<typeof schema.techCosts.$inferSelect>;
+  getStockpile: (resourceKey: string) => typeof schema.stockpiles.$inferSelect | undefined;
+  decrementStockpile: (stockpileId: number, quantity: number) => void;
   getPrerequisitesForTech: (techId: string) => Array<typeof schema.techPrerequisites.$inferSelect>;
   getFacilityById: (id: number) => typeof schema.facilities.$inferSelect | undefined;
   getMetaTickCount: () => number;

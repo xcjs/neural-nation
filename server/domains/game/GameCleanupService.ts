@@ -1,7 +1,7 @@
 import { existsSync, unlinkSync } from 'node:fs';
 import { GameStatus } from '../../../lib/types/game';
 import { getGameDbPath } from '../db/DbFactory';
-import { loadRegistry, removeFromRegistry, saveRegistry, updateRegistryEntry } from './GameRegistry';
+import { loadRegistry, removeFromRegistry, updateRegistryEntry } from './GameRegistry';
 
 export interface CleanupOptions {
   ageDays: number;
@@ -44,7 +44,6 @@ export class GameCleanupService {
       }
     }
 
-    saveRegistry(registry);
     return { cleaned, pending };
   }
 

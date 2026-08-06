@@ -33,8 +33,8 @@ export class GameTools {
       },
     }, (args) => {
       const db = this.dbConnection.getDb();
-      const limit = Math.min((args.limit as number) || 50, 200);
-      const offset = (args.offset as number) || 0;
+      const limit = Math.max(Math.min((args.limit as number) || 50, 200), 1);
+      const offset = Math.max((args.offset as number) || 0, 0);
       const items = db.select().from(schema.events).orderBy(desc(schema.events.id)).limit(limit).offset(offset).all();
       const countRow = db.select({ count: sql<number>`count(*)` }).from(schema.events).get();
       return { items, totalCount: countRow?.count ?? items.length, limit, offset };

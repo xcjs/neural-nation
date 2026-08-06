@@ -3,11 +3,13 @@ import { Token } from '../../ioc/Token';
 
 export type TransportRow = typeof schema.transports.$inferSelect;
 export type FacilityRow = typeof schema.facilities.$inferSelect;
+export type FacilityBufferRow = typeof schema.facilityBuffers.$inferSelect;
 export type TerrainRow = typeof schema.terrain.$inferSelect;
 export type TransportInsertValues = Omit<typeof schema.transports.$inferInsert, 'id'>;
 
 export interface ITransportRepository {
   getFacilityById: (id: number) => FacilityRow | undefined;
+  getFacilityBuffers: (facilityId: number) => FacilityBufferRow[];
   getTerrainInBoundingBox: (latMin: number, latMax: number, lonMin: number, lonMax: number) => TerrainRow[];
   getMetaTickCount: () => number;
   insertTransport: (values: TransportInsertValues) => TransportRow;

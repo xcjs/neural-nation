@@ -74,7 +74,6 @@ export class TechService {
     const offset = params.offset || 0;
 
     const recipeRows = this.techRepo.getRecipesWithFilters(params.facilityType, params.techRequired);
-    const totalCount = this.techRepo.countRecipes();
 
     const allInputs = this.techRepo.getAllRecipeInputs();
     const allOutputs = this.techRepo.getAllRecipeOutputs();
@@ -84,21 +83,23 @@ export class TechService {
     if (params.unlockedOnly) {
       const completedTech = this.techRepo.getCompletedResearchTechIds();
       const filtered = recipes.filter(r => !r.techRequired || completedTech.includes(r.techRequired));
+      const paged = filtered.slice(offset, offset + limit);
       return {
-        items: filtered,
+        items: paged,
         totalCount: filtered.length,
         limit,
         offset,
-        hasMore: false,
+        hasMore: offset + paged.length < filtered.length,
       };
     }
 
+    const paged = recipes.slice(offset, offset + limit);
     return {
-      items: recipes,
-      totalCount,
+      items: paged,
+      totalCount: recipes.length,
       limit,
       offset,
-      hasMore: offset + recipes.length < totalCount,
+      hasMore: offset + paged.length < recipes.length,
     };
   }
 
@@ -134,6 +135,26 @@ export class TechService {
     }
     if (lab.status !== 'Active') {
       throw new Error(`Research lab ${labFacilityId} is ${lab.status}, must be Active`);
+    }
+
+    const labBusy = this.techRepo.getInProgressResearchByLabId(labFacilityId);
+    if (labBusy.length > 0) {
+      throw new Error(`Research lab ${labFacilityId} is already running ${labBusy.length} research project(s): ${labBusy.map(r => r.techId).join(', ')}`);
+    }
+
+    const costs = this.techRepo.getTechCostsByTechId(techNodeId);
+    for (const cost of costs) {
+      const stockpile = this.techRepo.getStockpile(cost.resourceKey);
+      if (!stockpile || stockpile.quantity < cost.quantity) {
+        const have = stockpile?.quantity ?? 0;
+        throw new Error(`Insufficient resources to research ${techNodeId}: need ${cost.quantity}${cost.unit} ${cost.resourceKey}, have ${have}${cost.unit}`);
+      }
+    }
+    for (const cost of costs) {
+      const stockpile = this.techRepo.getStockpile(cost.resourceKey);
+      if (stockpile) {
+        this.techRepo.decrementStockpile(stockpile.id, stockpile.quantity - cost.quantity);
+      }
     }
 
     const research = this.techRepo.insertGameResearch(techNodeId, labFacilityId, tick);

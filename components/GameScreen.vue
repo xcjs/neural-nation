@@ -116,9 +116,9 @@ onMounted(async () => {
   }
 
   if (!props.spectator && import.meta.client) {
-    const privateToken = sessionStorage.getItem(`nn-private-${token}`);
-    if (privateToken) {
-      game.privateToken = privateToken;
+    const stored = localStorage.getItem(`nn-private-${token}`);
+    if (stored) {
+      game.privateToken = stored;
     }
   }
 

@@ -7,7 +7,8 @@ import type { FacilityRow, IFacilityRepository, SearchFacilitiesParams } from '.
 import { FacilityStatus } from '../../../lib/types/facility';
 import { greatCircleDistance } from '../../shared/geo/distance';
 import { footprintAreaDeg2 } from '../power/gridTopology';
-import { BASE_POWER_CONSUMPTION, POWER_GENERATING_TYPES } from '../shared/constants/facilityTypes';
+import { BASE_POWER_CONSUMPTION, EXTRACTOR_TYPES, POWER_GENERATING_TYPES } from '../shared/constants/facilityTypes';
+import { CONSTRUCTION_TIMES, DEFAULT_CONSTRUCTION_TIME } from './Ticks/ConstructionTick';
 
 const FACILITY_TECH_REQUIREMENTS: Record<string, string> = {
   AdvancedFactory: 'precision_manufacturing',
@@ -160,6 +161,34 @@ function polygonsIntersect(a: GeoPoint[], b: GeoPoint[]): boolean {
     if (pointInPolygon(p, a))
       return true;
   }
+  // Detect overlap where a vertex of one polygon lies on an edge of the other
+  // but is NOT a shared vertex (shared vertices indicate adjacency, not overlap).
+  const isSharedVertex = (p: GeoPoint, verts: GeoPoint[]): boolean =>
+    verts.some(v => Math.abs(v.lat - p.lat) < 1e-9 && Math.abs(v.lon - p.lon) < 1e-9);
+  for (const p of a) {
+    if (isSharedVertex(p, b))
+      continue;
+    if (pointOnPolygonBoundary(p, b)) {
+      return true;
+    }
+  }
+  for (const p of b) {
+    if (isSharedVertex(p, a))
+      continue;
+    if (pointOnPolygonBoundary(p, a)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function pointOnPolygonBoundary(point: GeoPoint, polygon: GeoPoint[]): boolean {
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const pi = polygon[i]!;
+    const pj = polygon[j]!;
+    if (onSegment(pi, pj, point))
+      return true;
+  }
   return false;
 }
 
@@ -210,6 +239,11 @@ export class FacilityService {
     lon: number;
     footprint?: Array<{ lat: number; lon: number }>;
   }): { facilityId: number; status: string } {
+    if (!Number.isFinite(params.lat) || params.lat < -90 || params.lat > 90)
+      throw new Error('lat must be a finite number in [-90, 90]');
+    if (!Number.isFinite(params.lon) || params.lon < -180 || params.lon > 180)
+      throw new Error('lon must be a finite number in [-180, 180]');
+
     const tick = this.facilityRepo.getTick();
     const facilityType = normalizeFacilityType(params.type);
 
@@ -240,6 +274,8 @@ export class FacilityService {
     }
 
     // Cannot build on ocean — must terraform to land first
+    let facilityElevation = 0;
+    let facilityTerrainClass = 'Plain';
     if (this.terrainRepo) {
       const cell = this.terrainRepo.getTerrainCellNear(params.lat, params.lon);
       if (cell) {
@@ -252,6 +288,8 @@ export class FacilityService {
             + `Use terraform with action 'ocean_to_land' or 'raise_land' to create land first.`,
           );
         }
+        facilityElevation = effElev;
+        facilityTerrainClass = this.classifyByElevation(effElev);
       }
     }
 
@@ -274,6 +312,8 @@ export class FacilityService {
       techRequired: requiredTech ?? null,
       powerConnected: isPowerGenerating ? 1 : 0,
       powerConsumption,
+      elevation: facilityElevation,
+      terrainClass: facilityTerrainClass,
       createdAtTick: tick,
     });
 
@@ -290,21 +330,26 @@ export class FacilityService {
 
     for (const cost of costs) {
       const needed = cost.quantity * scale;
+      if (needed <= 0)
+        continue;
       const stockpile = this.facilityRepo.getStockpile(cost.resourceKey);
       if (!stockpile || stockpile.quantity < needed) {
         const have = stockpile?.quantity ?? 0;
-        throw new Error(`Insufficient resources to build ${type}: need ${needed.toFixed(1)}${cost.unit} ${cost.resourceKey} (footprint ${areaKm2.toFixed(2)} km² × ${cost.quantity}${cost.unit}), have ${have}${cost.unit}`);
+        throw new Error(`Insufficient resources to build ${type}: need ${needed.toFixed(4)}${cost.unit} ${cost.resourceKey} (footprint ${areaKm2.toFixed(2)} km² × ${cost.quantity}${cost.unit}), have ${have}${cost.unit}`);
       }
     }
 
     for (const cost of costs) {
       const needed = cost.quantity * scale;
+      if (needed <= 0)
+        continue;
       const stockpile = this.facilityRepo.getStockpile(cost.resourceKey);
       this.facilityRepo.decrementStockpile(stockpile!.id, stockpile!.quantity - needed);
     }
   }
 
   demolishFacility(facilityId: number): { success: boolean } {
+    this.facilityRepo.deleteTransportsForFacility(facilityId);
     this.facilityRepo.deleteFacility(facilityId);
     this.facilityRepo.deleteFacilityBuffers(facilityId);
     return { success: true };
@@ -367,6 +412,7 @@ export class FacilityService {
       elevation: facility.elevation,
       terrainClass: facility.terrainClass,
       constructionProgress: facility.constructionProgress,
+      constructionTotal: CONSTRUCTION_TIMES[facility.type] ?? DEFAULT_CONSTRUCTION_TIME,
       throughput: facility.throughput,
       footprint: facility.footprint ? safeParseFootprint(facility.footprint) : null,
     };
@@ -376,6 +422,17 @@ export class FacilityService {
     const facility = this.facilityRepo.getFacilityById(facilityId);
     if (!facility) {
       throw new Error(`Facility not found: ${facilityId}`);
+    }
+
+    // Extractor-type facilities (Extractor, Farm, Forestry, WaterPump, Excavator, Dredger)
+    // don't use recipes — they pull directly from resource deposits. Reject any recipeId
+    // (extractors can't run recipes) but allow setting the target output rate.
+    if (EXTRACTOR_TYPES.has(facility.type)) {
+      if (recipeId) {
+        throw new Error(`Facility ${facilityId} is a ${facility.type} (extractor-type) and does not use recipes; omit recipeId to set the extraction rate`);
+      }
+      this.facilityRepo.updateProductionTarget(facilityId, '', targetRate);
+      return { success: true };
     }
 
     const recipe = this.facilityRepo.getRecipe(recipeId);
@@ -401,23 +458,46 @@ export class FacilityService {
     const limit = Math.min(params.limit || 50, 200);
     const offset = Math.max(params.offset || 0, 0);
 
-    const { items, totalCount } = this.facilityRepo.searchFacilities({ ...params, limit, offset });
-
-    let filteredItems = items;
     if (params.nearLat !== undefined && params.nearLon !== undefined) {
       const radiusKm = params.radiusKm || 100;
-      filteredItems = items.filter((f) => {
+      const { items: allItems } = this.facilityRepo.searchFacilities({ ...params, limit: 10000, offset: 0 });
+      const filtered = allItems.filter((f) => {
         const dist = greatCircleDistance(params.nearLat!, params.nearLon!, f.lat, f.lon);
         return dist <= radiusKm;
       });
+      const totalCount = filtered.length;
+      const paged = filtered.slice(offset, offset + limit);
+      return {
+        items: paged.map(mapToSummary),
+        totalCount,
+        limit,
+        offset,
+        hasMore: offset + paged.length < totalCount,
+      };
     }
 
+    const { items, totalCount } = this.facilityRepo.searchFacilities({ ...params, limit, offset });
+
     return {
-      items: filteredItems.map(mapToSummary),
+      items: items.map(mapToSummary),
       totalCount,
       limit,
       offset,
-      hasMore: offset + filteredItems.length < totalCount,
+      hasMore: offset + items.length < totalCount,
     };
+  }
+
+  private classifyByElevation(elevation: number): string {
+    if (elevation < 0)
+      return 'Ocean';
+    if (elevation < 200)
+      return 'Coastal';
+    if (elevation < 800)
+      return 'Plain';
+    if (elevation < 1500)
+      return 'Hill';
+    if (elevation < 3000)
+      return 'Mountain';
+    return 'HighMountain';
   }
 }

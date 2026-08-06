@@ -7,18 +7,18 @@ import actionsHandler from './game/actions.get';
 import createGameHandler from './game/create.post';
 import healthHandler from './health.get';
 
-function mockEvent(method: string, query: Record<string, string> = {}, body?: unknown) {
+function mockEvent(method: string, query: Record<string, string> = {}) {
   const params = new URLSearchParams(query).toString();
   const url = `/?${params}`;
+  const req: any = { url, method, headers: {} };
   return {
     method,
     path: url,
     node: {
-      req: { url, method, headers: {} },
+      req,
       res: { setHeader: () => {}, end: () => {} },
     },
     context: {},
-    body,
   } as never;
 }
 

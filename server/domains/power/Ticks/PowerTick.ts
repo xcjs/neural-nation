@@ -1,8 +1,9 @@
 import type { GameDb } from '../../../db/client';
 import type { ITick } from '../../tick/ITick';
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { schema } from '../../../db/schema';
 import { greatCircleDistance } from '../../../shared/geo/distance';
+import { logGameEvent } from '../../events/logGameEvent';
 import { EXTRACTOR_TYPES, POWER_GENERATING_TYPES } from '../../shared/constants/facilityTypes';
 import { applyTransmissionLoss, computeConnectedComponents, computeGridThrottle, solarOutputFactor } from '../gridTopology';
 
@@ -25,7 +26,7 @@ interface PowerLineEdge {
 export class PowerTick implements ITick {
   constructor(private readonly db: GameDb) {}
 
-  process(_tick: number): void {
+  process(tick: number): void {
     const facilities = this.db.select({
       id: schema.facilities.id,
       type: schema.facilities.type,
@@ -48,7 +49,7 @@ export class PowerTick implements ITick {
     const facilityMap = new Map(facilities.map(f => [f.id, f]));
 
     for (const component of components) {
-      this.processGrid(component, facilityMap, powerLines);
+      this.processGrid(component, facilityMap, powerLines, tick);
     }
   }
 
@@ -56,6 +57,7 @@ export class PowerTick implements ITick {
     component: number[],
     facilityMap: Map<number, FacilityPowerRow>,
     powerLines: PowerLineEdge[],
+    tick: number,
   ): void {
     const gridFacilities = component
       .map(id => facilityMap.get(id))
@@ -89,6 +91,33 @@ export class PowerTick implements ITick {
 
     const totalDemand = consumers.reduce((sum, c) => sum + c.powerConsumption, 0);
 
+    if (totalCapacity < totalDemand) {
+      const deficit = totalDemand - totalCapacity;
+      const energyStockpile = this.db.select().from(schema.stockpiles).where(
+        and(
+          eq(schema.stockpiles.resourceKey, 'energy'),
+          sql`${schema.stockpiles.facilityId} IS NULL`,
+        ),
+      ).all();
+      const available = energyStockpile.reduce((sum, s) => sum + s.quantity, 0);
+      if (available > 0) {
+        const drawn = Math.min(deficit, available);
+        totalCapacity += drawn;
+        const toDeduct = drawn;
+        let remaining = toDeduct;
+        for (const s of energyStockpile) {
+          if (remaining <= 0)
+            break;
+          const deduct = Math.min(remaining, s.quantity);
+          this.db.update(schema.stockpiles)
+            .set({ quantity: s.quantity - deduct })
+            .where(eq(schema.stockpiles.id, s.id))
+            .run();
+          remaining -= deduct;
+        }
+      }
+    }
+
     const gridEdges = powerLines.filter(
       e => component.includes(e.fromFacilityId) && component.includes(e.toFacilityId),
     );
@@ -108,6 +137,13 @@ export class PowerTick implements ITick {
 
     const hasPower = totalCapacity > 0;
     const { throttle } = computeGridThrottle(totalCapacity, totalDemand);
+
+    if (!hasPower && consumers.length > 0) {
+      logGameEvent(this.db, tick, 'power_blackout', `Power blackout on grid with ${consumers.length} consumers (demand ${totalDemand}, capacity 0)`, 'critical');
+    }
+    else if (hasPower && throttle < 1 && consumers.length > 0) {
+      logGameEvent(this.db, tick, 'power_brownout', `Power brownout on grid with ${consumers.length} consumers (demand ${totalDemand}, capacity ${totalCapacity.toFixed(1)}, throttle ${(throttle * 100).toFixed(0)}%)`, 'warning');
+    }
 
     for (const gen of generators) {
       this.updateFacility(gen.id, 1, 1.0);
