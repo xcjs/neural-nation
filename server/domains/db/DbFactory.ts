@@ -18,12 +18,16 @@ export function getTemplateDbPath(): string {
   return resolve(getDataDir(), '_template.db');
 }
 
+const openDbs = new Set<GameDb>();
+
 export function createGameDbFromPath(path: string): GameDb {
   const sqlite = new Database(path);
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');
   runMigrations(sqlite);
-  return drizzle(sqlite, { schema });
+  const db = drizzle(sqlite, { schema });
+  openDbs.add(db);
+  return db;
 }
 
 export function createGameDb(token: string): GameDb {
@@ -33,4 +37,11 @@ export function createGameDb(token: string): GameDb {
 export function closeGameDb(db: GameDb): void {
   const sqlite = (db as unknown as { session: { client: Database.Database } }).session.client;
   sqlite.close();
+  openDbs.delete(db);
+}
+
+export function closeAllDbs(): void {
+  for (const db of Array.from(openDbs)) {
+    closeGameDb(db);
+  }
 }

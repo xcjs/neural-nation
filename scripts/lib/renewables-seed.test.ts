@@ -2,6 +2,8 @@ import Database from 'better-sqlite3';
 import { afterEach, describe, expect, it } from 'vitest';
 import { seedRenewableDeposits } from './renewables-seed';
 
+const openDbs = new Set<Database.Database>();
+
 function createTestDb(): Database.Database {
   const db = new Database(':memory:');
   db.exec(`
@@ -21,11 +23,15 @@ function createTestDb(): Database.Database {
       unit TEXT NOT NULL
     );
   `);
+  openDbs.add(db);
   return db;
 }
 
 afterEach(() => {
-  // in-memory dbs cleaned by GC
+  for (const db of Array.from(openDbs)) {
+    db.close();
+    openDbs.delete(db);
+  }
 });
 
 describe('renewables-seed', () => {
