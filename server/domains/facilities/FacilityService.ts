@@ -161,6 +161,34 @@ function polygonsIntersect(a: GeoPoint[], b: GeoPoint[]): boolean {
     if (pointInPolygon(p, a))
       return true;
   }
+  // Detect overlap where a vertex of one polygon lies on an edge of the other
+  // but is NOT a shared vertex (shared vertices indicate adjacency, not overlap).
+  const isSharedVertex = (p: GeoPoint, verts: GeoPoint[]): boolean =>
+    verts.some(v => Math.abs(v.lat - p.lat) < 1e-9 && Math.abs(v.lon - p.lon) < 1e-9);
+  for (const p of a) {
+    if (isSharedVertex(p, b))
+      continue;
+    if (pointOnPolygonBoundary(p, b)) {
+      return true;
+    }
+  }
+  for (const p of b) {
+    if (isSharedVertex(p, a))
+      continue;
+    if (pointOnPolygonBoundary(p, a)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function pointOnPolygonBoundary(point: GeoPoint, polygon: GeoPoint[]): boolean {
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const pi = polygon[i]!;
+    const pj = polygon[j]!;
+    if (onSegment(pi, pj, point))
+      return true;
+  }
   return false;
 }
 
@@ -211,6 +239,11 @@ export class FacilityService {
     lon: number;
     footprint?: Array<{ lat: number; lon: number }>;
   }): { facilityId: number; status: string } {
+    if (!Number.isFinite(params.lat) || params.lat < -90 || params.lat > 90)
+      throw new Error('lat must be a finite number in [-90, 90]');
+    if (!Number.isFinite(params.lon) || params.lon < -180 || params.lon > 180)
+      throw new Error('lon must be a finite number in [-180, 180]');
+
     const tick = this.facilityRepo.getTick();
     const facilityType = normalizeFacilityType(params.type);
 
@@ -425,23 +458,32 @@ export class FacilityService {
     const limit = Math.min(params.limit || 50, 200);
     const offset = Math.max(params.offset || 0, 0);
 
-    const { items, totalCount } = this.facilityRepo.searchFacilities({ ...params, limit, offset });
-
-    let filteredItems = items;
     if (params.nearLat !== undefined && params.nearLon !== undefined) {
       const radiusKm = params.radiusKm || 100;
-      filteredItems = items.filter((f) => {
+      const { items: allItems } = this.facilityRepo.searchFacilities({ ...params, limit: 10000, offset: 0 });
+      const filtered = allItems.filter((f) => {
         const dist = greatCircleDistance(params.nearLat!, params.nearLon!, f.lat, f.lon);
         return dist <= radiusKm;
       });
+      const totalCount = filtered.length;
+      const paged = filtered.slice(offset, offset + limit);
+      return {
+        items: paged.map(mapToSummary),
+        totalCount,
+        limit,
+        offset,
+        hasMore: offset + paged.length < totalCount,
+      };
     }
 
+    const { items, totalCount } = this.facilityRepo.searchFacilities({ ...params, limit, offset });
+
     return {
-      items: filteredItems.map(mapToSummary),
+      items: items.map(mapToSummary),
       totalCount,
       limit,
       offset,
-      hasMore: offset + filteredItems.length < totalCount,
+      hasMore: offset + items.length < totalCount,
     };
   }
 

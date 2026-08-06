@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useActionsStore } from '~/stores/actions';
 import { useGameStore } from '~/stores/game';
 
 const actions = useActionsStore();
 const game = useGameStore();
-const token = game.meta?.token || '';
+const token = computed(() => game.meta?.token || '');
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 function onSearch() {
   if (searchTimer)
     clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => actions.fetchPage(token, 0), 300);
+  searchTimer = setTimeout(() => actions.fetchPage(token.value, 0), 300);
 }
 
 function statusColor(status: string): string {

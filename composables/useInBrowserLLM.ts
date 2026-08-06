@@ -49,7 +49,7 @@ function genId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export function useInBrowserLLM(token: string) {
+export function useInBrowserLLM(token: string | (() => string)) {
   const chat = useChatStore();
   const mcpClient = useMcpClient(token);
 

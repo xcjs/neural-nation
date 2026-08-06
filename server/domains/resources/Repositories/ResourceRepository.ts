@@ -1,7 +1,7 @@
 import type { PaginatedResult } from '../../../../lib/types/mcp';
 import type { GameDb } from '../../../db/client';
 import type { IResourceRepository } from './IResourceRepository';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { ELEMENT_BY_SYMBOL } from '../../../../lib/constants/elements';
 import { NON_ELEMENT_NAMES } from '../../../../lib/constants/resource-names';
 import { schema } from '../../../db/schema';
@@ -39,7 +39,7 @@ export class ResourceRepository implements IResourceRepository {
   }
 
   getDiscoveredDeposits(limit: number, offset: number): DepositRow[] {
-    return this.db.select().from(schema.resources).where(eq(schema.resources.discovered, 1)).limit(limit).offset(offset).all();
+    return this.db.select().from(schema.resources).where(eq(schema.resources.discovered, 1)).orderBy(asc(schema.resources.id)).limit(limit).offset(offset).all();
   }
 
   countDiscoveredDeposits(): number {

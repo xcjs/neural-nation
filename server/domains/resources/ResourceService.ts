@@ -13,6 +13,13 @@ export class ResourceService {
     lon: number,
     radius: number,
   ): { depositsFound: number; discovered: Array<{ resourceKey: string; quantity: number; grade: number }> } {
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90)
+      throw new Error('lat must be a finite number in [-90, 90]');
+    if (!Number.isFinite(lon) || lon < -180 || lon > 180)
+      throw new Error('lon must be a finite number in [-180, 180]');
+    if (!Number.isFinite(radius) || radius < 0.1 || radius > 5)
+      throw new Error('radius must be a finite number in [0.1, 5.0]');
+
     const deposits = this.resourceRepo.findUndiscoveredDepositsWithinRadius(lat, lon, radius);
 
     const discovered: Array<{ resourceKey: string; quantity: number; grade: number }> = [];

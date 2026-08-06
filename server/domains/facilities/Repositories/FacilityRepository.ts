@@ -1,6 +1,6 @@
 import type { GameDb } from '../../../db/client';
 import type { BuildFacilityParams, FacilityBufferRow, FacilityRow, IFacilityRepository, RecipeRow, SearchFacilitiesParams, StockpileRow } from './IFacilityRepository';
-import { and, eq, or, sql } from 'drizzle-orm';
+import { and, asc, eq, or, sql } from 'drizzle-orm';
 import { schema } from '../../../db/schema';
 
 export class FacilityRepository implements IFacilityRepository {
@@ -100,7 +100,7 @@ export class FacilityRepository implements IFacilityRepository {
   }
 
   listFacilities(limit: number, offset: number): { items: FacilityRow[]; totalCount: number } {
-    const items = this.db.select().from(schema.facilities).limit(limit).offset(offset).all() as FacilityRow[];
+    const items = this.db.select().from(schema.facilities).orderBy(asc(schema.facilities.id)).limit(limit).offset(offset).all() as FacilityRow[];
     const totalCount = this.db.select({ count: sql<number>`count(*)` })
       .from(schema.facilities)
       .get()
@@ -154,7 +154,7 @@ export class FacilityRepository implements IFacilityRepository {
       queryBuilder = queryBuilder.where(and(...conditions));
     }
 
-    const items = queryBuilder.limit(params.limit ?? 50).offset(params.offset ?? 0).all() as FacilityRow[];
+    const items = queryBuilder.orderBy(asc(schema.facilities.id)).limit(params.limit ?? 50).offset(params.offset ?? 0).all() as FacilityRow[];
 
     const countQuery = this.db.select({ count: sql<number>`count(*)` })
       .from(schema.facilities)
