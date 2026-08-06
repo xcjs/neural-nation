@@ -1,6 +1,6 @@
 import { defineEventHandler, getQuery } from 'h3';
+import { IFacilityService } from '../../domains/facilities/FacilitiesModule';
 import { findRegistryEntry, findRegistryEntryByPublicToken } from '../../domains/game/GameRegistry';
-import { IMcpDispatcher } from '../../domains/mcp/McpModule';
 import { createScopedContainer } from '../../utils/container';
 
 export default defineEventHandler(async (event) => {
@@ -22,12 +22,6 @@ export default defineEventHandler(async (event) => {
   }
 
   const scope = createScopedContainer(entry.token);
-  const dispatcher = scope.resolve(IMcpDispatcher);
-  const result = dispatcher.executeTool(entry.token, 'get_facility_details', { facilityId });
-
-  if (result.status === 'error') {
-    return { status: 404, error: result.errorMessage };
-  }
-
-  return result.data;
+  const facilityService = scope.resolve(IFacilityService);
+  return facilityService.getFacilityDetails(facilityId);
 });
