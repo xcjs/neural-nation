@@ -9,6 +9,7 @@ export default defineConfig({
     exclude: ['node_modules', '.nuxt', '.output', 'dist'],
     hookTimeout: 120000,
     setupFiles: ['./test/setup.ts'],
+    pool: 'forks',
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'cobertura'],
