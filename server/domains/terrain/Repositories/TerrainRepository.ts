@@ -1,18 +1,14 @@
 import type { GameDb } from '../../../db/client';
 import type { ITerrainRepository } from './ITerrainRepository';
 import { and, eq, sql } from 'drizzle-orm';
+import { latToIndex, lonToIndex } from '../../../../lib/constants/terrain';
 import { schema } from '../../../db/schema';
 
 export class TerrainRepository implements ITerrainRepository {
   constructor(private readonly db: GameDb) {}
 
   getTerrainCellNear(lat: number, lon: number): typeof schema.terrain.$inferSelect | undefined {
-    return this.db.select().from(schema.terrain).where(
-      and(
-        sql`abs(${schema.terrain.lat} - ${lat}) <= 0.5`,
-        sql`abs(${schema.terrain.lon} - ${lon}) <= 0.5`,
-      ),
-    ).get();
+    return this.getTerrainCellByIndex(latToIndex(lat), lonToIndex(lon));
   }
 
   getTerrainCellByIndex(latIndex: number, lonIndex: number): typeof schema.terrain.$inferSelect | undefined {
