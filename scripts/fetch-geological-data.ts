@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,6 +8,47 @@ const root = join(__dirname, '..');
 
 const geoDir = join(root, 'data', 'geological', 'raw');
 const terrainDir = join(root, 'data', 'geological', 'terrain');
+const srtmDir = join(root, 'data', 'geological', 'terrain', 'srtm');
+
+const SRTM_BASE = 'https://s3.amazonaws.com/elevation-tiles-prod/srtm';
+
+async function downloadSrtmTiles(): Promise<void> {
+  mkdirSync(srtmDir, { recursive: true });
+  let downloaded = 0;
+  let skipped = 0;
+  let missing = 0;
+  for (let lat = -90; lat <= 89; lat++) {
+    for (let lon = -180; lon <= 179; lon++) {
+      const path = join(srtmDir, `srtm_${lat}_${lon}.tif`);
+      if (existsSync(path)) {
+        skipped++;
+        continue;
+      }
+      const url = `${SRTM_BASE}/srtm_${lat}_${lon}.tif`;
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const buf = Buffer.from(await res.arrayBuffer());
+          writeFileSync(path, buf);
+          downloaded++;
+        }
+        else if (res.status === 404) {
+          missing++;
+        }
+        else {
+          console.log(`  srtm_${lat}_${lon}: HTTP ${res.status}`);
+        }
+      }
+      catch (e) {
+        console.log(`  srtm_${lat}_${lon}: error ${e instanceof Error ? e.message : 'unknown'}`);
+      }
+      if ((downloaded + skipped + missing) % 500 === 0) {
+        console.log(`  SRTM progress: ${downloaded} downloaded, ${skipped} cached, ${missing} ocean (no tile)`);
+      }
+    }
+  }
+  console.log(`SRTM complete: ${downloaded} downloaded, ${skipped} cached, ${missing} ocean tiles skipped.`);
+}
 
 async function main() {
   mkdirSync(geoDir, { recursive: true });
@@ -41,11 +82,7 @@ async function main() {
     console.log('  MRDS already downloaded');
   }
 
-  // SRTM elevation data — note: full SRTM requires NASA Earthdata login
-  // For now, create a placeholder. Real implementation would download tiles.
-  console.log('  SRTM elevation data: requires NASA Earthdata credentials.');
-  console.log('  Place .hgt tiles in', terrainDir);
-  console.log('  See: https://earthdata.nasa.gov/sensors/digital-elevation-data');
+  await downloadSrtmTiles();
 
   // Oil & gas data (EIA/USGS)
   console.log('  Oil & gas: download from https://www.eia.gov/maps/');
