@@ -29,5 +29,5 @@ export function buildTerrainHeightmap(db: Database.Database): TerrainHeightmapRe
 
 export function writeTerrainHeightmap(result: TerrainHeightmapResult): void {
   mkdirSync(dirname(result.outputPath), { recursive: true });
-  writeFileSync(result.outputPath, JSON.stringify(result), 'utf-8');
+  writeFileSync(result.outputPath, JSON.stringify({ width: result.width, height: result.height, cells: result.cells, data: result.data }), 'utf-8');
 }

@@ -48,9 +48,9 @@ export async function generateTerrainFromSrtm(
 
   const latCount = Math.round((latMax - latMin) / resolution);
   const lonCount = Math.round((lonMax - lonMin) / resolution);
-  for (let li = 0; li < latCount; li++) {
+  for (let li = 0; li <= latCount; li++) {
     const lat = latMin + li * resolution;
-    for (let loni = 0; loni < lonCount; loni++) {
+    for (let loni = 0; loni <= lonCount; loni++) {
       const lon = lonMin + loni * resolution;
       const latHi = lat + resolution;
       const lonHi = lon + resolution;

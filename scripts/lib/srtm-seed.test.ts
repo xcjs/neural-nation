@@ -72,7 +72,10 @@ describe('generateTerrainFromSrtm', () => {
   it('downsamples a single tile to 0.25° cells with averaged elevation', async () => {
     const dir = makeTileDir();
     // A 1° tile covering lat 0..1, lon 0..1. 4x4 samples (0.25° each).
-    // All samples = 100m → every output cell should be 100m, class Plain.
+    // All samples = 100m. Inclusive bounds produce 5x5 cells; the 16 inner
+    // cells (lat 0..0.75, lon 0..0.75) overlap the tile → 100m, class Coastal.
+    // The 9 edge cells at lat=1.0 and/or lon=1.0 fall outside the tile
+    // (cell spans lat 1.0..1.25 / lon 1.0..1.25, beyond the tile) → -1000m, Ocean.
     writeTile(join(dir, 'srtm_0_0.tif'), 4, 4, Array.from({ length: 16 }, () => 100));
 
     const cells = await generateTerrainFromSrtm(dir, {
@@ -86,10 +89,18 @@ describe('generateTerrainFromSrtm', () => {
       baseFrequency: 0,
     });
 
-    expect(cells.length).toBe(16); // 4 lat × 4 lon at 0.25°
-    for (const c of cells) {
+    expect(cells.length).toBe(25); // 5 lat × 5 lon at 0.25° (inclusive bounds)
+    const inner = cells.filter(c => c.lat <= 0.75 && c.lon <= 0.75);
+    const edge = cells.filter(c => c.lat > 0.75 || c.lon > 0.75);
+    expect(inner.length).toBe(16);
+    expect(edge.length).toBe(9);
+    for (const c of inner) {
       expect(c.elevation).toBe(100);
       expect(c.terrainClass).toBe('Coastal');
+    }
+    for (const c of edge) {
+      expect(c.elevation).toBe(-1000);
+      expect(c.terrainClass).toBe('Ocean');
     }
   });
 
@@ -109,7 +120,7 @@ describe('generateTerrainFromSrtm', () => {
       baseFrequency: 0,
     });
 
-    expect(cells.length).toBe(16);
+    expect(cells.length).toBe(25);
     for (const c of cells) {
       expect(c.elevation).toBe(-1000);
       expect(c.terrainClass).toBe('Ocean');
@@ -142,7 +153,7 @@ describe('generateTerrainFromSrtm', () => {
       baseFrequency: 0,
     });
 
-    expect(cells.length).toBe(16);
+    expect(cells.length).toBe(25);
     // Bottom-left cell (lat 0..0.25, lon 0..0.25) = rows 0,1 cols 0,1:
     // [100, 100] + [200, nodata] → non-nodata mean = 133.
     const cell = cells.find(c => c.lat === 0 && c.lon === 0);
