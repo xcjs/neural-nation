@@ -89,7 +89,7 @@ export interface TerrainGridConfig {
 }
 
 export const DEFAULT_TERRAIN_CONFIG: TerrainGridConfig = {
-  resolution: 1,
+  resolution: 0.25,
   latMin: -90,
   latMax: 90,
   lonMin: -180,

@@ -541,12 +541,12 @@ async function main() {
   const renewableResult = seedRenewableDeposits(db, join(root, 'data', 'geological'));
   console.log(`Renewables: ${renewableResult.insertedRows} deposits inserted`);
 
-  // Seed terrain grid (deterministic value-noise, 1° resolution).
+  // Seed terrain grid (SRTM if tiles present, otherwise deterministic value-noise).
   // Idempotent — no-ops if terrain table already populated.
   console.log('Seeding terrain grid...');
   const { seedTerrainGrid } = await import('./lib/terrain-seed');
-  const terrainResult = seedTerrainGrid(db);
-  console.log(`Terrain: ${terrainResult.insertedCells} cells @ ${terrainResult.resolution}° resolution`);
+  const terrainResult = await seedTerrainGrid(db, undefined, join(root, 'data', 'geological', 'terrain', 'srtm'));
+  console.log(`Terrain: ${terrainResult.insertedCells} cells @ ${terrainResult.resolution}° resolution (${terrainResult.source})`);
 
   // Seed real resource deposits from USGS MRDS (if the zip is present).
   // Idempotent — no-ops if resources already seeded or zip missing.

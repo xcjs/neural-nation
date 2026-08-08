@@ -1,41 +1,47 @@
-/**
- * Terrain seed module — generate a deterministic global terrain grid and
- * insert it into a game/template database.
- *
- * Uses value-noise (scripts/lib/value-noise.ts) rather than SRTM data so the
- * build is hermetic and reproducible. Grid resolution is configurable; the
- * default 1° grid produces ~65k cells.
- */
 import type Database from 'better-sqlite3';
+import { existsSync, readdirSync } from 'node:fs';
+import { generateTerrainFromSrtm } from './srtm-seed';
 import { DEFAULT_TERRAIN_CONFIG, generateTerrainGrid, type TerrainCell, type TerrainGridConfig } from './value-noise';
 
 export interface TerrainSeedResult {
   insertedCells: number;
   resolution: number;
+  source: 'srtm' | 'noise';
 }
 
-/**
- * Generate and insert terrain cells into the `terrain` table.
- *
- * Idempotent: if the `terrain` table already contains rows, this is a no-op.
- */
-export function seedTerrainGrid(
+function hasSrtmTiles(tilesDir: string): boolean {
+  if (!existsSync(tilesDir))
+    return false;
+  return readdirSync(tilesDir).some(f => /^srtm_-?\d+_-?\d+\.tif$/.test(f));
+}
+
+export async function seedTerrainGrid(
   db: Database.Database,
   config: TerrainGridConfig = DEFAULT_TERRAIN_CONFIG,
-): TerrainSeedResult {
+  tilesDir?: string,
+): Promise<TerrainSeedResult> {
   const result: TerrainSeedResult = {
     insertedCells: 0,
     resolution: config.resolution,
+    source: 'noise',
   };
 
-  // Idempotency: check if terrain already seeded
   const existing = db.prepare(`SELECT COUNT(*) AS n FROM terrain`).get() as { n: number };
   if (existing.n > 0) {
     console.log(`Terrain grid already seeded (${existing.n} cells), skipping.`);
     return result;
   }
 
-  const cells = generateTerrainGrid(config);
+  let cells: TerrainCell[];
+  if (tilesDir && hasSrtmTiles(tilesDir)) {
+    cells = await generateTerrainFromSrtm(tilesDir, config);
+    result.source = 'srtm';
+  }
+  else {
+    console.warn('SRTM tiles not found — falling back to value-noise terrain. Run `npm run fetch:data` to download real elevation data.');
+    cells = generateTerrainGrid(config);
+    result.source = 'noise';
+  }
 
   const insertStmt = db.prepare(`
     INSERT INTO terrain (lat_index, lon_index, lat, lon, elevation, terrain_class)
@@ -48,7 +54,6 @@ export function seedTerrainGrid(
     }
   });
 
-  // Batch in chunks of 5000
   const BATCH_SIZE = 5000;
   for (let i = 0; i < cells.length; i += BATCH_SIZE) {
     const batch = cells.slice(i, i + BATCH_SIZE);

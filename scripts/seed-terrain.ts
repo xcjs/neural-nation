@@ -25,8 +25,8 @@ async function main() {
   db.pragma('foreign_keys = ON');
 
   const { seedTerrainGrid } = await import('./lib/terrain-seed');
-  const result = seedTerrainGrid(db);
-  console.log(`Terrain: ${result.insertedCells} cells @ ${result.resolution}° resolution`);
+  const result = await seedTerrainGrid(db, undefined, join(root, 'data', 'geological', 'terrain', 'srtm'));
+  console.log(`Terrain: ${result.insertedCells} cells @ ${result.resolution}° resolution (${result.source})`);
 
   db.close();
 }
