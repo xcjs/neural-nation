@@ -166,9 +166,9 @@ describe('template DB seed data', () => {
     }
   });
 
-  it('seeds terrain grid with >60000 cells', () => {
+  it('seeds terrain grid with >1000000 cells', () => {
     const count = db.prepare('SELECT COUNT(*) as n FROM terrain').get() as { n: number };
-    expect(count.n).toBeGreaterThan(60000);
+    expect(count.n).toBeGreaterThan(1000000);
   });
 
   it('seeds MRDS deposits with non-zero remaining quantities', () => {
