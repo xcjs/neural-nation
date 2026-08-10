@@ -8,23 +8,23 @@ const root = join(__dirname, '..');
 
 const geoDir = join(root, 'data', 'geological', 'raw');
 const terrainDir = join(root, 'data', 'geological', 'terrain');
-const srtmDir = join(root, 'data', 'geological', 'terrain', 'srtm');
+const tilesDir = join(root, 'data', 'geological', 'terrain', 'tiles');
 
-const SRTM_BASE = 'https://s3.amazonaws.com/elevation-tiles-prod/srtm';
+const TILE_BASE = 'https://s3.amazonaws.com/elevation-tiles-prod/geotiff';
 
-async function downloadSrtmTiles(): Promise<void> {
-  mkdirSync(srtmDir, { recursive: true });
+async function downloadTerrainTiles(zoom = 6): Promise<void> {
+  mkdirSync(tilesDir, { recursive: true });
   let downloaded = 0;
   let skipped = 0;
   let missing = 0;
-  for (let lat = -90; lat <= 89; lat++) {
-    for (let lon = -180; lon <= 179; lon++) {
-      const path = join(srtmDir, `srtm_${lat}_${lon}.tif`);
+  for (let x = 0; x < 2 ** zoom; x++) {
+    for (let y = 0; y < 2 ** zoom; y++) {
+      const path = join(tilesDir, `${zoom}_${x}_${y}.tif`);
       if (existsSync(path)) {
         skipped++;
         continue;
       }
-      const url = `${SRTM_BASE}/srtm_${lat}_${lon}.tif`;
+      const url = `${TILE_BASE}/${zoom}/${x}/${y}.tif`;
       try {
         const res = await fetch(url);
         if (res.ok) {
@@ -36,18 +36,18 @@ async function downloadSrtmTiles(): Promise<void> {
           missing++;
         }
         else {
-          console.log(`  srtm_${lat}_${lon}: HTTP ${res.status}`);
+          console.log(`  tile ${zoom}_${x}_${y}: HTTP ${res.status}`);
         }
       }
       catch (e) {
-        console.log(`  srtm_${lat}_${lon}: error ${e instanceof Error ? e.message : 'unknown'}`);
+        console.log(`  tile ${zoom}_${x}_${y}: error ${e instanceof Error ? e.message : 'unknown'}`);
       }
       if ((downloaded + skipped + missing) % 500 === 0) {
-        console.log(`  SRTM progress: ${downloaded} downloaded, ${skipped} cached, ${missing} ocean (no tile)`);
+        console.log(`  Terrain tiles: ${downloaded} downloaded, ${skipped} cached, ${missing} missing`);
       }
     }
   }
-  console.log(`SRTM complete: ${downloaded} downloaded, ${skipped} cached, ${missing} ocean tiles skipped.`);
+  console.log(`Terrain tiles complete: ${downloaded} downloaded, ${skipped} cached, ${missing} missing.`);
 }
 
 async function main() {
@@ -82,7 +82,7 @@ async function main() {
     console.log('  MRDS already downloaded');
   }
 
-  await downloadSrtmTiles();
+  await downloadTerrainTiles();
 
   // Oil & gas data (EIA/USGS)
   console.log('  Oil & gas: download from https://www.eia.gov/maps/');
