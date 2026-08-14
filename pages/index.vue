@@ -197,5 +197,15 @@ function copyUrl() {
     </div>
 
     <ChangelogPanel v-if="changelog.length" v-model:open="changelogOpen" :data="changelog" />
+
+    <a
+      href="https://github.com/xcjs/neural-nation"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="fixed bottom-4 right-4 opacity-50 hover:opacity-100 transition-opacity duration-200"
+      aria-label="View source on GitHub"
+    >
+      <img src="/github-mark.svg" alt="GitHub" class="w-7 h-7">
+    </a>
   </div>
 </template>
