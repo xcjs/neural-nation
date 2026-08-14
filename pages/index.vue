@@ -202,10 +202,10 @@ function copyUrl() {
       href="https://github.com/xcjs/neural-nation"
       target="_blank"
       rel="noopener noreferrer"
-      class="fixed bottom-4 right-4 opacity-50 hover:opacity-100 transition-opacity duration-200"
+      class="fixed bottom-4 right-4 z-50 opacity-50 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400 focus-visible:outline-offset-2 transition-opacity duration-200"
       aria-label="View source on GitHub"
     >
-      <img src="/github-mark.svg" alt="GitHub" class="w-7 h-7">
+      <img src="/github-mark.svg" alt="GitHub" width="28" height="28" class="w-7 h-7">
     </a>
   </div>
 </template>
