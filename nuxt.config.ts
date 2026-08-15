@@ -82,6 +82,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       version: pkg.version,
+      umami: {
+        domain: '',
+        websiteId: '',
+      },
     },
     gameCleanupEnabled: true,
     gameCleanupAgeDays: 7,
