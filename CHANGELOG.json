@@ -1,5 +1,23 @@
 [
   {
+    "version": "0.3.2",
+    "date": "2026-08-14",
+    "summary": "GitHub repository link, Umami analytics script injection, and dev server documentation.",
+    "changes": {
+      "added": [
+        "GitHub repository link with themed cyan-400 logo in the bottom-right corner of the main page, with opacity hover transition and keyboard focus-visible styling.",
+        "Official GitHub mark SVG asset (primer/octicons) in public/github-mark.svg.",
+        "Umami analytics script injection via a client-only Nuxt plugin (plugins/analytics.client.ts) reading domain and website ID from runtimeConfig, silently skipping injection when unconfigured.",
+        "Umami config block (umami.domain, umami.websiteId) in nuxt.config.ts runtimeConfig.public, mapped to NUXT_PUBLIC_UMAMI_DOMAIN and NUXT_PUBLIC_UMAMI_WEBSITE_ID env vars.",
+        "Env var documentation for Umami analytics in .env.example.",
+        "AGENTS.md with dev server pre-flight check guidance."
+      ],
+      "fixed": [
+        "GitHub logo clipping at small sizes: replaced edge-to-edge SVG path with the official primer/octicons mark that has proper internal padding."
+      ]
+    }
+  },
+  {
     "version": "0.3.1",
     "date": "2026-08-05",
     "summary": "34 gameplay, UI, validation, and security fixes from live play-testing and code inspection.",
