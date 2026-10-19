@@ -7,7 +7,17 @@
 # Node 24.18.x headers are unaffected and run cleanly even on newer 24.x runtimes
 # (see the mitigation matrix in nodejs/node#65446), so pin the image until #65943
 # backports the registry fix; revisit with the next LTS roll.
-FROM node:24.18.1-slim AS builder
+# 2026-10-19 second root-cause: mismatched pair. The builder's node-gyp fetched Node
+# 24.22.0 HEADERS even on a 24.18.1 base (verified: shipped addon's build/config.gypi
+# has nodedir=/root/.cache/node-gyp/24.22.0), so the addon compiled against 24.22
+# headers ran on a 24.18.1 runtime — the 24.19+ ObjectWrap cleanup-hook registration
+# needs BOTH sides on the fixed pair. v24.22.0 (2026-10-14, LTS Krypton) contains the
+# complete fix set: 452e7/5468337-era backports including
+# abe1b673e9 'src: keep global list of addon-provided cleanup hooks' (the registry,
+# nodejs/node#63985/#65446 fix) and 5570a84048 'src: fix use-after-free in
+# CleanupHookThunkRun' (#65630). Pin BOTH stages to 24.22.0-slim so headers and runtime
+# are the same, fixed, matched pair. Supersedes the 24.18.1 pin from !9.
+FROM node:24.22.0-slim AS builder
 
 WORKDIR /app
 
@@ -26,7 +36,9 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:24.18.1-slim AS runtime
+# Runtime must MATCH the builder's headers version (the v0.4.1 crash = 24.22-headers
+# addon on a 24.18.1 runtime). See the builder-stage comment for the full root cause.
+FROM node:24.22.0-slim AS runtime
 
 WORKDIR /app
 
