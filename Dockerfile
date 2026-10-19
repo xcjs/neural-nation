@@ -14,7 +14,14 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-RUN npm install
+# npm ci (not install) = lockfile-exact AND, critically, a DIFFERENT command string than
+# the cached `RUN npm install` layer: the builder's persistent build cache reused the
+# old layer after the FROM pin (job 86151 trace shows `RUN npm install CACHED`), which
+# shipped better-sqlite3 still compiled against Node 24.19.0 headers — per the upstream
+# mitigation matrix, the crash follows the addon's BUILD HEADERS, not the runtime
+# (24.19-headers addon aborts even on a 24.18.1 runtime). This line forces a fresh
+# compile against the pinned base's 24.18.1 headers.
+RUN npm ci
 
 COPY . .
 RUN npm run build
