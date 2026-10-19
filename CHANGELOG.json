@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.4.2",
+    "date": "2026-10-19",
+    "summary": "Builds and runs on Node 24.22.0 — the first version pairing the cleanup-hook registry fix in BOTH headers and runtime; v0.4.1 crashed from a header/runtime mismatch.",
+    "changes": {
+      "fixed": [
+        "v0.4.1 still crashed: its builder (node:24.18.1-slim) self-fetched Node 24.22.0 headers via node-gyp (shipped config.gypi nodedir=/root/.cache/node-gyp/24.22.0), producing addon(24.22 headers) + runtime(24.18.1) — a mismatched cleanup-hook pair, still aborting on GC of better-sqlite3 Statements.",
+        "Both Dockerfile stages now pin node:24.22.0-slim, the first release carrying the complete fix set in both directions (abe1b673e9 'keep global list of addon-provided cleanup hooks' + 5570a84048 'fix use-after-free in CleanupHookThunkRun')."
+      ]
+    }
+  },
+  {
     "version": "0.4.1",
     "date": "2026-10-19",
     "summary": "Rebuilds better-sqlite3 against the pinned Node 24.18.1 headers; the 0.4.0 image shipped a cache-hit layer compiled against 24.19.0 headers and still crashed.",
