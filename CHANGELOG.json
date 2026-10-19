@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.4.1",
+    "date": "2026-10-19",
+    "summary": "Rebuilds better-sqlite3 against the pinned Node 24.18.1 headers; the 0.4.0 image shipped a cache-hit layer compiled against 24.19.0 headers and still crashed.",
+    "changes": {
+      "fixed": [
+        "v0.4.0 still crashed in production: the CI runner's persistent build cache reused the August-era RUN npm install layer (Build job trace showed it CACHED after the FROM pin), so better-sqlite3 shipped compiled against Node 24.19.0 headers — the abort tracks the addon's build headers, not the loaded runtime (nodejs/node#65446 mitigation matrix).",
+        "Builder stage now uses RUN npm ci (lockfile-exact), busting the stale layer so better-sqlite3 recompiles against the pinned 24.18.1 headers (verified uncached in pipeline 15986, job 86157)."
+      ]
+    }
+  },
+  {
     "version": "0.4.0",
     "date": "2026-10-19",
     "summary": "Fixes production crashes in game-scoped requests by pinning the runtime to Node 24.18.1.",
